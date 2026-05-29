@@ -8,16 +8,18 @@ import (
 	"time"
 
 	"github.com/FlorianWenzel/codepulse/internal/domain"
+	"github.com/FlorianWenzel/codepulse/internal/server/decorate"
 	"github.com/FlorianWenzel/codepulse/internal/server/gate"
 	"github.com/FlorianWenzel/codepulse/internal/server/store"
 )
 
 // Server is the HTTP API handler.
 type Server struct {
-	store store.Store
-	gate  gate.Gate
-	mux   *http.ServeMux
-	now   func() time.Time
+	store     store.Store
+	gate      gate.Gate
+	mux       *http.ServeMux
+	now       func() time.Time
+	decorator decorate.Decorator
 }
 
 // New builds a Server backed by the given store and the default quality gate.
@@ -25,6 +27,17 @@ func New(s store.Store) *Server {
 	srv := &Server{store: s, gate: gate.Default(), now: time.Now}
 	srv.routes()
 	return srv
+}
+
+// SetDecorator configures PR decoration (commit-status posting).
+func (s *Server) SetDecorator(d decorate.Decorator) { s.decorator = d }
+
+// branchOf returns the requested branch or "main".
+func branchOf(r *http.Request) string {
+	if b := r.URL.Query().Get("branch"); b != "" {
+		return b
+	}
+	return "main"
 }
 
 func (s *Server) routes() {
@@ -35,6 +48,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/v1/projects/{key}", s.getProject)
 	s.mux.HandleFunc("POST /api/v1/analyses", s.ingest)
 	s.mux.HandleFunc("GET /api/v1/issues", s.listIssues)
+	s.mux.HandleFunc("GET /api/v1/issues/new", s.listNewIssues)
 	s.mux.HandleFunc("POST /api/v1/issues/transition", s.transitionIssue)
 	s.mux.HandleFunc("POST /api/v1/issues/assign", s.assignIssue)
 	s.mux.HandleFunc("POST /api/v1/issues/comment", s.commentIssue)
@@ -91,10 +105,17 @@ func (s *Server) getProject(w http.ResponseWriter, r *http.Request) {
 // the analysis id + gate result.
 func (s *Server) ingest(w http.ResponseWriter, r *http.Request) {
 	key := r.URL.Query().Get("project")
-	if _, ok := s.store.GetProject(key); !ok {
+	proj, ok := s.store.GetProject(key)
+	if !ok {
 		httpError(w, http.StatusNotFound, "unknown project; create it first")
 		return
 	}
+	branch := r.URL.Query().Get("branch")
+	if branch == "" {
+		branch = proj.MainBranch
+	}
+	base := r.URL.Query().Get("base") // set for PR/feature-branch analyses
+
 	var rep domain.Report
 	if err := json.NewDecoder(r.Body).Decode(&rep); err != nil {
 		httpError(w, http.StatusBadRequest, "invalid report JSON")
@@ -104,6 +125,7 @@ func (s *Server) ingest(w http.ResponseWriter, r *http.Request) {
 	result := gate.Evaluate(s.gate, rep.Summary)
 	a := store.Analysis{
 		ProjectKey: key,
+		Branch:     branch,
 		CreatedAt:  s.now(),
 		Summary:    rep.Summary,
 		Metrics:    rep.Metrics,
@@ -114,10 +136,26 @@ func (s *Server) ingest(w http.ResponseWriter, r *http.Request) {
 		httpError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	writeJSON(w, http.StatusCreated, map[string]any{
-		"analysisId": saved.ID,
-		"gate":       result,
-	})
+
+	resp := map[string]any{"analysisId": saved.ID, "branch": branch, "gate": result}
+	if base != "" {
+		newIssues := s.store.NewIssues(key, branch, base)
+		resp["newIssues"] = len(newIssues)
+	}
+
+	// Best-effort PR decoration (no-op unless a decorator is configured).
+	if s.decorator != nil {
+		commit := r.URL.Query().Get("commit")
+		repo := r.URL.Query().Get("repo")
+		if repo != "" && commit != "" {
+			_ = s.decorator.Decorate(r.Context(), decorate.Status{
+				Repo: repo, Commit: commit, GateOK: result.Status == gate.StatusOK,
+				Description: "CodePulse quality gate: " + result.Status,
+			})
+		}
+	}
+
+	writeJSON(w, http.StatusCreated, resp)
 }
 
 func (s *Server) listIssues(w http.ResponseWriter, r *http.Request) {
@@ -127,16 +165,29 @@ func (s *Server) listIssues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	openOnly := r.URL.Query().Get("open") == "true"
-	writeJSON(w, http.StatusOK, s.store.Issues(key, openOnly))
+	writeJSON(w, http.StatusOK, s.store.Issues(key, branchOf(r), openOnly))
+}
+
+func (s *Server) listNewIssues(w http.ResponseWriter, r *http.Request) {
+	key := r.URL.Query().Get("project")
+	if _, ok := s.store.GetProject(key); !ok {
+		httpError(w, http.StatusNotFound, "project not found")
+		return
+	}
+	base := r.URL.Query().Get("base")
+	if base == "" {
+		base = "main"
+	}
+	writeJSON(w, http.StatusOK, s.store.NewIssues(key, branchOf(r), base))
 }
 
 func (s *Server) transitionIssue(w http.ResponseWriter, r *http.Request) {
-	var body struct{ Project, Key, Transition string }
+	var body struct{ Project, Branch, Key, Transition string }
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httpError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
-	is, err := s.store.TransitionIssue(body.Project, body.Key, body.Transition)
+	is, err := s.store.TransitionIssue(body.Project, orMain(body.Branch), body.Key, body.Transition)
 	if err != nil {
 		httpError(w, http.StatusBadRequest, err.Error())
 		return
@@ -145,12 +196,12 @@ func (s *Server) transitionIssue(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) assignIssue(w http.ResponseWriter, r *http.Request) {
-	var body struct{ Project, Key, Assignee string }
+	var body struct{ Project, Branch, Key, Assignee string }
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httpError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
-	is, err := s.store.AssignIssue(body.Project, body.Key, body.Assignee)
+	is, err := s.store.AssignIssue(body.Project, orMain(body.Branch), body.Key, body.Assignee)
 	if err != nil {
 		httpError(w, http.StatusNotFound, err.Error())
 		return
@@ -159,12 +210,12 @@ func (s *Server) assignIssue(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) commentIssue(w http.ResponseWriter, r *http.Request) {
-	var body struct{ Project, Key, Author, Text string }
+	var body struct{ Project, Branch, Key, Author, Text string }
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httpError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
-	is, err := s.store.CommentIssue(body.Project, body.Key, body.Author, body.Text, s.now())
+	is, err := s.store.CommentIssue(body.Project, orMain(body.Branch), body.Key, body.Author, body.Text, s.now())
 	if err != nil {
 		httpError(w, http.StatusNotFound, err.Error())
 		return
@@ -178,16 +229,16 @@ func (s *Server) listHotspots(w http.ResponseWriter, r *http.Request) {
 		httpError(w, http.StatusNotFound, "project not found")
 		return
 	}
-	writeJSON(w, http.StatusOK, s.store.Hotspots(key, r.URL.Query().Get("status")))
+	writeJSON(w, http.StatusOK, s.store.Hotspots(key, branchOf(r), r.URL.Query().Get("status")))
 }
 
 func (s *Server) resolveHotspot(w http.ResponseWriter, r *http.Request) {
-	var body struct{ Project, Key, Resolution string }
+	var body struct{ Project, Branch, Key, Resolution string }
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httpError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
-	h, err := s.store.ResolveHotspot(body.Project, body.Key, body.Resolution)
+	h, err := s.store.ResolveHotspot(body.Project, orMain(body.Branch), body.Key, body.Resolution)
 	if err != nil {
 		httpError(w, http.StatusBadRequest, err.Error())
 		return
@@ -197,7 +248,7 @@ func (s *Server) resolveHotspot(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) measures(w http.ResponseWriter, r *http.Request) {
 	key := r.URL.Query().Get("project")
-	a, ok := s.store.LatestAnalysis(key)
+	a, ok := s.store.LatestAnalysis(key, branchOf(r))
 	if !ok {
 		httpError(w, http.StatusNotFound, "no analysis for project")
 		return
@@ -211,12 +262,20 @@ func (s *Server) measures(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) gateStatus(w http.ResponseWriter, r *http.Request) {
 	key := r.URL.Query().Get("project")
-	a, ok := s.store.LatestAnalysis(key)
+	a, ok := s.store.LatestAnalysis(key, branchOf(r))
 	if !ok {
 		httpError(w, http.StatusNotFound, "no analysis for project")
 		return
 	}
 	writeJSON(w, http.StatusOK, a.Gate)
+}
+
+// orMain returns b or "main" when empty.
+func orMain(b string) string {
+	if b == "" {
+		return "main"
+	}
+	return b
 }
 
 // --- helpers ---

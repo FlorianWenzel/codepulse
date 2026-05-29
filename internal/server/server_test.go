@@ -2,6 +2,7 @@ package server_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"github.com/FlorianWenzel/codepulse/internal/domain"
 	"github.com/FlorianWenzel/codepulse/internal/scan"
 	"github.com/FlorianWenzel/codepulse/internal/server"
+	"github.com/FlorianWenzel/codepulse/internal/server/decorate"
 	"github.com/FlorianWenzel/codepulse/internal/server/gate"
 	"github.com/FlorianWenzel/codepulse/internal/server/store"
 )
@@ -155,6 +157,60 @@ func TestIssueAndHotspotWorkflow(t *testing.T) {
 	getJSON(t, ts.URL+"/api/v1/hotspots?project=demo&status=TO_REVIEW", http.StatusOK, &hs2)
 	if len(hs2) != 0 {
 		t.Errorf("hotspots to review after resolve = %d, want 0", len(hs2))
+	}
+}
+
+// fakeDecorator captures decoration calls.
+type fakeDecorator struct{ statuses []decorate.Status }
+
+func (f *fakeDecorator) Decorate(_ context.Context, s decorate.Status) error {
+	f.statuses = append(f.statuses, s)
+	return nil
+}
+
+// TestBranchAnalysisAndDecoration ingests on main and on a feature branch with
+// base=main, verifies "new issues" are the branch-introduced ones, and that
+// PR decoration is invoked with the gate result.
+func TestBranchAnalysisAndDecoration(t *testing.T) {
+	srv := server.New(store.NewMemory())
+	fd := &fakeDecorator{}
+	srv.SetDecorator(fd)
+	ts := httptest.NewServer(srv)
+	defer ts.Close()
+
+	mustPost(t, ts.URL+"/api/v1/projects", map[string]string{"key": "demo"}, http.StatusCreated)
+
+	// main: python project (4 issues)
+	mainRep, _ := scan.Scan(scan.Options{Root: "../../testdata/pyfixture"})
+	var resp map[string]any
+	postJSON(t, ts.URL+"/api/v1/analyses?project=demo&repo=acme/app&commit=abc123", mainRep, http.StatusCreated, &resp)
+	if len(fd.statuses) != 1 || fd.statuses[0].Commit != "abc123" {
+		t.Fatalf("expected decoration for main commit, got %+v", fd.statuses)
+	}
+	if fd.statuses[0].GateOK {
+		t.Error("gate should fail (pyfixture has a vulnerability)")
+	}
+
+	// feature branch: javascript project (different issues), base=main
+	featRep, _ := scan.Scan(scan.Options{Root: "../../testdata/jsfixture"})
+	postJSON(t, ts.URL+"/api/v1/analyses?project=demo&branch=feature&base=main", featRep, http.StatusCreated, &resp)
+	// jsfixture: 4 issues + 1 hotspot; none share keys with python main → all 4 new
+	if got, _ := resp["newIssues"].(float64); int(got) != 4 {
+		t.Errorf("newIssues = %v, want 4", resp["newIssues"])
+	}
+
+	// the dedicated endpoint agrees
+	var newIssues []store.Issue
+	getJSON(t, ts.URL+"/api/v1/issues/new?project=demo&branch=feature&base=main", http.StatusOK, &newIssues)
+	if len(newIssues) != 4 {
+		t.Errorf("GET issues/new = %d, want 4", len(newIssues))
+	}
+
+	// main and feature branches are isolated
+	var mainIssues []store.Issue
+	getJSON(t, ts.URL+"/api/v1/issues?project=demo&branch=main&open=true", http.StatusOK, &mainIssues)
+	if len(mainIssues) != 4 {
+		t.Errorf("main issues = %d, want 4 (python)", len(mainIssues))
 	}
 }
 

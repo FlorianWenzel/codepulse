@@ -12,15 +12,17 @@ import (
 
 // Project is an analyzed codebase.
 type Project struct {
-	Key       string    `json:"key"`
-	Name      string    `json:"name"`
-	CreatedAt time.Time `json:"createdAt"`
+	Key        string    `json:"key"`
+	Name       string    `json:"name"`
+	MainBranch string    `json:"mainBranch"`
+	CreatedAt  time.Time `json:"createdAt"`
 }
 
 // Analysis is one immutable snapshot of a project at a point in time.
 type Analysis struct {
 	ID         string               `json:"id"`
 	ProjectKey string               `json:"projectKey"`
+	Branch     string               `json:"branch"`
 	CreatedAt  time.Time            `json:"createdAt"`
 	Summary    domain.Summary       `json:"summary"`
 	Metrics    []domain.FileMetrics `json:"metrics"`
@@ -130,16 +132,19 @@ type Store interface {
 	GetProject(key string) (Project, bool)
 	ListProjects() []Project
 
-	// SaveAnalysis persists an analysis and reconciles its findings against
-	// the project's tracked issues and hotspots (carry-over / new / fixed).
+	// SaveAnalysis persists an analysis (on a.Branch) and reconciles its
+	// findings against that branch's tracked issues and hotspots.
 	SaveAnalysis(a Analysis, findings []domain.Finding) (Analysis, error)
-	LatestAnalysis(projectKey string) (Analysis, bool)
+	LatestAnalysis(projectKey, branch string) (Analysis, bool)
 
-	Issues(projectKey string, openOnly bool) []Issue
-	TransitionIssue(projectKey, key, transition string) (Issue, error)
-	AssignIssue(projectKey, key, assignee string) (Issue, error)
-	CommentIssue(projectKey, key, author, text string, at time.Time) (Issue, error)
+	Issues(projectKey, branch string, openOnly bool) []Issue
+	// NewIssues returns issues on branch whose identity is absent from base
+	// (i.e. introduced by this branch/PR).
+	NewIssues(projectKey, branch, base string) []Issue
+	TransitionIssue(projectKey, branch, key, transition string) (Issue, error)
+	AssignIssue(projectKey, branch, key, assignee string) (Issue, error)
+	CommentIssue(projectKey, branch, key, author, text string, at time.Time) (Issue, error)
 
-	Hotspots(projectKey, status string) []Hotspot
-	ResolveHotspot(projectKey, key, resolution string) (Hotspot, error)
+	Hotspots(projectKey, branch, status string) []Hotspot
+	ResolveHotspot(projectKey, branch, key, resolution string) (Hotspot, error)
 }

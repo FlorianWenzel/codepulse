@@ -55,10 +55,10 @@ func TestPostgresStoreIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("save analysis 1: %v", err)
 	}
-	if la, ok := st.LatestAnalysis("demo"); !ok || la.ID != a1.ID {
+	if la, ok := st.LatestAnalysis("demo", "main"); !ok || la.ID != a1.ID {
 		t.Fatalf("latest analysis mismatch: %+v ok=%v", la, ok)
 	}
-	if got := len(st.Issues("demo", true)); got != 2 {
+	if got := len(st.Issues("demo", "main", true)); got != 2 {
 		t.Fatalf("after first analysis, open issues = %d, want 2", got)
 	}
 
@@ -67,7 +67,7 @@ func TestPostgresStoreIntegration(t *testing.T) {
 		[]domain.Finding{smell, vuln}); err != nil {
 		t.Fatalf("save analysis 2: %v", err)
 	}
-	if got := len(st.Issues("demo", true)); got != 2 {
+	if got := len(st.Issues("demo", "main", true)); got != 2 {
 		t.Errorf("after re-ingest, open issues = %d, want 2 (tracked)", got)
 	}
 
@@ -76,11 +76,11 @@ func TestPostgresStoreIntegration(t *testing.T) {
 		[]domain.Finding{smell}); err != nil {
 		t.Fatalf("save analysis 3: %v", err)
 	}
-	open := st.Issues("demo", true)
+	open := st.Issues("demo", "main", true)
 	if len(open) != 1 || open[0].RuleID != "go:empty-block" {
 		t.Errorf("after fix, open issues = %+v, want only the code smell", open)
 	}
-	all := st.Issues("demo", false)
+	all := st.Issues("demo", "main", false)
 	if len(all) != 2 {
 		t.Errorf("total tracked issues = %d, want 2", len(all))
 	}
@@ -96,14 +96,14 @@ func TestPostgresStoreIntegration(t *testing.T) {
 
 	// --- workflow: false-positive is sticky across re-ingest ---
 	smellKey := open[0].Key
-	if _, err := st.TransitionIssue("demo", smellKey, "falsepositive"); err != nil {
+	if _, err := st.TransitionIssue("demo", "main", smellKey, "falsepositive"); err != nil {
 		t.Fatalf("transition: %v", err)
 	}
 	if _, err := st.SaveAnalysis(store.Analysis{ProjectKey: "demo", CreatedAt: time.Now()},
 		[]domain.Finding{smell}); err != nil {
 		t.Fatalf("save 4: %v", err)
 	}
-	if got := len(st.Issues("demo", true)); got != 0 {
+	if got := len(st.Issues("demo", "main", true)); got != 0 {
 		t.Errorf("after FP + re-ingest, open issues = %d, want 0 (sticky)", got)
 	}
 
@@ -114,14 +114,14 @@ func TestPostgresStoreIntegration(t *testing.T) {
 		[]domain.Finding{smell, hot}); err != nil {
 		t.Fatalf("save 5: %v", err)
 	}
-	if got := len(st.Hotspots("demo", store.HotspotToReview)); got != 1 {
+	if got := len(st.Hotspots("demo", "main", store.HotspotToReview)); got != 1 {
 		t.Fatalf("hotspots to review = %d, want 1", got)
 	}
-	hk := st.Hotspots("demo", "")[0].Key
-	if _, err := st.ResolveHotspot("demo", hk, store.HotspotSafe); err != nil {
+	hk := st.Hotspots("demo", "main", "")[0].Key
+	if _, err := st.ResolveHotspot("demo", "main", hk, store.HotspotSafe); err != nil {
 		t.Fatalf("resolve hotspot: %v", err)
 	}
-	if got := len(st.Hotspots("demo", store.HotspotToReview)); got != 0 {
+	if got := len(st.Hotspots("demo", "main", store.HotspotToReview)); got != 0 {
 		t.Errorf("hotspots to review after resolve = %d, want 0", got)
 	}
 }

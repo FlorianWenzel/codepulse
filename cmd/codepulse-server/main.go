@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/FlorianWenzel/codepulse/internal/server"
+	"github.com/FlorianWenzel/codepulse/internal/server/decorate"
 	"github.com/FlorianWenzel/codepulse/internal/server/store"
 )
 
@@ -32,6 +33,11 @@ func main() {
 	}
 
 	srv := server.New(st)
+	if tok := os.Getenv("GITHUB_TOKEN"); tok != "" {
+		srv.SetDecorator(&decorate.GitHub{Token: tok})
+		log.Printf("GitHub PR decoration enabled")
+	}
+
 	log.Printf("codepulse-server listening on %s", *addr)
 	if err := http.ListenAndServe(*addr, srv); err != nil {
 		log.Fatal(err)

@@ -67,7 +67,12 @@ PR decoration, SCM integrations). Always keep "CodePulse scans CodePulse" green 
 > (author + date) and flags `isNew` within an N-day window (`-new-code-days`); the
 > report carries `new_*` measures and the gate has clean-as-you-code conditions
 > (`new_vulnerabilities`, `new_blocker_issues`). e2e tested against a real throwaway
-> git repo (old vs new commits). **Next:** server branch/PR dimension + PR decoration, then SSO/RBAC.
+> git repo (old vs new commits). **Branch/PR analysis** ✅ — analyses/issues/hotspots
+> are namespaced per branch; ingest takes `?branch=&base=` and returns new-vs-base issue
+> counts; `GET /issues/new` lists PR-introduced issues. **PR decoration** ✅ — a GitHub
+> commit-status decorator (enabled via `GITHUB_TOKEN`) posts the gate result; httptest +
+> real-Postgres integration cover branch isolation + the new-issue diff; decorator
+> unit-tested against a fake API. **Next (Phase 4):** auth (tokens/RBAC) + SSO, scale, dataflow.
 
 - Add **Python, JavaScript, TypeScript, Java** grammars + starter rule sets.
 - Cognitive complexity, comment density, **duplication detection**, coverage import

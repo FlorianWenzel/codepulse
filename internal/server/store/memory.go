@@ -10,12 +10,13 @@ import (
 )
 
 // Memory is an in-memory Store, used for tests and single-node runs. It is
-// safe for concurrent use.
+// safe for concurrent use. Issues/hotspots/analyses are namespaced per
+// (project, branch).
 type Memory struct {
 	mu       sync.Mutex
 	projects map[string]Project
-	analyses map[string][]Analysis        // projectKey -> analyses (oldest first)
-	issues   map[string]map[string]*Issue // projectKey -> issueKey -> issue
+	analyses map[string][]Analysis        // bkey -> analyses (oldest first)
+	issues   map[string]map[string]*Issue // bkey -> issueKey -> issue
 	hotspots map[string]map[string]*Hotspot
 	seq      int
 }
@@ -30,6 +31,9 @@ func NewMemory() *Memory {
 	}
 }
 
+// bkey is the per-branch namespace key.
+func bkey(project, branch string) string { return project + "\x00" + branch }
+
 func (m *Memory) CreateProject(p Project) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -39,9 +43,10 @@ func (m *Memory) CreateProject(p Project) error {
 	if _, ok := m.projects[p.Key]; ok {
 		return fmt.Errorf("project %q already exists", p.Key)
 	}
+	if p.MainBranch == "" {
+		p.MainBranch = "main"
+	}
 	m.projects[p.Key] = p
-	m.issues[p.Key] = map[string]*Issue{}
-	m.hotspots[p.Key] = map[string]*Hotspot{}
 	return nil
 }
 
@@ -75,22 +80,27 @@ func (m *Memory) SaveAnalysis(a Analysis, findings []domain.Finding) (Analysis, 
 	if _, ok := m.projects[a.ProjectKey]; !ok {
 		return Analysis{}, fmt.Errorf("unknown project %q", a.ProjectKey)
 	}
+	if a.Branch == "" {
+		a.Branch = "main"
+	}
+	bk := bkey(a.ProjectKey, a.Branch)
 
 	m.seq++
 	a.ID = fmt.Sprintf("a%d", m.seq)
 
-	tracked := m.issues[a.ProjectKey]
-	hs := m.hotspots[a.ProjectKey]
+	if m.issues[bk] == nil {
+		m.issues[bk] = map[string]*Issue{}
+		m.hotspots[bk] = map[string]*Hotspot{}
+	}
+	tracked := m.issues[bk]
+	hs := m.hotspots[bk]
 	seenIssues := map[string]bool{}
-	seenHotspots := map[string]bool{}
 
 	for _, f := range findings {
 		k := findingKey(f)
 		if f.Type == domain.TypeHotspot {
-			seenHotspots[k] = true
 			if h, ok := hs[k]; ok {
-				h.LastAnalysisID = a.ID
-				h.Line = f.Location.StartLine
+				h.LastAnalysisID, h.Line = a.ID, f.Location.StartLine
 				continue
 			}
 			hs[k] = &Hotspot{Key: k, ProjectKey: a.ProjectKey, RuleID: f.RuleID, Message: f.Message,
@@ -100,10 +110,7 @@ func (m *Memory) SaveAnalysis(a Analysis, findings []domain.Finding) (Analysis, 
 
 		seenIssues[k] = true
 		if iss, ok := tracked[k]; ok {
-			iss.LastAnalysisID = a.ID
-			iss.Line = f.Location.StartLine
-			iss.Severity = f.Severity
-			// Reopen only if it was auto-closed (FIXED); manual triage is sticky.
+			iss.LastAnalysisID, iss.Line, iss.Severity = a.ID, f.Location.StartLine, f.Severity
 			if iss.Status == StatusClosed && iss.Resolution == ResolutionFixed {
 				iss.Status, iss.Resolution = StatusReopened, ""
 			}
@@ -116,32 +123,35 @@ func (m *Memory) SaveAnalysis(a Analysis, findings []domain.Finding) (Analysis, 
 		}
 	}
 
-	// Open issues absent this run are fixed (manual resolutions left alone).
 	for k, iss := range tracked {
 		if !seenIssues[k] && isOpenStatus(iss.Status) {
 			iss.Status, iss.Resolution, iss.LastAnalysisID = StatusClosed, ResolutionFixed, a.ID
 		}
 	}
 
-	m.analyses[a.ProjectKey] = append(m.analyses[a.ProjectKey], a)
+	m.analyses[bk] = append(m.analyses[bk], a)
 	return a, nil
 }
 
-func (m *Memory) LatestAnalysis(projectKey string) (Analysis, bool) {
+func (m *Memory) LatestAnalysis(projectKey, branch string) (Analysis, bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	list := m.analyses[projectKey]
+	list := m.analyses[bkey(projectKey, branch)]
 	if len(list) == 0 {
 		return Analysis{}, false
 	}
 	return list[len(list)-1], true
 }
 
-func (m *Memory) Issues(projectKey string, openOnly bool) []Issue {
+func (m *Memory) Issues(projectKey, branch string, openOnly bool) []Issue {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	return m.issuesLocked(projectKey, branch, openOnly)
+}
+
+func (m *Memory) issuesLocked(projectKey, branch string, openOnly bool) []Issue {
 	var out []Issue
-	for _, iss := range m.issues[projectKey] {
+	for _, iss := range m.issues[bkey(projectKey, branch)] {
 		if openOnly && !isOpenStatus(iss.Status) {
 			continue
 		}
@@ -159,10 +169,26 @@ func (m *Memory) Issues(projectKey string, openOnly bool) []Issue {
 	return out
 }
 
-func (m *Memory) TransitionIssue(projectKey, key, transition string) (Issue, error) {
+func (m *Memory) NewIssues(projectKey, branch, base string) []Issue {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	iss, ok := m.issues[projectKey][key]
+	baseKeys := map[string]bool{}
+	for k := range m.issues[bkey(projectKey, base)] {
+		baseKeys[k] = true
+	}
+	var out []Issue
+	for _, iss := range m.issuesLocked(projectKey, branch, true) {
+		if !baseKeys[iss.Key] {
+			out = append(out, iss)
+		}
+	}
+	return out
+}
+
+func (m *Memory) TransitionIssue(projectKey, branch, key, transition string) (Issue, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	iss, ok := m.issues[bkey(projectKey, branch)][key]
 	if !ok {
 		return Issue{}, fmt.Errorf("issue not found")
 	}
@@ -172,10 +198,10 @@ func (m *Memory) TransitionIssue(projectKey, key, transition string) (Issue, err
 	return *iss, nil
 }
 
-func (m *Memory) AssignIssue(projectKey, key, assignee string) (Issue, error) {
+func (m *Memory) AssignIssue(projectKey, branch, key, assignee string) (Issue, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	iss, ok := m.issues[projectKey][key]
+	iss, ok := m.issues[bkey(projectKey, branch)][key]
 	if !ok {
 		return Issue{}, fmt.Errorf("issue not found")
 	}
@@ -183,10 +209,10 @@ func (m *Memory) AssignIssue(projectKey, key, assignee string) (Issue, error) {
 	return *iss, nil
 }
 
-func (m *Memory) CommentIssue(projectKey, key, author, text string, at time.Time) (Issue, error) {
+func (m *Memory) CommentIssue(projectKey, branch, key, author, text string, at time.Time) (Issue, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	iss, ok := m.issues[projectKey][key]
+	iss, ok := m.issues[bkey(projectKey, branch)][key]
 	if !ok {
 		return Issue{}, fmt.Errorf("issue not found")
 	}
@@ -194,11 +220,11 @@ func (m *Memory) CommentIssue(projectKey, key, author, text string, at time.Time
 	return *iss, nil
 }
 
-func (m *Memory) Hotspots(projectKey, status string) []Hotspot {
+func (m *Memory) Hotspots(projectKey, branch, status string) []Hotspot {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	var out []Hotspot
-	for _, h := range m.hotspots[projectKey] {
+	for _, h := range m.hotspots[bkey(projectKey, branch)] {
 		if status != "" && h.Status != status {
 			continue
 		}
@@ -213,13 +239,13 @@ func (m *Memory) Hotspots(projectKey, status string) []Hotspot {
 	return out
 }
 
-func (m *Memory) ResolveHotspot(projectKey, key, resolution string) (Hotspot, error) {
+func (m *Memory) ResolveHotspot(projectKey, branch, key, resolution string) (Hotspot, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if !validHotspotResolution(resolution) {
 		return Hotspot{}, fmt.Errorf("invalid hotspot resolution %q", resolution)
 	}
-	h, ok := m.hotspots[projectKey][key]
+	h, ok := m.hotspots[bkey(projectKey, branch)][key]
 	if !ok {
 		return Hotspot{}, fmt.Errorf("hotspot not found")
 	}
