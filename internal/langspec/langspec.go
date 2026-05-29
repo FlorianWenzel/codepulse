@@ -93,6 +93,10 @@ func For(l lang.Language) (Spec, bool) {
 		return Go(), true
 	case lang.Python:
 		return Python(), true
+	case lang.JavaScript:
+		return JavaScript(), true
+	case lang.TypeScript:
+		return TypeScript(), true
 	default:
 		return Spec{}, false
 	}

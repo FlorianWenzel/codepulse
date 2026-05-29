@@ -22,6 +22,10 @@ func ForLanguage(l lang.Language) []Rule {
 		return goRules()
 	case lang.Python:
 		return pythonRules()
+	case lang.JavaScript:
+		return jsLikeRules(langspec.JavaScript())
+	case lang.TypeScript:
+		return jsLikeRules(langspec.TypeScript())
 	default:
 		return nil
 	}

@@ -88,6 +88,25 @@ func TestScanRatings(t *testing.T) {
 	}
 }
 
+func TestScanJavaScript(t *testing.T) {
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/jsfixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if rep.Language != "javascript" {
+		t.Errorf("language = %q, want javascript", rep.Language)
+	}
+	if rep.Summary.TotalFindings != 5 {
+		t.Errorf("findings = %d, want 5", rep.Summary.TotalFindings)
+	}
+	if rep.Summary.ByType[domain.TypeHotspot] != 1 {
+		t.Errorf("security hotspots = %d, want 1 (child-process exec)", rep.Summary.ByType[domain.TypeHotspot])
+	}
+	if rep.Summary.ByType[domain.TypeVulnerability] != 1 {
+		t.Errorf("vulnerabilities = %d, want 1 (eval)", rep.Summary.ByType[domain.TypeVulnerability])
+	}
+}
+
 func TestScanDuplication(t *testing.T) {
 	rep, err := scan.Scan(scan.Options{Root: "../../testdata/dupfixture", MinDupTokens: 20})
 	if err != nil {

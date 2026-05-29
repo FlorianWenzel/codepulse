@@ -46,6 +46,16 @@ func goRules() []Rule {
 				return "Remove this empty block, or add a comment explaining why it is empty.", true
 			},
 		},
+		{
+			ID:        "go:exec-command",
+			Name:      "OS command execution is security-sensitive",
+			Type:      domain.TypeHotspot,
+			Severity:  domain.SevMajor,
+			EffortMin: 10,
+			Query:     `(call_expression function: (selector_expression field: (field_identifier) @m (#eq? @m "Command"))) @flag`,
+			Capture:   "flag",
+			Message:   "Review this command execution: ensure arguments are trusted and not attacker-controlled.",
+		},
 		complexityRule(langspec.Go()),
 	}
 }

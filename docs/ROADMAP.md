@@ -42,8 +42,9 @@ PR decoration, SCM integrations). Always keep "CodePulse scans CodePulse" green 
 
 > **Progress:** multi-language core ✅ — added a `langspec` abstraction (per-language
 > node-kind mappings) so the metrics + rule engine are language-agnostic. **Python**
-> is now supported alongside Go (rules: exec/eval, TODO/FIXME, bare-except,
-> high-complexity), with cognitive complexity computed per language. Mixed-language
+> plus **JavaScript and TypeScript** are now supported alongside Go (per-language
+> rule sets incl. eval/exec, TODO/FIXME, bare-except, debugger, high-complexity, and
+> **security hotspots** for command execution), with cognitive complexity per language. Mixed-language
 > scans aggregate correctly. **Duplication detection** (token-window clone finder) and
 > **coverage import** (LCOV / Go coverprofile / Cobertura, suffix-matched onto files)
 > are implemented and fold into per-file + project metrics. **Ratings** (reliability,

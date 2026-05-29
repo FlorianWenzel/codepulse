@@ -69,6 +69,24 @@ func TestPythonRulesOnFixture(t *testing.T) {
 	})
 }
 
+func TestJSRulesOnFixture(t *testing.T) {
+	assertExact(t, runRules(t, lang.JavaScript, "../../testdata/jsfixture/sample.js"), map[string]int{
+		"js:todo-comment":       1,
+		"js:eval-usage":         1,
+		"js:debugger-statement": 1,
+		"js:child-process-exec": 1,
+		"js:high-complexity":    1,
+	})
+}
+
+func TestTSRulesOnFixture(t *testing.T) {
+	assertExact(t, runRules(t, lang.TypeScript, "../../testdata/tsfixture/sample.ts"), map[string]int{
+		"ts:todo-comment":    1,
+		"ts:eval-usage":      1,
+		"ts:high-complexity": 1,
+	})
+}
+
 // TestBadQueryFailsLoudly ensures an invalid query is reported at engine
 // construction rather than silently skipped.
 func TestBadQueryFailsLoudly(t *testing.T) {

@@ -47,6 +47,16 @@ func pythonRules() []Rule {
 				return "Catch a specific exception type instead of using a bare 'except:'.", true
 			},
 		},
+		{
+			ID:        "py:os-system",
+			Name:      "os.system() execution is security-sensitive",
+			Type:      domain.TypeHotspot,
+			Severity:  domain.SevMajor,
+			EffortMin: 10,
+			Query:     `(call function: (attribute attribute: (identifier) @m (#eq? @m "system"))) @flag`,
+			Capture:   "flag",
+			Message:   "Review this os.system() call: prefer subprocess with a list of args and no shell.",
+		},
 		complexityRule(langspec.Python()),
 	}
 }

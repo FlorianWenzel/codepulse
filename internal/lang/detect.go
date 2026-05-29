@@ -10,16 +10,24 @@ import (
 type Language string
 
 const (
-	Go      Language = "go"
-	Python  Language = "python"
-	Unknown Language = ""
+	Go         Language = "go"
+	Python     Language = "python"
+	JavaScript Language = "javascript"
+	TypeScript Language = "typescript"
+	Unknown    Language = ""
 )
 
-// extMap maps file extensions to languages. Later phases add JS/TS/Java here
+// extMap maps file extensions to languages. Later phases add Java etc. here
 // (plus their grammars in langspec and rule sets in rules).
 var extMap = map[string]Language{
-	".go": Go,
-	".py": Python,
+	".go":  Go,
+	".py":  Python,
+	".js":  JavaScript,
+	".jsx": JavaScript,
+	".mjs": JavaScript,
+	".cjs": JavaScript,
+	".ts":  TypeScript,
+	".tsx": TypeScript,
 }
 
 // Detect returns the language for a path, or Unknown if unsupported.
