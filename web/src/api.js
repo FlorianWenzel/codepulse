@@ -27,8 +27,16 @@ export const api = {
   getProject: (key) => request(`/projects/${q(key)}`),
   createProject: (key, name) => postJSON('/projects', { key, name }),
   issues: (key, open = true) => request(`/issues?project=${q(key)}&open=${open}`),
+  newIssues: (key, base = 'main', branch = 'main') =>
+    request(`/issues/new?project=${q(key)}&branch=${q(branch)}&base=${q(base)}`),
   measures: (key) => request(`/measures?project=${q(key)}`),
   gateStatus: (key) => request(`/quality-gates/status?project=${q(key)}`),
+  hotspots: (key, status = '') => request(`/hotspots?project=${q(key)}&status=${q(status)}`),
+
+  // Triage actions.
+  transitionIssue: (project, key, transition) => postJSON('/issues/transition', { project, key, transition }),
+  assignIssue: (project, key, assignee) => postJSON('/issues/assign', { project, key, assignee }),
+  resolveHotspot: (project, key, resolution) => postJSON('/hotspots/resolve', { project, key, resolution }),
 }
 
 export default api

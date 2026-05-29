@@ -32,6 +32,15 @@ onMounted(async () => {
     loaded.value = true
   }
 })
+
+async function onTransition({ key, transition }) {
+  try {
+    await api.transitionIssue(props.projectKey, key, transition)
+    issues.value = (await api.issues(props.projectKey, true)) || []
+  } catch (e) {
+    error.value = String(e)
+  }
+}
 </script>
 
 <template>
@@ -47,7 +56,7 @@ onMounted(async () => {
       <h2>Files</h2>
       <MeasuresTable :files="files" />
       <h2>Open issues ({{ issues.length }})</h2>
-      <IssuesTable :issues="issues" />
+      <IssuesTable :issues="issues" @transition="onTransition" />
     </template>
   </section>
 </template>

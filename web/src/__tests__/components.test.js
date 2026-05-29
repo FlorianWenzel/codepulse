@@ -70,4 +70,15 @@ describe('IssuesTable', () => {
   it('shows an empty state', () => {
     expect(mount(IssuesTable, { props: { issues: [] } }).text()).toContain('No open issues')
   })
+
+  it('emits a transition when a triage button is clicked', async () => {
+    const issues = [{ key: 'k1', severity: 'MINOR', type: 'CODE_SMELL', ruleId: 'go:empty-block', message: 'm', file: 'b.go', line: 3 }]
+    const w = mount(IssuesTable, { props: { issues } })
+    await w.get('[data-test=fp-btn]').trigger('click')
+    const ev = w.emitted('transition')
+    expect(ev).toBeTruthy()
+    expect(ev[0][0]).toEqual({ key: 'k1', transition: 'falsepositive' })
+    await w.get('[data-test=resolve-btn]').trigger('click')
+    expect(w.emitted('transition')[1][0]).toEqual({ key: 'k1', transition: 'resolve' })
+  })
 })
