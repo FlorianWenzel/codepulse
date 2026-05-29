@@ -116,7 +116,7 @@ metric domains, ratings, and a working clean-as-you-code gate.
 > IdP. **Notifications webhook** ✅ (`CODEPULSE_WEBHOOK_URL`; posts gate result per analysis,
 > tested). **7 languages** now (added **Ruby, Rust**). **Dataflow integration**: consumed via
 > the external-analyzer SARIF import (run Semgrep/CodeQL, feed their SARIF with `-import-sarif`).
-> **C and Bash** added → **9 languages**. **LSP diagnostics export** (`-format lsp`) for IDE
+> **C, Bash, C++, C#, PHP, Kotlin** added → **13 languages**. **LSP diagnostics export** (`-format lsp`) for IDE
 > integration. The v1.0 Definition-of-Done checklist below is fully met; remaining items are
 > post-v1.0 polish (yet more languages, richer rule sets, WASM grammars, i18n/theming).
 - AuthN/Z: local users + **OIDC/SAML/GitHub** SSO, groups, fine-grained RBAC.
@@ -137,7 +137,7 @@ metric domains, ratings, and a working clean-as-you-code gate.
 
 | Capability | SonarQube (CE / paid) | CodePulse target |
 |---|---|---|
-| Multi-language analysis | CE limited; many langs paid | **7 langs OSS** (Go/Py/JS/TS/Java/Ruby/Rust), tree-sitter ✅ |
+| Multi-language analysis | CE limited; many langs paid | **13 langs OSS** (tree-sitter) ✅ |
 | Bugs / Vulnerabilities / Code smells | ✅ | ✅ *P1–P2* |
 | Security hotspots + review | ✅ | ✅ (done) |
 | Metrics (LOC, complexity, duplication) | ✅ | ✅ *P1–P2* |
@@ -180,7 +180,7 @@ integrating best-of-breed OSS engines rather than reimplementing taint analysis.
 
 ## Definition of done for v1.0 (public)
 
-- [x] ≥5 languages with default profiles — **9** (Go, Python, JS, TS, Java, Ruby, Rust, C, Bash).
+- [x] ≥5 languages with default profiles — **13** (Go, Python, JS, TS, Java, Ruby, Rust, C, Bash, C++, C#, PHP, Kotlin).
 - [x] Branch + PR analysis with GitHub decoration.
 - [x] Clean-as-you-code gate (new-code period via git blame; `new_*` gate conditions).
 - [x] External SARIF consolidation (`-import-sarif`).
@@ -190,7 +190,7 @@ integrating best-of-breed OSS engines rather than reimplementing taint analysis.
   embedded-Postgres integration test — is green.
 
 ### Remaining open-ended polish (post-v1.0)
-- More languages (C++, C#, PHP, Kotlin, Go templates, …) — cheap to add via `langspec`.
+- Even more languages (Scala, Swift, Go templates, …) — cheap to add via `langspec`.
 - Richer first-party rule sets per language (current sets are deliberately small/low-FP).
 - WASM grammars (wazero) to drop the CGo build dependency.
 - i18n / accessibility / theming for the dashboard; deeper drilldown/treemap views.

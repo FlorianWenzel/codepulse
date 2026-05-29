@@ -36,6 +36,14 @@ func ForLanguage(l lang.Language) []Rule {
 		return cRules()
 	case lang.Bash:
 		return bashRules()
+	case lang.Cpp:
+		return cppRules()
+	case lang.CSharp:
+		return csRules()
+	case lang.PHP:
+		return phpRules()
+	case lang.Kotlin:
+		return ktRules()
 	default:
 		return nil
 	}

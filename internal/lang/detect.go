@@ -19,6 +19,10 @@ const (
 	Rust       Language = "rust"
 	C          Language = "c"
 	Bash       Language = "bash"
+	Cpp        Language = "cpp"
+	CSharp     Language = "csharp"
+	PHP        Language = "php"
+	Kotlin     Language = "kotlin"
 	Unknown    Language = ""
 )
 
@@ -40,6 +44,14 @@ var extMap = map[string]Language{
 	".h":    C,
 	".sh":   Bash,
 	".bash": Bash,
+	".cpp":  Cpp,
+	".cc":   Cpp,
+	".cxx":  Cpp,
+	".hpp":  Cpp,
+	".cs":   CSharp,
+	".php":  PHP,
+	".kt":   Kotlin,
+	".kts":  Kotlin,
 }
 
 // Detect returns the language for a path, or Unknown if unsupported.

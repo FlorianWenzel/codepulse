@@ -110,6 +110,14 @@ func For(l lang.Language) (Spec, bool) {
 		return C(), true
 	case lang.Bash:
 		return Bash(), true
+	case lang.Cpp:
+		return Cpp(), true
+	case lang.CSharp:
+		return CSharp(), true
+	case lang.PHP:
+		return PHP(), true
+	case lang.Kotlin:
+		return Kotlin(), true
 	default:
 		return Spec{}, false
 	}

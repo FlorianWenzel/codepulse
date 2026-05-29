@@ -125,6 +125,25 @@ func TestBashRulesOnFixture(t *testing.T) {
 	})
 }
 
+func TestMoreLanguageRules(t *testing.T) {
+	cases := []struct {
+		l       lang.Language
+		fixture string
+		todo    string
+		cx      string
+	}{
+		{lang.Cpp, "../../testdata/cppfixture/sample.cpp", "cpp:todo-comment", "cpp:high-complexity"},
+		{lang.CSharp, "../../testdata/csfixture/Sample.cs", "cs:todo-comment", "cs:high-complexity"},
+		{lang.PHP, "../../testdata/phpfixture/sample.php", "php:todo-comment", "php:high-complexity"},
+		{lang.Kotlin, "../../testdata/ktfixture/sample.kt", "kt:todo-comment", "kt:high-complexity"},
+	}
+	for _, c := range cases {
+		t.Run(string(c.l), func(t *testing.T) {
+			assertExact(t, runRules(t, c.l, c.fixture), map[string]int{c.todo: 1, c.cx: 1})
+		})
+	}
+}
+
 // TestBadQueryFailsLoudly ensures an invalid query is reported at engine
 // construction rather than silently skipped.
 func TestBadQueryFailsLoudly(t *testing.T) {
