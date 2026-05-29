@@ -45,6 +45,12 @@ describe('api client', () => {
     expect(JSON.parse(opts.body)).toEqual({ project: 'demo', key: 'k', resolution: 'SAFE' })
   })
 
+  it('builds the security-report URL', async () => {
+    global.fetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({}) })
+    await api.securityReport('demo')
+    expect(global.fetch).toHaveBeenCalledWith('/api/v1/security-report?project=demo&branch=main', undefined)
+  })
+
   it('throws on non-OK responses', async () => {
     global.fetch.mockResolvedValue({ ok: false, status: 404, text: async () => 'nope' })
     await expect(api.getProject('x')).rejects.toThrow('404')

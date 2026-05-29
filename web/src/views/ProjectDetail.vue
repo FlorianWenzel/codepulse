@@ -71,6 +71,7 @@ async function onResolveHotspot({ key, resolution }) {
     <header class="head">
       <h1>{{ projectKey }}</h1>
       <GateBadge :status="gate" />
+      <RouterLink :to="`/projects/${projectKey}/security`" class="seclink">Security report →</RouterLink>
     </header>
     <p v-if="error" class="error">{{ error }}</p>
     <template v-else-if="loaded">

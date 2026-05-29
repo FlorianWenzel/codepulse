@@ -33,6 +33,7 @@ export const api = {
   measuresHistory: (key, metric = 'total_findings', branch = 'main') =>
     request(`/measures/history?project=${q(key)}&branch=${q(branch)}&metric=${q(metric)}`),
   gateStatus: (key) => request(`/quality-gates/status?project=${q(key)}`),
+  securityReport: (key, branch = 'main') => request(`/security-report?project=${q(key)}&branch=${q(branch)}`),
   hotspots: (key, status = '') => request(`/hotspots?project=${q(key)}&status=${q(status)}`),
 
   // Quality gates.
