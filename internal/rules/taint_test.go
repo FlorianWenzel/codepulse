@@ -40,4 +40,33 @@ func f(name string) { safe := "ls"; _ = exec.Command(safe, name) }
 	if got := runRulesSrc(t, lang.Go, untainted)["go:tainted-exec"]; got != 0 {
 		t.Errorf("untainted local: go:tainted-exec fired %d, want 0", got)
 	}
+
+	// os.Args source -> exec sink.
+	osArgs := `package p
+import ("os"; "os/exec")
+func f() { _ = exec.Command(os.Args[1]) }
+`
+	if got := runRulesSrc(t, lang.Go, osArgs)["go:tainted-exec"]; got != 1 {
+		t.Errorf("os.Args source: go:tainted-exec fired %d, want 1", got)
+	}
+}
+
+func TestGoTaintSQL(t *testing.T) {
+	// Tainted concatenation into a SQL query.
+	vuln := `package p
+import ("database/sql"; "os")
+func f(db *sql.DB) { _, _ = db.Query("select * from t where id = " + os.Getenv("ID")) }
+`
+	if got := runRulesSrc(t, lang.Go, vuln)["go:tainted-sql"]; got != 1 {
+		t.Errorf("tainted sql: go:tainted-sql fired %d, want 1", got)
+	}
+
+	// Parameterized / literal query -> no finding.
+	safe := `package p
+import "database/sql"
+func f(db *sql.DB, id string) { _, _ = db.Query("select * from t where id = $1", id) }
+`
+	if got := runRulesSrc(t, lang.Go, safe)["go:tainted-sql"]; got != 0 {
+		t.Errorf("parameterized sql: go:tainted-sql fired %d, want 0", got)
+	}
 }

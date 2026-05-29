@@ -111,6 +111,7 @@ func goRules() []Rule {
 			Message:   "Avoid os.Exit() outside main(); it skips deferred cleanup. Return an error instead.",
 		},
 		goTaintExecRule(),
+		goTaintSQLRule(),
 		complexityRule(langspec.Go()),
 	}
 }
