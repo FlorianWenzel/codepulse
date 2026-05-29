@@ -15,18 +15,20 @@ const files = ref([])
 const issues = ref([])
 const hotspots = ref([])
 const trend = ref([])
+const ruleMeta = ref({})
 const gate = ref('')
 const error = ref('')
 const loaded = ref(false)
 
 onMounted(async () => {
   try {
-    const [m, is, g, hs, hist] = await Promise.all([
+    const [m, is, g, hs, hist, rules] = await Promise.all([
       api.measures(props.projectKey),
       api.issues(props.projectKey, true),
       api.gateStatus(props.projectKey).catch(() => ({ status: '' })),
       api.hotspots(props.projectKey, 'TO_REVIEW').catch(() => []),
       api.measuresHistory(props.projectKey, 'total_findings').catch(() => ({ points: [] })),
+      api.listRules().catch(() => []),
     ])
     summary.value = m.summary || {}
     files.value = m.metrics || []
@@ -34,6 +36,9 @@ onMounted(async () => {
     gate.value = g.status || ''
     hotspots.value = hs || []
     trend.value = (hist && hist.points) || []
+    const rm = {}
+    for (const r of rules || []) rm[r.id] = r
+    ruleMeta.value = rm
   } catch (e) {
     error.value = String(e)
   } finally {
@@ -76,7 +81,7 @@ async function onResolveHotspot({ key, resolution }) {
       <h2>Security hotspots ({{ hotspots.length }})</h2>
       <HotspotsTable :hotspots="hotspots" @resolve="onResolveHotspot" />
       <h2>Open issues ({{ issues.length }})</h2>
-      <IssuesTable :issues="issues" @transition="onTransition" />
+      <IssuesTable :issues="issues" :rule-meta="ruleMeta" @transition="onTransition" />
     </template>
   </section>
 </template>

@@ -19,6 +19,9 @@ vi.mock('../api.js', () => ({
       { key: 'h1', ruleId: 'py:os-system', message: 'os.system', file: 'sample.py', line: 9, status: 'TO_REVIEW' },
     ]),
     measuresHistory: vi.fn().mockResolvedValue({ metric: 'total_findings', points: [{ value: 4 }, { value: 4 }] }),
+    listRules: vi.fn().mockResolvedValue([
+      { id: 'py:exec-eval', description: 'eval runs arbitrary code', cwe: ['CWE-95'] },
+    ]),
   },
 }))
 
@@ -41,5 +44,7 @@ describe('ProjectDetail view', () => {
     expect(w.findAll('[data-test=hotspot-row]')).toHaveLength(1)
     expect(w.text()).toContain('Security hotspots (1)')
     expect(w.findAll('[data-test=trend-bar]').length).toBe(2)
+    // rule metadata surfaced: CWE badge on the eval issue
+    expect(w.text()).toContain('CWE-95')
   })
 })

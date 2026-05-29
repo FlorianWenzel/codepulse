@@ -1,6 +1,13 @@
 <script setup>
-defineProps({ issues: { type: Array, default: () => [] } })
+const props = defineProps({
+  issues: { type: Array, default: () => [] },
+  ruleMeta: { type: Object, default: () => ({}) }, // ruleId -> { description, cwe, ... }
+})
 const emit = defineEmits(['transition'])
+
+function meta(id) {
+  return props.ruleMeta[id] || {}
+}
 </script>
 
 <template>
@@ -12,7 +19,10 @@ const emit = defineEmits(['transition'])
       <tr v-for="is in issues" :key="is.key" data-test="issue-row">
         <td><span :class="['sev', `sev-${is.severity}`]">{{ is.severity }}</span></td>
         <td>{{ is.type }}</td>
-        <td class="rule">{{ is.ruleId }}</td>
+        <td class="rule">
+          <span :title="meta(is.ruleId).description || ''">{{ is.ruleId }}</span>
+          <span v-for="c in (meta(is.ruleId).cwe || [])" :key="c" class="cwe" data-test="cwe-badge">{{ c }}</span>
+        </td>
         <td>{{ is.message }}</td>
         <td class="loc">{{ is.file }}:{{ is.line }}</td>
         <td class="actions">
@@ -33,6 +43,7 @@ const emit = defineEmits(['transition'])
 .issues { width: 100%; border-collapse: collapse; }
 .issues th, .issues td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--border, #eee); font-size: 0.9rem; }
 .rule, .loc { font-family: monospace; color: var(--muted, #555); }
+.cwe { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 8px; background: #fce8e6; color: #c5221f; font-family: sans-serif; font-size: 0.72rem; }
 .sev { font-weight: 600; font-size: 0.8rem; }
 .sev-BLOCKER, .sev-CRITICAL { color: #c5221f; }
 .sev-MAJOR { color: #ef6c00; }

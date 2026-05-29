@@ -73,6 +73,15 @@ describe('IssuesTable', () => {
     expect(mount(IssuesTable, { props: { issues: [] } }).text()).toContain('No open issues')
   })
 
+  it('renders CWE badges from rule metadata', () => {
+    const issues = [{ key: 'k1', severity: 'CRITICAL', type: 'VULNERABILITY', ruleId: 'py:exec-eval', message: 'eval', file: 'a.py', line: 5 }]
+    const ruleMeta = { 'py:exec-eval': { description: 'eval runs code', cwe: ['CWE-95'] } }
+    const w = mount(IssuesTable, { props: { issues, ruleMeta } })
+    const badges = w.findAll('[data-test=cwe-badge]')
+    expect(badges).toHaveLength(1)
+    expect(badges[0].text()).toBe('CWE-95')
+  })
+
   it('emits a transition when a triage button is clicked', async () => {
     const issues = [{ key: 'k1', severity: 'MINOR', type: 'CODE_SMELL', ruleId: 'go:empty-block', message: 'm', file: 'b.go', line: 3 }]
     const w = mount(IssuesTable, { props: { issues } })
