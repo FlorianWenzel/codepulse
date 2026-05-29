@@ -10,9 +10,33 @@ import (
 // one place so rule definitions stay terse.
 type Taxonomy struct {
 	Description string   `json:"description,omitempty"`
+	Remediation string   `json:"remediation,omitempty"`
 	CWE         []string `json:"cwe,omitempty"`
 	OWASP       []string `json:"owasp,omitempty"`
 	Tags        []string `json:"tags,omitempty"`
+}
+
+// remediation maps rule id -> "how to fix" guidance, shown in the rule
+// catalogue and SARIF help. Kept separate to keep the taxonomy table readable.
+var remediation = map[string]string{
+	"py:exec-eval":        "Don't eval/exec untrusted input. Use ast.literal_eval for data, or dispatch on an explicit allow-list of operations.",
+	"py:yaml-unsafe-load": "Use yaml.safe_load (or yaml.load(..., Loader=yaml.SafeLoader)).",
+	"py:pickle-load":      "Never unpickle untrusted data. Use JSON or another safe, schema-checked format.",
+	"py:os-system":        "Use subprocess.run([...], shell=False) with an argument list; never build a shell string from input.",
+	"py:tainted-sql":      "Use parameterized queries: cursor.execute(\"... WHERE x = %s\", (value,)). Never concatenate input into SQL.",
+	"py:bare-except":      "Catch the specific exception type(s) you expect; let unexpected ones propagate.",
+	"go:exec-command":     "Pass a fixed binary and an argument slice (no shell); validate/allow-list any input-derived arguments.",
+	"go:weak-hash":        "Use crypto/sha256 (or stronger). For passwords use bcrypt/argon2, not a raw hash.",
+	"go:tainted-exec":     "Don't pass untrusted input as the command/args. Use a fixed binary + validated arg slice.",
+	"go:tainted-sql":      "Use parameterized queries with placeholders ($1, ?) and pass values as args; never concatenate input.",
+	"js:eval-usage":       "Remove eval(); parse JSON with JSON.parse or dispatch explicitly.",
+	"ts:eval-usage":       "Remove eval(); parse JSON with JSON.parse or dispatch explicitly.",
+	"js:inner-html":       "Use textContent, or sanitize HTML with a vetted library (e.g. DOMPurify) before assignment.",
+	"ts:inner-html":       "Use textContent, or sanitize HTML with a vetted library (e.g. DOMPurify) before assignment.",
+	"js:document-write":   "Build DOM nodes or set textContent; if HTML is required, sanitize it first.",
+	"ts:document-write":   "Build DOM nodes or set textContent; if HTML is required, sanitize it first.",
+	"java:process-exec":   "Use ProcessBuilder with an argument list and no shell; validate any input-derived arguments.",
+	"java:catch-generic":  "Catch the narrowest exception types you can handle; rethrow or wrap the rest.",
 }
 
 // ruleTaxonomy maps rule id -> taxonomy. Security rules carry CWE/OWASP; others
@@ -60,13 +84,20 @@ type Meta struct {
 	Severity    domain.Severity  `json:"severity"`
 	EffortMin   int              `json:"effortMin"`
 	Description string           `json:"description,omitempty"`
+	Remediation string           `json:"remediation,omitempty"`
 	CWE         []string         `json:"cwe,omitempty"`
 	OWASP       []string         `json:"owasp,omitempty"`
 	Tags        []string         `json:"tags,omitempty"`
 }
 
-// TaxonomyFor returns the taxonomy for a rule id (zero value if none).
-func TaxonomyFor(id string) Taxonomy { return ruleTaxonomy[id] }
+// TaxonomyFor returns the taxonomy for a rule id (merging remediation text).
+func TaxonomyFor(id string) Taxonomy {
+	t := ruleTaxonomy[id]
+	if r, ok := remediation[id]; ok {
+		t.Remediation = r
+	}
+	return t
+}
 
 // Catalog returns metadata for every built-in rule across all languages,
 // merging in the security taxonomy.
@@ -74,7 +105,7 @@ func Catalog() []Meta {
 	var out []Meta
 	for _, l := range Languages() {
 		for _, r := range ForLanguage(l) {
-			t := ruleTaxonomy[r.ID]
+			t := TaxonomyFor(r.ID)
 			desc := t.Description
 			if desc == "" {
 				desc = r.Name
@@ -82,7 +113,8 @@ func Catalog() []Meta {
 			out = append(out, Meta{
 				ID: r.ID, Name: r.Name, Language: string(l), Type: r.Type,
 				Severity: r.Severity, EffortMin: r.EffortMin,
-				Description: desc, CWE: t.CWE, OWASP: t.OWASP, Tags: t.Tags,
+				Description: desc, Remediation: t.Remediation,
+				CWE: t.CWE, OWASP: t.OWASP, Tags: t.Tags,
 			})
 		}
 	}

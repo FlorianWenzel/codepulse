@@ -143,7 +143,7 @@ func ruleMeta() []report.RuleMeta {
 	for _, c := range rules.Catalog() {
 		m = append(m, report.RuleMeta{
 			ID: c.ID, Name: c.Name, Type: c.Type, Severity: c.Severity,
-			Description: c.Description, CWE: c.CWE, Tags: c.Tags,
+			Description: c.Description, Remediation: c.Remediation, CWE: c.CWE, Tags: c.Tags,
 		})
 	}
 	return m

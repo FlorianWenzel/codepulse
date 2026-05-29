@@ -36,6 +36,7 @@ type sarifRule struct {
 	Name             string         `json:"name"`
 	ShortDescription sarifText      `json:"shortDescription"`
 	FullDescription  *sarifText     `json:"fullDescription,omitempty"`
+	Help             *sarifText     `json:"help,omitempty"`
 	Properties       map[string]any `json:"properties,omitempty"`
 }
 
@@ -88,6 +89,7 @@ type RuleMeta struct {
 	Type        domain.IssueType
 	Severity    domain.Severity
 	Description string
+	Remediation string
 	CWE         []string
 	Tags        []string
 }
@@ -115,6 +117,9 @@ func WriteSARIF(w io.Writer, r domain.Report, ruleMeta []RuleMeta) error {
 		}
 		if m.Description != "" {
 			sr.FullDescription = &sarifText{Text: m.Description}
+		}
+		if m.Remediation != "" {
+			sr.Help = &sarifText{Text: m.Remediation}
 		}
 		rules = append(rules, sr)
 	}

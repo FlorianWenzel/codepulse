@@ -20,7 +20,7 @@ func TestWriteSARIFIncludesRuleMetadata(t *testing.T) {
 	}
 	meta := []report.RuleMeta{{
 		ID: "py:exec-eval", Name: "eval is dangerous", Type: domain.TypeVulnerability,
-		Severity: domain.SevCritical, Description: "eval runs arbitrary code",
+		Severity: domain.SevCritical, Description: "eval runs arbitrary code", Remediation: "use JSON.parse",
 		CWE: []string{"CWE-95"}, Tags: []string{"security"},
 	}}
 
@@ -34,6 +34,9 @@ func TestWriteSARIFIncludesRuleMetadata(t *testing.T) {
 	}
 	if !strings.Contains(out, "CWE-95") {
 		t.Error("SARIF missing CWE mapping")
+	}
+	if !strings.Contains(out, "\"help\"") || !strings.Contains(out, "use JSON.parse") {
+		t.Error("SARIF missing rule help (remediation)")
 	}
 	// must still be valid JSON
 	var v any

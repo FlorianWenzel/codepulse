@@ -433,8 +433,8 @@ func TestRulesCatalog(t *testing.T) {
 	if eval == nil {
 		t.Fatal("py:exec-eval missing from catalog")
 	}
-	if eval.Description == "" || len(eval.CWE) == 0 {
-		t.Errorf("py:exec-eval lacks description/CWE: %+v", eval)
+	if eval.Description == "" || len(eval.CWE) == 0 || eval.Remediation == "" {
+		t.Errorf("py:exec-eval lacks description/CWE/remediation: %+v", eval)
 	}
 
 	// language filter
