@@ -56,7 +56,10 @@ PR decoration, SCM integrations). Always keep "CodePulse scans CodePulse" green 
 > interface with SQL-level issue tracking, **integration-tested against a real
 > Postgres** (PG 18 via an embedded binary; carry-over + fixed detection verified);
 > `codepulse-server` selects it via `DATABASE_URL`. **docker-compose** + Dockerfile
-> ship for self-host. **Next:** the Vue dashboard, then branch/PR analysis + new-code period.
+> ship for self-host. The **Vue 3 dashboard** (`web/`) is built: projects list, project
+> detail (gate badge + A–E ratings + measures), and an issues browser, wired to the API.
+> Vitest unit/component/view tests (12) + production build green.
+> **Next:** branch/PR analysis + new-code period, security hotspots, then SSO/RBAC.
 
 - Add **Python, JavaScript, TypeScript, Java** grammars + starter rule sets.
 - Cognitive complexity, comment density, **duplication detection**, coverage import
