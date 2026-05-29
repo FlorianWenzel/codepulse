@@ -3,6 +3,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"github.com/FlorianWenzel/codepulse/internal/domain"
 	"github.com/FlorianWenzel/codepulse/internal/importers/coverage"
 	"github.com/FlorianWenzel/codepulse/internal/importers/sarif"
+	"github.com/FlorianWenzel/codepulse/internal/importers/semgrep"
 	"github.com/FlorianWenzel/codepulse/internal/lang"
 	"github.com/FlorianWenzel/codepulse/internal/report"
 	"github.com/FlorianWenzel/codepulse/internal/rules"
@@ -26,15 +28,16 @@ func main() {
 
 func run() error {
 	var (
-		format   = flag.String("format", "json", "output format: json | sarif | lsp")
-		out      = flag.String("o", "", "write report to this file (default: stdout)")
-		exclude  = flag.String("exclude", "", "comma-separated path substrings to skip")
-		failOn   = flag.String("fail-on", "", "exit non-zero if any finding is at least this severity (BLOCKER|CRITICAL|MAJOR|MINOR|INFO)")
-		covPath  = flag.String("coverage", "", "import a coverage report (LCOV, Go coverprofile, or Cobertura XML)")
-		dupTok   = flag.Int("dup-tokens", 0, "duplication window size in tokens (0 = default 100)")
-		newDays  = flag.Int("new-code-days", 0, "mark findings introduced within N days as new code (requires a git repo)")
-		impSarif = flag.String("import-sarif", "", "comma-separated SARIF files from other analyzers to merge")
-		quiet    = flag.Bool("quiet", false, "suppress the human-readable summary on stderr")
+		format     = flag.String("format", "json", "output format: json | sarif | lsp")
+		out        = flag.String("o", "", "write report to this file (default: stdout)")
+		exclude    = flag.String("exclude", "", "comma-separated path substrings to skip")
+		failOn     = flag.String("fail-on", "", "exit non-zero if any finding is at least this severity (BLOCKER|CRITICAL|MAJOR|MINOR|INFO)")
+		covPath    = flag.String("coverage", "", "import a coverage report (LCOV, Go coverprofile, or Cobertura XML)")
+		dupTok     = flag.Int("dup-tokens", 0, "duplication window size in tokens (0 = default 100)")
+		newDays    = flag.Int("new-code-days", 0, "mark findings introduced within N days as new code (requires a git repo)")
+		impSarif   = flag.String("import-sarif", "", "comma-separated SARIF files from other analyzers to merge")
+		semgrepCfg = flag.String("semgrep", "", "run semgrep with this --config and merge its findings (requires semgrep on PATH)")
+		quiet      = flag.Bool("quiet", false, "suppress the human-readable summary on stderr")
 	)
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: codepulse-scan [flags] [path]\n\nFlags:\n")
@@ -69,6 +72,14 @@ func run() error {
 			}
 			sarif.Merge(&rep, findings)
 		}
+	}
+
+	if *semgrepCfg != "" {
+		findings, err := semgrep.Run(context.Background(), *semgrepCfg, root)
+		if err != nil {
+			return err
+		}
+		sarif.Merge(&rep, findings)
 	}
 
 	if *covPath != "" {

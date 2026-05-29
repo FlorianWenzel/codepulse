@@ -153,7 +153,7 @@ metric domains, ratings, and a working clean-as-you-code gate.
 | Rule authoring | Java plugin SDK | **YAML + tree-sitter query** *P1* |
 | SSO (OIDC) | **paid** | ✅ **OSS** (done) |
 | Portfolio / aggregation | **paid** | ✅ (done) |
-| Taint/dataflow security | **paid, deep** | integrate via SARIF import (CodeQL/Semgrep) ✅ |
+| Taint/dataflow security | **paid, deep** | native Semgrep interop (`-semgrep`) + SARIF import (CodeQL) ✅ |
 | Deployment weight | JVM, heavier | single Go binary + Postgres |
 | License | LGPL + commercial editions | **Apache-2.0, no gated features** |
 
@@ -194,4 +194,4 @@ integrating best-of-breed OSS engines rather than reimplementing taint analysis.
 - [in progress] Richer rule sets — debug-leftover rules + security rules (yaml.load/pickle RCE, MD5/SHA-1 weak hash, innerHTML XSS) across languages; ongoing low-FP expansion.
 - [investigated] WASM grammars (wazero) to drop CGo — see docs/adr/0001-wasm-grammars.md (deferred post-v1.0; CGo is faster/complete now).
 - [x] Dashboard i18n (en/de), light/dark theme, a11y (sr-only/aria), and a **per-file measures drilldown** (sorted by complexity, with coverage).
-- Semgrep-rule native interop (today: consume via SARIF import).
+- [x] Semgrep native interop — `-semgrep <config>` runs the semgrep CLI and ingests its SARIF (tested against a stubbed CLI). Consuming pre-generated SARIF also still works.
