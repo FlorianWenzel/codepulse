@@ -4,9 +4,9 @@
 
 **Status:** Phases 1–4 implemented and end-to-end tested. Working today:
 
-- **Scanner** (`codepulse-scan`): 7 languages via tree-sitter (**Go, Python, JavaScript, TypeScript, Java, Ruby, Rust**); rules for bugs/vulnerabilities/code-smells/security-hotspots; metrics (LOC, cyclomatic & cognitive complexity, comments), **duplication detection**, **coverage import** (LCOV/Go/Cobertura), A–E **ratings** + technical debt, **new-code period** via git blame; SARIF 2.1.0 + JSON output; **external-analyzer SARIF import** (consolidate gosec/ESLint/Bandit/…).
-- **Server** (`codepulse-server`): HTTP API over an in-memory or **PostgreSQL** store; analysis ingest with cross-analysis **issue tracking**, **quality gates** (incl. clean-as-you-code), **branch/PR analysis** (new-vs-base), **GitHub PR decoration**, **security-hotspot & issue triage workflows**, **portfolio aggregation**, **retention/pruning**, **notifications webhook**, **token auth + RBAC**, and **OIDC SSO**.
-- **Dashboard** (`web/`): Vue 3 SPA — projects, gate/ratings/measures, issues browser.
+- **Scanner** (`codepulse-scan`): **15 languages** via tree-sitter (Go, Python, JS, TS, Java, Ruby, Rust, C, Bash, C++, C#, PHP, Kotlin, Scala, Swift); ~80 rules incl. cross-language **taint/dataflow** (command & SQL injection); rules for bugs/vulnerabilities/code-smells/security-hotspots; metrics (LOC, cyclomatic & cognitive complexity, comments), **duplication detection**, **coverage import** (LCOV/Go/Cobertura), A–E **ratings** + technical debt, **new-code period** via git blame; SARIF 2.1.0 + JSON output; **external-analyzer SARIF import** (consolidate gosec/ESLint/Bandit/…).
+- **Server** (`codepulse-server`): HTTP API over an in-memory or **PostgreSQL** store; analysis ingest with cross-analysis **issue tracking**, **quality gates** (incl. clean-as-you-code), **branch/PR analysis** (new-vs-base), **GitHub PR decoration**, **security-hotspot & issue triage workflows**, **portfolio aggregation**, **retention/pruning**, **notifications webhook**, **token auth + RBAC**, **OIDC SSO** (+ provider presets, group mapping, **keyless GitHub-Actions OIDC**), an **OWASP security report**, and a **rule catalogue** (CWE/OWASP + remediation).
+- **Dashboard** (`web/`): Vue 3 SPA — projects, gate/ratings/measures + file drilldown, findings trend, issue & hotspot triage, security report, gate admin; i18n/theme/a11y.
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the full status + SonarQube comparison.
 
