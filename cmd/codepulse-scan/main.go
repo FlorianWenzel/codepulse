@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -37,6 +38,7 @@ func run() error {
 		impSarif   = flag.String("import-sarif", "", "comma-separated SARIF files from other analyzers to merge")
 		semgrepCfg = flag.String("semgrep", "", "run semgrep with this --config and merge its findings (requires semgrep on PATH)")
 		since      = flag.String("since", "", "incremental: only analyze files changed since this git ref")
+		rulesDump  = flag.Bool("rules", false, "print the built-in rule catalogue as JSON and exit")
 		quiet      = flag.Bool("quiet", false, "suppress the human-readable summary on stderr")
 	)
 	flag.Usage = func() {
@@ -44,6 +46,12 @@ func run() error {
 		flag.PrintDefaults()
 	}
 	flag.Parse()
+
+	if *rulesDump {
+		enc := json.NewEncoder(os.Stdout)
+		enc.SetIndent("", "  ")
+		return enc.Encode(rules.Catalog())
+	}
 
 	root := "."
 	if flag.NArg() > 0 {

@@ -51,3 +51,38 @@ func TestCLIEndToEnd(t *testing.T) {
 		t.Errorf("sarif results = %d, want 4", len(log.Runs[0].Results))
 	}
 }
+
+// TestCLIRulesDump runs `codepulse-scan -rules` and validates the emitted
+// catalogue is well-formed JSON carrying rule metadata (CWE included).
+func TestCLIRulesDump(t *testing.T) {
+	out, err := exec.Command("go", "run", ".", "-rules").Output()
+	if err != nil {
+		t.Fatalf("run cli -rules: %v", err)
+	}
+	var cat []struct {
+		ID       string   `json:"id"`
+		Name     string   `json:"name"`
+		Language string   `json:"language"`
+		Severity string   `json:"severity"`
+		CWE      []string `json:"cwe"`
+	}
+	if err := json.Unmarshal(out, &cat); err != nil {
+		t.Fatalf("rules dump is not valid JSON: %v\n%s", err, out)
+	}
+	if len(cat) < 50 {
+		t.Fatalf("catalogue has %d rules, want >= 50", len(cat))
+	}
+	// py:exec-eval is a known CWE-tagged vulnerability rule.
+	var found bool
+	for _, r := range cat {
+		if r.ID == "py:exec-eval" {
+			found = true
+			if len(r.CWE) == 0 {
+				t.Errorf("py:exec-eval missing CWE mapping")
+			}
+		}
+	}
+	if !found {
+		t.Errorf("py:exec-eval not present in catalogue")
+	}
+}
