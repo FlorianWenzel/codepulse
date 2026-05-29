@@ -1,8 +1,8 @@
-# Binaries
+# Binaries (anchored to repo root so cmd/codepulse-scan/ is NOT ignored)
 /bin/
 /dist/
-codepulse-scan
-codepulse-server
+/codepulse-scan
+/codepulse-server
 *.exe
 
 # Go
