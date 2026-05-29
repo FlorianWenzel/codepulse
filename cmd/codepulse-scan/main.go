@@ -26,7 +26,7 @@ func main() {
 
 func run() error {
 	var (
-		format   = flag.String("format", "json", "output format: json | sarif")
+		format   = flag.String("format", "json", "output format: json | sarif | lsp")
 		out      = flag.String("o", "", "write report to this file (default: stdout)")
 		exclude  = flag.String("exclude", "", "comma-separated path substrings to skip")
 		failOn   = flag.String("fail-on", "", "exit non-zero if any finding is at least this severity (BLOCKER|CRITICAL|MAJOR|MINOR|INFO)")
@@ -102,8 +102,12 @@ func run() error {
 		if err := report.WriteSARIF(w, rep, ruleMeta()); err != nil {
 			return err
 		}
+	case "lsp":
+		if err := report.WriteLSP(w, rep); err != nil {
+			return err
+		}
 	default:
-		return fmt.Errorf("unknown format %q (want json or sarif)", *format)
+		return fmt.Errorf("unknown format %q (want json, sarif, or lsp)", *format)
 	}
 
 	if !*quiet {
@@ -124,7 +128,7 @@ func run() error {
 // ruleMeta exposes every built-in rule's metadata for SARIF.
 func ruleMeta() []report.RuleMeta {
 	var m []report.RuleMeta
-	for _, l := range []lang.Language{lang.Go, lang.Python, lang.JavaScript, lang.TypeScript, lang.Java, lang.Ruby, lang.Rust} {
+	for _, l := range []lang.Language{lang.Go, lang.Python, lang.JavaScript, lang.TypeScript, lang.Java, lang.Ruby, lang.Rust, lang.C, lang.Bash} {
 		for _, r := range rules.ForLanguage(l) {
 			m = append(m, report.RuleMeta{ID: r.ID, Name: r.Name, Type: r.Type, Severity: r.Severity})
 		}

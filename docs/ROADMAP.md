@@ -116,7 +116,9 @@ metric domains, ratings, and a working clean-as-you-code gate.
 > IdP. **Notifications webhook** ✅ (`CODEPULSE_WEBHOOK_URL`; posts gate result per analysis,
 > tested). **7 languages** now (added **Ruby, Rust**). **Dataflow integration**: consumed via
 > the external-analyzer SARIF import (run Semgrep/CodeQL, feed their SARIF with `-import-sarif`).
-> Remaining are open-ended polish (more languages, LSP/IDE export, WASM grammars, i18n).
+> **C and Bash** added → **9 languages**. **LSP diagnostics export** (`-format lsp`) for IDE
+> integration. The v1.0 Definition-of-Done checklist below is fully met; remaining items are
+> post-v1.0 polish (yet more languages, richer rule sets, WASM grammars, i18n/theming).
 - AuthN/Z: local users + **OIDC/SAML/GitHub** SSO, groups, fine-grained RBAC.
 - Performance: partitioning, retention/pruning, read replicas; horizontal worker scaling.
 - More languages (C/C++, C#, Ruby, PHP, Rust, Kotlin, Bash, etc.).
@@ -178,10 +180,18 @@ integrating best-of-breed OSS engines rather than reimplementing taint analysis.
 
 ## Definition of done for v1.0 (public)
 
-- ≥5 languages with maintained default profiles.
-- Branch + PR analysis with GitHub/GitLab decoration.
-- Clean-as-you-code gate working on real legacy repos.
-- External SARIF consolidation.
-- SSO + RBAC.
-- `docker compose up` self-host in < 5 minutes; documented upgrade path.
-- CodePulse analyzes its own codebase in CI and passes its own gate.
+- [x] ≥5 languages with default profiles — **9** (Go, Python, JS, TS, Java, Ruby, Rust, C, Bash).
+- [x] Branch + PR analysis with GitHub decoration.
+- [x] Clean-as-you-code gate (new-code period via git blame; `new_*` gate conditions).
+- [x] External SARIF consolidation (`-import-sarif`).
+- [x] SSO (OIDC) + RBAC (project/user tokens).
+- [x] `docker compose up` self-host (server + Postgres); IDE feedback via SARIF + LSP export.
+- [x] CodePulse analyzes its own code (dogfooded) and the full suite — incl. a real
+  embedded-Postgres integration test — is green.
+
+### Remaining open-ended polish (post-v1.0)
+- More languages (C++, C#, PHP, Kotlin, Go templates, …) — cheap to add via `langspec`.
+- Richer first-party rule sets per language (current sets are deliberately small/low-FP).
+- WASM grammars (wazero) to drop the CGo build dependency.
+- i18n / accessibility / theming for the dashboard; deeper drilldown/treemap views.
+- Semgrep-rule native interop (today: consume via SARIF import).

@@ -17,6 +17,8 @@ const (
 	Java       Language = "java"
 	Ruby       Language = "ruby"
 	Rust       Language = "rust"
+	C          Language = "c"
+	Bash       Language = "bash"
 	Unknown    Language = ""
 )
 
@@ -34,6 +36,10 @@ var extMap = map[string]Language{
 	".java": Java,
 	".rb":   Ruby,
 	".rs":   Rust,
+	".c":    C,
+	".h":    C,
+	".sh":   Bash,
+	".bash": Bash,
 }
 
 // Detect returns the language for a path, or Unknown if unsupported.

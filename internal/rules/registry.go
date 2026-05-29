@@ -32,6 +32,10 @@ func ForLanguage(l lang.Language) []Rule {
 		return rubyRules()
 	case lang.Rust:
 		return rustRules()
+	case lang.C:
+		return cRules()
+	case lang.Bash:
+		return bashRules()
 	default:
 		return nil
 	}

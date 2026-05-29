@@ -106,6 +106,10 @@ func For(l lang.Language) (Spec, bool) {
 		return Ruby(), true
 	case lang.Rust:
 		return Rust(), true
+	case lang.C:
+		return C(), true
+	case lang.Bash:
+		return Bash(), true
 	default:
 		return Spec{}, false
 	}

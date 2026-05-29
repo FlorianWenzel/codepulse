@@ -111,6 +111,20 @@ func TestRustRulesOnFixture(t *testing.T) {
 	})
 }
 
+func TestCRulesOnFixture(t *testing.T) {
+	assertExact(t, runRules(t, lang.C, "../../testdata/cfixture/sample.c"), map[string]int{
+		"c:todo-comment":    1,
+		"c:high-complexity": 1,
+	})
+}
+
+func TestBashRulesOnFixture(t *testing.T) {
+	assertExact(t, runRules(t, lang.Bash, "../../testdata/bashfixture/sample.sh"), map[string]int{
+		"bash:todo-comment":    1,
+		"bash:high-complexity": 1,
+	})
+}
+
 // TestBadQueryFailsLoudly ensures an invalid query is reported at engine
 // construction rather than silently skipped.
 func TestBadQueryFailsLoudly(t *testing.T) {
