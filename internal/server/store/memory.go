@@ -50,6 +50,29 @@ func (m *Memory) AuthToken(hash string) (Token, bool) {
 	return t, ok
 }
 
+func (m *Memory) PruneAnalyses(projectKey, branch string, keep int) (int, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if keep < 0 {
+		keep = 0
+	}
+	bk := bkey(projectKey, branchOrMain(branch))
+	list := m.analyses[bk]
+	if len(list) <= keep {
+		return 0, nil
+	}
+	removed := len(list) - keep
+	m.analyses[bk] = append([]Analysis(nil), list[removed:]...) // keep newest `keep`
+	return removed, nil
+}
+
+func branchOrMain(b string) string {
+	if b == "" {
+		return "main"
+	}
+	return b
+}
+
 // bkey is the per-branch namespace key.
 func bkey(project, branch string) string { return project + "\x00" + branch }
 

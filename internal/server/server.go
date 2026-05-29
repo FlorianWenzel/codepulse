@@ -5,6 +5,7 @@ package server
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/FlorianWenzel/codepulse/internal/domain"
@@ -48,6 +49,8 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /api/v1/projects", s.createProject)
 	s.mux.HandleFunc("GET /api/v1/projects", s.listProjects)
 	s.mux.HandleFunc("GET /api/v1/projects/{key}", s.getProject)
+	s.mux.HandleFunc("POST /api/v1/projects/{key}/prune", s.pruneProject)
+	s.mux.HandleFunc("GET /api/v1/portfolio", s.portfolio)
 	s.mux.HandleFunc("POST /api/v1/analyses", s.ingest)
 	s.mux.HandleFunc("GET /api/v1/issues", s.listIssues)
 	s.mux.HandleFunc("GET /api/v1/issues/new", s.listNewIssues)
@@ -109,6 +112,61 @@ func (s *Server) getProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, p)
+}
+
+// portfolioEntry is one project's headline status for the overview.
+type portfolioEntry struct {
+	Key        string         `json:"key"`
+	Name       string         `json:"name"`
+	GateStatus string         `json:"gateStatus"`
+	Ratings    domain.Ratings `json:"ratings"`
+	Ncloc      int            `json:"ncloc"`
+	Findings   int            `json:"findings"`
+	HasAnalysis bool          `json:"hasAnalysis"`
+}
+
+// portfolio returns every project's latest main-branch status (aggregation).
+func (s *Server) portfolio(w http.ResponseWriter, r *http.Request) {
+	if !s.guard(w, r, func(store.Token) bool { return true }) {
+		return
+	}
+	var out []portfolioEntry
+	for _, p := range s.store.ListProjects() {
+		e := portfolioEntry{Key: p.Key, Name: p.Name}
+		if a, ok := s.store.LatestAnalysis(p.Key, p.MainBranch); ok {
+			e.HasAnalysis = true
+			e.GateStatus = a.Gate.Status
+			e.Ratings = a.Summary.Ratings
+			e.Ncloc = a.Summary.TotalNcloc
+			e.Findings = a.Summary.TotalFindings
+		}
+		out = append(out, e)
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+// pruneProject applies retention (keep newest N analyses on a branch).
+func (s *Server) pruneProject(w http.ResponseWriter, r *http.Request) {
+	if !s.guard(w, r, isAdmin) {
+		return
+	}
+	key := r.PathValue("key")
+	if _, ok := s.store.GetProject(key); !ok {
+		httpError(w, http.StatusNotFound, "project not found")
+		return
+	}
+	keep := 30
+	if v := r.URL.Query().Get("keep"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			keep = n
+		}
+	}
+	removed, err := s.store.PruneAnalyses(key, branchOf(r), keep)
+	if err != nil {
+		httpError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]int{"removed": removed, "kept": keep})
 }
 
 // ingest accepts a scanner report (domain.Report) for ?project=KEY, persists

@@ -107,8 +107,10 @@ metric domains, ratings, and a working clean-as-you-code gate.
 > (401/403/200 matrix). **Java** is now the 5th language (rules: empty-catch, System.exit,
 > process-exec hotspot, TODO, high-complexity). **External-analyzer SARIF import** ✅ —
 > third-party results (gosec/ESLint/Bandit/…) are parsed and merged as namespaced
-> `external:<tool>:<rule>` findings (`-import-sarif`), unit-tested. **Next:** SSO (OIDC),
-> scale (retention/pruning), dataflow integration, portfolio/notifications.
+> `external:<tool>:<rule>` findings (`-import-sarif`), unit-tested. **Portfolio/aggregation**
+> ✅ (`GET /portfolio`: every project's latest gate + ratings + size) and **retention/pruning**
+> ✅ (`POST /projects/{key}/prune?keep=N`, both stores) are done and e2e tested.
+> **Next:** SSO (OIDC login) and a documented dataflow integration (Semgrep/CodeQL via SARIF).
 - AuthN/Z: local users + **OIDC/SAML/GitHub** SSO, groups, fine-grained RBAC.
 - Performance: partitioning, retention/pruning, read replicas; horizontal worker scaling.
 - More languages (C/C++, C#, Ruby, PHP, Rust, Kotlin, Bash, etc.).

@@ -214,6 +214,65 @@ func TestBranchAnalysisAndDecoration(t *testing.T) {
 	}
 }
 
+func TestPortfolio(t *testing.T) {
+	ts := httptest.NewServer(server.New(store.NewMemory()))
+	defer ts.Close()
+	mustPost(t, ts.URL+"/api/v1/projects", map[string]string{"key": "a", "name": "A"}, http.StatusCreated)
+	mustPost(t, ts.URL+"/api/v1/projects", map[string]string{"key": "b", "name": "B"}, http.StatusCreated)
+
+	rep, _ := scan.Scan(scan.Options{Root: "../../testdata/pyfixture"})
+	var ignore map[string]any
+	postJSON(t, ts.URL+"/api/v1/analyses?project=a", rep, http.StatusCreated, &ignore)
+
+	var entries []struct {
+		Key         string `json:"key"`
+		GateStatus  string `json:"gateStatus"`
+		HasAnalysis bool   `json:"hasAnalysis"`
+		Ratings     struct {
+			Security string `json:"security"`
+		} `json:"ratings"`
+	}
+	getJSON(t, ts.URL+"/api/v1/portfolio", http.StatusOK, &entries)
+	if len(entries) != 2 {
+		t.Fatalf("portfolio entries = %d, want 2", len(entries))
+	}
+	byKey := map[string]int{}
+	for i, e := range entries {
+		byKey[e.Key] = i
+	}
+	a := entries[byKey["a"]]
+	if !a.HasAnalysis || a.GateStatus != gate.StatusError || a.Ratings.Security != "D" {
+		t.Errorf("project a entry wrong: %+v", a)
+	}
+	if entries[byKey["b"]].HasAnalysis {
+		t.Errorf("project b should have no analysis yet")
+	}
+}
+
+func TestRetentionPrune(t *testing.T) {
+	ts := httptest.NewServer(server.New(store.NewMemory()))
+	defer ts.Close()
+	mustPost(t, ts.URL+"/api/v1/projects", map[string]string{"key": "p"}, http.StatusCreated)
+
+	rep, _ := scan.Scan(scan.Options{Root: "../../testdata/gofixture"})
+	var ignore map[string]any
+	for i := 0; i < 3; i++ {
+		postJSON(t, ts.URL+"/api/v1/analyses?project=p", rep, http.StatusCreated, &ignore)
+	}
+
+	var pruneResp struct{ Removed, Kept int }
+	postJSON(t, ts.URL+"/api/v1/projects/p/prune?keep=1", nil, http.StatusOK, &pruneResp)
+	if pruneResp.Removed != 2 || pruneResp.Kept != 1 {
+		t.Errorf("prune result = %+v, want removed=2 kept=1", pruneResp)
+	}
+	// latest analysis still resolvable after pruning
+	var measures map[string]any
+	getJSON(t, ts.URL+"/api/v1/measures?project=p", http.StatusOK, &measures)
+	if measures["analysisId"] == nil {
+		t.Error("expected a remaining analysis after prune")
+	}
+}
+
 func TestIngestUnknownProject(t *testing.T) {
 	ts := httptest.NewServer(server.New(store.NewMemory()))
 	defer ts.Close()

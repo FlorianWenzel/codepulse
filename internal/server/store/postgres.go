@@ -404,6 +404,20 @@ func (p *Postgres) AuthToken(hash string) (Token, bool) {
 	return t, true
 }
 
+func (p *Postgres) PruneAnalyses(projectKey, branch string, keep int) (int, error) {
+	if keep < 0 {
+		keep = 0
+	}
+	ct, err := p.pool.Exec(context.Background(), `
+DELETE FROM analysis WHERE project_key=$1 AND branch=$2 AND id NOT IN (
+    SELECT id FROM analysis WHERE project_key=$1 AND branch=$2 ORDER BY created_at DESC, id DESC LIMIT $3)`,
+		projectKey, branchOr(branch), keep)
+	if err != nil {
+		return 0, err
+	}
+	return int(ct.RowsAffected()), nil
+}
+
 // compile-time checks that both stores satisfy the interface.
 var (
 	_ Store = (*Memory)(nil)

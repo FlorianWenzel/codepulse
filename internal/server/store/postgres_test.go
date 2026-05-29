@@ -124,4 +124,16 @@ func TestPostgresStoreIntegration(t *testing.T) {
 	if got := len(st.Hotspots("demo", "main", store.HotspotToReview)); got != 0 {
 		t.Errorf("hotspots to review after resolve = %d, want 0", got)
 	}
+
+	// --- retention: keep only the most recent analysis ---
+	removed, err := st.PruneAnalyses("demo", "main", 1)
+	if err != nil {
+		t.Fatalf("prune: %v", err)
+	}
+	if removed < 1 {
+		t.Errorf("prune removed = %d, want >=1", removed)
+	}
+	if _, ok := st.LatestAnalysis("demo", "main"); !ok {
+		t.Error("latest analysis should remain after prune")
+	}
 }

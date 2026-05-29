@@ -172,4 +172,8 @@ type Store interface {
 
 	CreateToken(t Token) error
 	AuthToken(hash string) (Token, bool)
+
+	// PruneAnalyses keeps only the most recent keep analyses for a branch and
+	// deletes older ones, returning how many were removed (retention).
+	PruneAnalyses(projectKey, branch string, keep int) (int, error)
 }
