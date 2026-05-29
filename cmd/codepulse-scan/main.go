@@ -124,7 +124,7 @@ func run() error {
 // ruleMeta exposes every built-in rule's metadata for SARIF.
 func ruleMeta() []report.RuleMeta {
 	var m []report.RuleMeta
-	for _, l := range []lang.Language{lang.Go, lang.Python, lang.JavaScript, lang.TypeScript, lang.Java} {
+	for _, l := range []lang.Language{lang.Go, lang.Python, lang.JavaScript, lang.TypeScript, lang.Java, lang.Ruby, lang.Rust} {
 		for _, r := range rules.ForLanguage(l) {
 			m = append(m, report.RuleMeta{ID: r.ID, Name: r.Name, Type: r.Type, Severity: r.Severity})
 		}

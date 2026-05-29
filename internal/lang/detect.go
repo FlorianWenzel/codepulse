@@ -15,6 +15,8 @@ const (
 	JavaScript Language = "javascript"
 	TypeScript Language = "typescript"
 	Java       Language = "java"
+	Ruby       Language = "ruby"
+	Rust       Language = "rust"
 	Unknown    Language = ""
 )
 
@@ -30,6 +32,8 @@ var extMap = map[string]Language{
 	".ts":   TypeScript,
 	".tsx":  TypeScript,
 	".java": Java,
+	".rb":   Ruby,
+	".rs":   Rust,
 }
 
 // Detect returns the language for a path, or Unknown if unsupported.

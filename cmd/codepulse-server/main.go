@@ -46,6 +46,10 @@ func main() {
 		srv.SetDecorator(&decorate.GitHub{Token: tok})
 		log.Printf("GitHub PR decoration enabled")
 	}
+	if hook := os.Getenv("CODEPULSE_WEBHOOK_URL"); hook != "" {
+		srv.SetWebhook(hook)
+		log.Printf("notifications webhook enabled")
+	}
 	if au := os.Getenv("CODEPULSE_OIDC_AUTH_URL"); au != "" {
 		admins := map[string]bool{}
 		for _, e := range strings.Split(os.Getenv("CODEPULSE_OIDC_ADMIN_EMAILS"), ",") {

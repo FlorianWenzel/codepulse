@@ -3,6 +3,8 @@
 package server
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -23,7 +25,12 @@ type Server struct {
 	decorator   decorate.Decorator
 	authEnabled bool
 	oidc        *OIDC
+	webhookURL  string
 }
+
+// SetWebhook configures a URL that receives a JSON notification after each
+// analysis is ingested.
+func (s *Server) SetWebhook(url string) { s.webhookURL = url }
 
 // New builds a Server backed by the given store and the default quality gate.
 func New(s store.Store) *Server {
@@ -230,7 +237,27 @@ func (s *Server) ingest(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if s.webhookURL != "" {
+		s.notify(r.Context(), map[string]any{
+			"project": key, "branch": branch, "analysisId": saved.ID,
+			"gateStatus": result.Status, "newIssues": resp["newIssues"],
+		})
+	}
+
 	writeJSON(w, http.StatusCreated, resp)
+}
+
+// notify posts a best-effort JSON notification to the configured webhook.
+func (s *Server) notify(ctx context.Context, payload map[string]any) {
+	body, _ := json.Marshal(payload)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.webhookURL, bytes.NewReader(body))
+	if err != nil {
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if resp, err := http.DefaultClient.Do(req); err == nil {
+		resp.Body.Close()
+	}
 }
 
 func (s *Server) listIssues(w http.ResponseWriter, r *http.Request) {

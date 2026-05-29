@@ -2,13 +2,28 @@
 
 > An open-source, self-hostable code quality & security platform — a permissively-licensed alternative to SonarQube.
 
-**Status:** Phase 1 in progress. The design docs (below) define the full plan; the **Go scanner** is now implemented end-to-end — it walks a repo, parses Go with tree-sitter, runs built-in rules, computes metrics, and emits SARIF 2.1.0 or internal JSON. See [docs/ROADMAP.md](docs/ROADMAP.md) for what's done vs. next.
+**Status:** Phases 1–4 implemented and end-to-end tested. Working today:
+
+- **Scanner** (`codepulse-scan`): 7 languages via tree-sitter (**Go, Python, JavaScript, TypeScript, Java, Ruby, Rust**); rules for bugs/vulnerabilities/code-smells/security-hotspots; metrics (LOC, cyclomatic & cognitive complexity, comments), **duplication detection**, **coverage import** (LCOV/Go/Cobertura), A–E **ratings** + technical debt, **new-code period** via git blame; SARIF 2.1.0 + JSON output; **external-analyzer SARIF import** (consolidate gosec/ESLint/Bandit/…).
+- **Server** (`codepulse-server`): HTTP API over an in-memory or **PostgreSQL** store; analysis ingest with cross-analysis **issue tracking**, **quality gates** (incl. clean-as-you-code), **branch/PR analysis** (new-vs-base), **GitHub PR decoration**, **security-hotspot & issue triage workflows**, **portfolio aggregation**, **retention/pruning**, **notifications webhook**, **token auth + RBAC**, and **OIDC SSO**.
+- **Dashboard** (`web/`): Vue 3 SPA — projects, gate/ratings/measures, issues browser.
+
+See [docs/ROADMAP.md](docs/ROADMAP.md) for the full status + SonarQube comparison.
 
 ```sh
-make build                       # build bin/codepulse-scan
-./bin/codepulse-scan ./path      # scan a Go project (JSON to stdout, summary to stderr)
+# Scanner
+make build                                   # build bin/codepulse-scan + bin/codepulse-server
+./bin/codepulse-scan ./path                  # scan (JSON to stdout, summary to stderr)
 ./bin/codepulse-scan -format sarif -o out.sarif ./path
-make test                        # unit + end-to-end tests
+./bin/codepulse-scan -coverage cover.out -new-code-days 30 -import-sarif gosec.sarif ./path
+make test                                    # unit + e2e tests (incl. a real embedded Postgres)
+
+# Server (self-host)
+docker compose -f deploy/docker-compose.yml up --build   # server + Postgres
+# or: DATABASE_URL=... CODEPULSE_ADMIN_TOKEN=... ./bin/codepulse-server
+
+# Dashboard
+cd web && npm install && npm run dev         # proxies /api to :8080
 ```
 
 > ℹ️ **Note:** Before a public launch, verify the "CodePulse" name is clear of trademark conflicts.

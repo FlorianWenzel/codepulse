@@ -273,6 +273,36 @@ func TestRetentionPrune(t *testing.T) {
 	}
 }
 
+func TestNotificationWebhook(t *testing.T) {
+	got := make(chan map[string]any, 1)
+	hook := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var p map[string]any
+		json.NewDecoder(r.Body).Decode(&p)
+		got <- p
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer hook.Close()
+
+	srv := server.New(store.NewMemory())
+	srv.SetWebhook(hook.URL)
+	ts := httptest.NewServer(srv)
+	defer ts.Close()
+
+	mustPost(t, ts.URL+"/api/v1/projects", map[string]string{"key": "demo"}, http.StatusCreated)
+	rep, _ := scan.Scan(scan.Options{Root: "../../testdata/pyfixture"})
+	var ignore map[string]any
+	postJSON(t, ts.URL+"/api/v1/analyses?project=demo", rep, http.StatusCreated, &ignore)
+
+	select {
+	case p := <-got:
+		if p["project"] != "demo" || p["gateStatus"] != gate.StatusError {
+			t.Errorf("webhook payload = %+v, want project=demo gateStatus=ERROR", p)
+		}
+	default:
+		t.Fatal("webhook was not called")
+	}
+}
+
 func TestIngestUnknownProject(t *testing.T) {
 	ts := httptest.NewServer(server.New(store.NewMemory()))
 	defer ts.Close()

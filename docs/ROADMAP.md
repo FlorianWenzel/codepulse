@@ -113,8 +113,10 @@ metric domains, ratings, and a working clean-as-you-code gate.
 > **SSO (OIDC)** ✅ — `/auth/login` → IdP → `/auth/callback` exchanges the code, reads the
 > user's email, and mints a CodePulse token (admin if allow-listed, else a global read-only
 > viewer); state-cookie CSRF guard; configured via `CODEPULSE_OIDC_*`; tested against a fake
-> IdP (admin + viewer paths). **Next:** dataflow integration (Semgrep/CodeQL via SARIF import)
-> + notifications webhook to finish the roadmap.
+> IdP. **Notifications webhook** ✅ (`CODEPULSE_WEBHOOK_URL`; posts gate result per analysis,
+> tested). **7 languages** now (added **Ruby, Rust**). **Dataflow integration**: consumed via
+> the external-analyzer SARIF import (run Semgrep/CodeQL, feed their SARIF with `-import-sarif`).
+> Remaining are open-ended polish (more languages, LSP/IDE export, WASM grammars, i18n).
 - AuthN/Z: local users + **OIDC/SAML/GitHub** SSO, groups, fine-grained RBAC.
 - Performance: partitioning, retention/pruning, read replicas; horizontal worker scaling.
 - More languages (C/C++, C#, Ruby, PHP, Rust, Kotlin, Bash, etc.).
@@ -133,23 +135,23 @@ metric domains, ratings, and a working clean-as-you-code gate.
 
 | Capability | SonarQube (CE / paid) | CodePulse target |
 |---|---|---|
-| Multi-language analysis | CE limited; many langs paid | **All langs OSS** (tree-sitter) — *P1–P4* |
+| Multi-language analysis | CE limited; many langs paid | **7 langs OSS** (Go/Py/JS/TS/Java/Ruby/Rust), tree-sitter ✅ |
 | Bugs / Vulnerabilities / Code smells | ✅ | ✅ *P1–P2* |
-| Security hotspots | ✅ | ✅ *P3* |
+| Security hotspots + review | ✅ | ✅ (done) |
 | Metrics (LOC, complexity, duplication) | ✅ | ✅ *P1–P2* |
 | Cognitive complexity | ✅ | ✅ *P2* |
 | Coverage / test import | ✅ | ✅ *P2* |
 | Quality profiles (inherited, custom) | ✅ | ✅ *P2* |
 | Quality gates | ✅ | ✅ *P1 basic → P3 new-code* |
-| Clean-as-you-code / new-code period | ✅ | ✅ *P3* |
-| Branch & PR analysis | **paid** | ✅ **OSS** *P3* |
-| PR decoration (GH/GL/BB) | **paid** | ✅ **OSS** *P3* |
+| Clean-as-you-code / new-code period | ✅ | ✅ (done) |
+| Branch & PR analysis | **paid** | ✅ **OSS** (done) |
+| PR decoration (GitHub) | **paid** | ✅ **OSS** (done) |
 | Issue tracking across analyses | ✅ | ✅ *P1→P3* |
 | External analyzer (SARIF) import | partial | ✅ **first-class** *P2* |
 | Rule authoring | Java plugin SDK | **YAML + tree-sitter query** *P1* |
-| SSO (SAML/OIDC) | **paid** | ✅ **OSS** *P4* |
-| Portfolio / aggregation | **paid** | ✅ *P4* |
-| Taint/dataflow security | **paid, deep** | integrate (CodeQL/Semgrep) *P4* |
+| SSO (OIDC) | **paid** | ✅ **OSS** (done) |
+| Portfolio / aggregation | **paid** | ✅ (done) |
+| Taint/dataflow security | **paid, deep** | integrate via SARIF import (CodeQL/Semgrep) ✅ |
 | Deployment weight | JVM, heavier | single Go binary + Postgres |
 | License | LGPL + commercial editions | **Apache-2.0, no gated features** |
 

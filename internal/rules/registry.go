@@ -28,6 +28,10 @@ func ForLanguage(l lang.Language) []Rule {
 		return jsLikeRules(langspec.TypeScript())
 	case lang.Java:
 		return javaRules()
+	case lang.Ruby:
+		return rubyRules()
+	case lang.Rust:
+		return rustRules()
 	default:
 		return nil
 	}

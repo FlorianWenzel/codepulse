@@ -96,6 +96,21 @@ func TestJavaRulesOnFixture(t *testing.T) {
 	})
 }
 
+func TestRubyRulesOnFixture(t *testing.T) {
+	assertExact(t, runRules(t, lang.Ruby, "../../testdata/rubyfixture/sample.rb"), map[string]int{
+		"ruby:todo-comment":    1,
+		"ruby:high-complexity": 1,
+	})
+}
+
+func TestRustRulesOnFixture(t *testing.T) {
+	assertExact(t, runRules(t, lang.Rust, "../../testdata/rustfixture/sample.rs"), map[string]int{
+		"rust:todo-comment":    1,
+		"rust:high-complexity": 1,
+		"rust:unwrap":          1,
+	})
+}
+
 // TestBadQueryFailsLoudly ensures an invalid query is reported at engine
 // construction rather than silently skipped.
 func TestBadQueryFailsLoudly(t *testing.T) {

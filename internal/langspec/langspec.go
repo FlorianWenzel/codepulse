@@ -102,6 +102,10 @@ func For(l lang.Language) (Spec, bool) {
 		return TypeScript(), true
 	case lang.Java:
 		return Java(), true
+	case lang.Ruby:
+		return Ruby(), true
+	case lang.Rust:
+		return Rust(), true
 	default:
 		return Spec{}, false
 	}
