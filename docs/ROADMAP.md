@@ -79,7 +79,7 @@ PR decoration, SCM integrations). Always keep "CodePulse scans CodePulse" green 
   (Cobertura/LCOV/JaCoCo/Go), test results import.
 - Ratings (reliability/security/maintainability) + technical debt.
 - Async ingest via Postgres job queue + workers.
-- Quality profile management UI; quality gate editor; measures treemap & drilldown.
+- Quality gate editor ✅ (configurable gates: create/list, assign per project; ingest evaluates the project's gate). Profile management UI: API-level config in place; full UI is post-v1.0. Measures treemap & drilldown ✅.
 - **External SARIF import** (gosec/ESLint/Bandit/golangci-lint) — instant breadth.
 
 **Exit:** multi-language project shows consolidated issues (first-party + imported), full

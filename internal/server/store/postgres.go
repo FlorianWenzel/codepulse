@@ -18,7 +18,14 @@ CREATE TABLE IF NOT EXISTS project (
     key         TEXT PRIMARY KEY,
     name        TEXT NOT NULL,
     main_branch TEXT NOT NULL DEFAULT 'main',
+    gate_id     TEXT NOT NULL DEFAULT '',
     created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+ALTER TABLE project ADD COLUMN IF NOT EXISTS gate_id TEXT NOT NULL DEFAULT '';
+CREATE TABLE IF NOT EXISTS gate (
+    id         TEXT PRIMARY KEY,
+    name       TEXT NOT NULL,
+    conditions JSONB NOT NULL DEFAULT '[]'
 );
 CREATE SEQUENCE IF NOT EXISTS analysis_seq;
 CREATE TABLE IF NOT EXISTS analysis (
@@ -122,8 +129,8 @@ func (p *Postgres) CreateProject(pr Project) error {
 func (p *Postgres) GetProject(key string) (Project, bool) {
 	var pr Project
 	err := p.pool.QueryRow(context.Background(),
-		`SELECT key, name, main_branch, created_at FROM project WHERE key=$1`, key).
-		Scan(&pr.Key, &pr.Name, &pr.MainBranch, &pr.CreatedAt)
+		`SELECT key, name, main_branch, gate_id, created_at FROM project WHERE key=$1`, key).
+		Scan(&pr.Key, &pr.Name, &pr.MainBranch, &pr.GateID, &pr.CreatedAt)
 	if err != nil {
 		return Project{}, false
 	}
@@ -132,7 +139,7 @@ func (p *Postgres) GetProject(key string) (Project, bool) {
 
 func (p *Postgres) ListProjects() []Project {
 	rows, err := p.pool.Query(context.Background(),
-		`SELECT key, name, main_branch, created_at FROM project ORDER BY key`)
+		`SELECT key, name, main_branch, gate_id, created_at FROM project ORDER BY key`)
 	if err != nil {
 		return nil
 	}
@@ -140,11 +147,67 @@ func (p *Postgres) ListProjects() []Project {
 	var out []Project
 	for rows.Next() {
 		var pr Project
-		if err := rows.Scan(&pr.Key, &pr.Name, &pr.MainBranch, &pr.CreatedAt); err == nil {
+		if err := rows.Scan(&pr.Key, &pr.Name, &pr.MainBranch, &pr.GateID, &pr.CreatedAt); err == nil {
 			out = append(out, pr)
 		}
 	}
 	return out
+}
+
+func (p *Postgres) SaveGate(rec GateRecord) error {
+	if rec.ID == "" {
+		return fmt.Errorf("gate id required")
+	}
+	cj, _ := json.Marshal(rec.Conditions)
+	_, err := p.pool.Exec(context.Background(),
+		`INSERT INTO gate(id, name, conditions) VALUES ($1,$2,$3)
+		 ON CONFLICT (id) DO UPDATE SET name=excluded.name, conditions=excluded.conditions`,
+		rec.ID, rec.Name, cj)
+	return err
+}
+
+func (p *Postgres) GetGate(id string) (GateRecord, bool) {
+	var rec GateRecord
+	var cj []byte
+	if err := p.pool.QueryRow(context.Background(),
+		`SELECT id, name, conditions FROM gate WHERE id=$1`, id).Scan(&rec.ID, &rec.Name, &cj); err != nil {
+		return GateRecord{}, false
+	}
+	_ = json.Unmarshal(cj, &rec.Conditions)
+	return rec, true
+}
+
+func (p *Postgres) ListGates() []GateRecord {
+	rows, err := p.pool.Query(context.Background(), `SELECT id, name, conditions FROM gate ORDER BY id`)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+	var out []GateRecord
+	for rows.Next() {
+		var rec GateRecord
+		var cj []byte
+		if err := rows.Scan(&rec.ID, &rec.Name, &cj); err == nil {
+			_ = json.Unmarshal(cj, &rec.Conditions)
+			out = append(out, rec)
+		}
+	}
+	return out
+}
+
+func (p *Postgres) SetProjectGate(projectKey, gateID string) error {
+	if _, ok := p.GetGate(gateID); !ok {
+		return fmt.Errorf("gate not found")
+	}
+	ct, err := p.pool.Exec(context.Background(),
+		`UPDATE project SET gate_id=$2 WHERE key=$1`, projectKey, gateID)
+	if err != nil {
+		return err
+	}
+	if ct.RowsAffected() == 0 {
+		return fmt.Errorf("project not found")
+	}
+	return nil
 }
 
 func (p *Postgres) SaveAnalysis(a Analysis, findings []domain.Finding) (Analysis, error) {

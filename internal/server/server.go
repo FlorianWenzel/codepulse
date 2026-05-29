@@ -35,6 +35,8 @@ func (s *Server) SetWebhook(url string) { s.webhookURL = url }
 // New builds a Server backed by the given store and the default quality gate.
 func New(s store.Store) *Server {
 	srv := &Server{store: s, gate: gate.Default(), now: time.Now}
+	// Seed the default gate so it can be listed/assigned like any other.
+	_ = s.SaveGate(store.GateRecord{ID: "default", Name: gate.Default().Name, Conditions: gate.Default().Conditions})
 	srv.routes()
 	return srv
 }
@@ -71,6 +73,9 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /api/v1/hotspots/resolve", s.resolveHotspot)
 	s.mux.HandleFunc("GET /api/v1/measures", s.measures)
 	s.mux.HandleFunc("GET /api/v1/measures/history", s.measuresHistory)
+	s.mux.HandleFunc("POST /api/v1/quality-gates", s.createGate)
+	s.mux.HandleFunc("GET /api/v1/quality-gates", s.listGates)
+	s.mux.HandleFunc("POST /api/v1/projects/{key}/quality-gate", s.assignGate)
 	s.mux.HandleFunc("GET /api/v1/quality-gates/status", s.gateStatus)
 }
 
@@ -205,7 +210,14 @@ func (s *Server) ingest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result := gate.Evaluate(s.gate, rep.Summary)
+	// Evaluate the project's assigned gate, falling back to the default.
+	g := s.gate
+	if proj.GateID != "" {
+		if rec, ok := s.store.GetGate(proj.GateID); ok {
+			g = rec.Gate()
+		}
+	}
+	result := gate.Evaluate(g, rep.Summary)
 	a := store.Analysis{
 		ProjectKey: key,
 		Branch:     branch,
@@ -433,6 +445,49 @@ func (s *Server) measuresHistory(w http.ResponseWriter, r *http.Request) {
 		points = append(points, point{AnalysisID: a.ID, CreatedAt: a.CreatedAt, Value: summaryMetric(a.Summary, metric)})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"metric": metric, "points": points})
+}
+
+func (s *Server) createGate(w http.ResponseWriter, r *http.Request) {
+	if !s.guard(w, r, isAdmin) {
+		return
+	}
+	var rec store.GateRecord
+	if err := json.NewDecoder(r.Body).Decode(&rec); err != nil {
+		httpError(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	if rec.ID == "" {
+		httpError(w, http.StatusBadRequest, "gate id required")
+		return
+	}
+	if err := s.store.SaveGate(rec); err != nil {
+		httpError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusCreated, rec)
+}
+
+func (s *Server) listGates(w http.ResponseWriter, r *http.Request) {
+	if !s.guard(w, r, func(store.Token) bool { return true }) {
+		return
+	}
+	writeJSON(w, http.StatusOK, s.store.ListGates())
+}
+
+func (s *Server) assignGate(w http.ResponseWriter, r *http.Request) {
+	if !s.guard(w, r, isAdmin) {
+		return
+	}
+	var body struct{ GateID string }
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httpError(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	if err := s.store.SetProjectGate(r.PathValue("key"), body.GateID); err != nil {
+		httpError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"project": r.PathValue("key"), "gateId": body.GateID})
 }
 
 func (s *Server) gateStatus(w http.ResponseWriter, r *http.Request) {

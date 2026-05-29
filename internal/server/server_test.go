@@ -335,6 +335,40 @@ func TestMeasuresHistory(t *testing.T) {
 	}
 }
 
+func TestConfigurableQualityGate(t *testing.T) {
+	ts := httptest.NewServer(server.New(store.NewMemory()))
+	defer ts.Close()
+	mustPost(t, ts.URL+"/api/v1/projects", map[string]string{"key": "demo"}, http.StatusCreated)
+
+	// default gate fails pyfixture (it has a vulnerability)
+	rep, _ := scan.Scan(scan.Options{Root: "../../testdata/pyfixture"})
+	var resp map[string]any
+	postJSON(t, ts.URL+"/api/v1/analyses?project=demo", rep, http.StatusCreated, &resp)
+	if g, _ := resp["gate"].(map[string]any); g["status"] != gate.StatusError {
+		t.Fatalf("default gate should be ERROR, got %v", resp["gate"])
+	}
+
+	// create a lenient gate (only blockers fail) and assign it
+	mustPost(t, ts.URL+"/api/v1/quality-gates", map[string]any{
+		"id": "lenient", "name": "Lenient",
+		"conditions": []map[string]any{{"metric": "blocker_issues", "op": "GT", "threshold": 0}},
+	}, http.StatusCreated)
+	postJSON(t, ts.URL+"/api/v1/projects/demo/quality-gate", map[string]string{"gateId": "lenient"}, http.StatusOK, nil)
+
+	// now the same report passes (no blocker issues)
+	postJSON(t, ts.URL+"/api/v1/analyses?project=demo", rep, http.StatusCreated, &resp)
+	if g, _ := resp["gate"].(map[string]any); g["status"] != gate.StatusOK {
+		t.Errorf("lenient gate should be OK, got %v", resp["gate"])
+	}
+
+	// the gate list includes default + lenient
+	var gates []store.GateRecord
+	getJSON(t, ts.URL+"/api/v1/quality-gates", http.StatusOK, &gates)
+	if len(gates) != 2 {
+		t.Errorf("gates = %d, want 2 (default + lenient)", len(gates))
+	}
+}
+
 func TestIngestUnknownProject(t *testing.T) {
 	ts := httptest.NewServer(server.New(store.NewMemory()))
 	defer ts.Close()

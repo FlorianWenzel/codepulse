@@ -19,6 +19,7 @@ type Memory struct {
 	issues   map[string]map[string]*Issue // bkey -> issueKey -> issue
 	hotspots map[string]map[string]*Hotspot
 	tokens   map[string]Token // hash -> token
+	gates    map[string]GateRecord
 	seq      int
 }
 
@@ -30,7 +31,51 @@ func NewMemory() *Memory {
 		issues:   map[string]map[string]*Issue{},
 		hotspots: map[string]map[string]*Hotspot{},
 		tokens:   map[string]Token{},
+		gates:    map[string]GateRecord{},
 	}
+}
+
+func (m *Memory) SaveGate(rec GateRecord) error {
+	if rec.ID == "" {
+		return fmt.Errorf("gate id required")
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.gates[rec.ID] = rec
+	return nil
+}
+
+func (m *Memory) GetGate(id string) (GateRecord, bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	g, ok := m.gates[id]
+	return g, ok
+}
+
+func (m *Memory) ListGates() []GateRecord {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	out := make([]GateRecord, 0, len(m.gates))
+	for _, g := range m.gates {
+		out = append(out, g)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	return out
+}
+
+func (m *Memory) SetProjectGate(projectKey, gateID string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	p, ok := m.projects[projectKey]
+	if !ok {
+		return fmt.Errorf("project not found")
+	}
+	if _, ok := m.gates[gateID]; !ok {
+		return fmt.Errorf("gate not found")
+	}
+	p.GateID = gateID
+	m.projects[projectKey] = p
+	return nil
 }
 
 func (m *Memory) CreateToken(t Token) error {

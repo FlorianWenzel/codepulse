@@ -15,8 +15,19 @@ type Project struct {
 	Key        string    `json:"key"`
 	Name       string    `json:"name"`
 	MainBranch string    `json:"mainBranch"`
+	GateID     string    `json:"gateId,omitempty"`
 	CreatedAt  time.Time `json:"createdAt"`
 }
+
+// GateRecord is a stored, named quality gate.
+type GateRecord struct {
+	ID         string           `json:"id"`
+	Name       string           `json:"name"`
+	Conditions []gate.Condition `json:"conditions"`
+}
+
+// Gate converts a record to an evaluatable gate.
+func (g GateRecord) Gate() gate.Gate { return gate.Gate{Name: g.Name, Conditions: g.Conditions} }
 
 // Analysis is one immutable snapshot of a project at a point in time.
 type Analysis struct {
@@ -174,6 +185,11 @@ type Store interface {
 
 	CreateToken(t Token) error
 	AuthToken(hash string) (Token, bool)
+
+	SaveGate(rec GateRecord) error
+	GetGate(id string) (GateRecord, bool)
+	ListGates() []GateRecord
+	SetProjectGate(projectKey, gateID string) error
 
 	// PruneAnalyses keeps only the most recent keep analyses for a branch and
 	// deletes older ones, returning how many were removed (retention).
