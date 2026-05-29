@@ -174,11 +174,11 @@ Ordered by leverage.
   ERROR via `deploy/ci/gate.sh`). Dogfooded by a CI job (`uses: ./`). README has the snippet.
   **Next:** publish to the Actions Marketplace; add a GitLab CI template.
 
-### 5. OIDC (extend what's shipped)
-- OIDC **SSO login is already implemented** (`/auth/login` → `/auth/callback`; admin/viewer
-  mapping; `CODEPULSE_OIDC_*`). Next: provider **presets** (Google, GitHub, Okta/Keycloak,
-  Azure AD), group → role mapping, and **GitHub Actions OIDC keyless auth** so the Action
-  uploads with a short-lived OIDC token instead of a static project token.
+### 5. OIDC (extend what's shipped)  *(in progress)*
+- OIDC SSO login ✅. **Provider presets ✅** (`CODEPULSE_OIDC_PROVIDER`: google/github/gitlab
+  fill the endpoint URLs) and **group → role mapping ✅** (`CODEPULSE_OIDC_ADMIN_GROUPS`: an
+  IdP `groups` claim grants admin), both tested against a fake IdP. **Next:** GitHub Actions
+  OIDC keyless auth (short-lived token instead of a static project token); Okta/Keycloak issuer discovery.
 
 ### More languages
 - Keep widening via `langspec` (C++/C#/PHP/Kotlin/Scala/Swift already added; next Go templates,

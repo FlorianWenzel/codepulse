@@ -118,3 +118,72 @@ func TestSSOViewerLogin(t *testing.T) {
 		t.Errorf("viewer create project = %d, want 403", r.StatusCode)
 	}
 }
+
+// fakeIdPGroups returns an IdP whose userinfo includes group claims.
+func fakeIdPGroups(email string, groups []string) *httptest.Server {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]string{"access_token": "fake-access-token"})
+	})
+	mux.HandleFunc("/userinfo", func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]any{"email": email, "groups": groups})
+	})
+	return httptest.NewServer(mux)
+}
+
+func TestOIDCProviderPreset(t *testing.T) {
+	srv := server.New(store.NewMemory())
+	srv.SetOIDC(&server.OIDC{Provider: "google", ClientID: "x", RedirectURL: "http://cb/auth/callback"})
+	ts := httptest.NewServer(srv)
+	defer ts.Close()
+	resp, err := noRedirect().Get(ts.URL + "/auth/login")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusFound {
+		t.Fatalf("login status = %d, want 302", resp.StatusCode)
+	}
+	loc, _ := url.Parse(resp.Header.Get("Location"))
+	if loc.Host != "accounts.google.com" {
+		t.Errorf("preset authorize host = %q, want accounts.google.com", loc.Host)
+	}
+}
+
+func TestSSOGroupAdmin(t *testing.T) {
+	idp := fakeIdPGroups("bob@corp.com", []string{"platform-admin"})
+	defer idp.Close()
+	srv := server.New(store.NewMemory())
+	srv.EnableAuth()
+	srv.SetOIDC(&server.OIDC{
+		AuthURL: "https://idp.example/authorize", TokenURL: idp.URL + "/token", UserInfoURL: idp.URL + "/userinfo",
+		ClientID: "cid", RedirectURL: "http://cb/auth/callback",
+		AdminEmails: map[string]bool{}, AdminGroups: map[string]bool{"platform-admin": true},
+	})
+	ts := httptest.NewServer(srv)
+	defer ts.Close()
+
+	resp, _ := noRedirect().Get(ts.URL + "/auth/login")
+	loc, _ := url.Parse(resp.Header.Get("Location"))
+	state := loc.Query().Get("state")
+	var cookie *http.Cookie
+	for _, c := range resp.Cookies() {
+		if c.Name == "cp_oidc_state" {
+			cookie = c
+		}
+	}
+	req, _ := http.NewRequest("GET", ts.URL+"/auth/callback?code=x&state="+state, nil)
+	req.AddCookie(cookie)
+	cb, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out struct{ Role, Token string }
+	json.NewDecoder(cb.Body).Decode(&out)
+	if out.Role != "admin" {
+		t.Fatalf("group-mapped role = %q, want admin", out.Role)
+	}
+	// the issued token has admin rights
+	if r := authReq(t, ts.URL, "POST", "/api/v1/projects", out.Token, map[string]string{"key": "g"}); r.StatusCode != http.StatusCreated {
+		t.Errorf("group-admin create project = %d, want 201", r.StatusCode)
+	}
+}

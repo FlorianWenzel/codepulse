@@ -15,18 +15,47 @@ import (
 // login. After a successful login CodePulse mints an API token for the user:
 // admin if their email is in AdminEmails, otherwise a global read-only viewer.
 type OIDC struct {
+	Provider     string // optional preset: google | github | gitlab (fills URLs if unset)
 	AuthURL      string
 	TokenURL     string
 	UserInfoURL  string
 	ClientID     string
 	ClientSecret string
 	RedirectURL  string
-	AdminEmails  map[string]bool
+	AdminEmails  map[string]bool // emails granted admin
+	AdminGroups  map[string]bool // IdP groups granted admin
 	HTTP         *http.Client
 }
 
-// SetOIDC enables SSO with the given provider config.
-func (s *Server) SetOIDC(o *OIDC) { s.oidc = o }
+// providerPresets fills in well-known endpoint URLs for common providers.
+var providerPresets = map[string]struct{ auth, token, userinfo string }{
+	"google": {"https://accounts.google.com/o/oauth2/v2/auth", "https://oauth2.googleapis.com/token", "https://openidconnect.googleapis.com/v1/userinfo"},
+	"github": {"https://github.com/login/oauth/authorize", "https://github.com/login/oauth/access_token", "https://api.github.com/user"},
+	"gitlab": {"https://gitlab.com/oauth/authorize", "https://gitlab.com/oauth/token", "https://gitlab.com/oauth/userinfo"},
+}
+
+// applyPreset fills empty endpoint URLs from the named provider preset.
+func (o *OIDC) applyPreset() {
+	p, ok := providerPresets[strings.ToLower(o.Provider)]
+	if !ok {
+		return
+	}
+	if o.AuthURL == "" {
+		o.AuthURL = p.auth
+	}
+	if o.TokenURL == "" {
+		o.TokenURL = p.token
+	}
+	if o.UserInfoURL == "" {
+		o.UserInfoURL = p.userinfo
+	}
+}
+
+// SetOIDC enables SSO with the given provider config (applies provider presets).
+func (s *Server) SetOIDC(o *OIDC) {
+	o.applyPreset()
+	s.oidc = o
+}
 
 func (o *OIDC) client() *http.Client {
 	if o.HTTP != nil {
@@ -80,7 +109,7 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
 		httpError(w, http.StatusBadGateway, "token exchange failed: "+err.Error())
 		return
 	}
-	email, err := s.oidc.userEmail(r.Context(), accessToken)
+	email, groups, err := s.oidc.userInfo(r.Context(), accessToken)
 	if err != nil || email == "" {
 		httpError(w, http.StatusBadGateway, "could not resolve user")
 		return
@@ -89,6 +118,13 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
 	role := store.RoleViewer // global viewer (empty project = read-all)
 	if s.oidc.AdminEmails[strings.ToLower(email)] {
 		role = store.RoleAdmin
+	} else {
+		for _, g := range groups {
+			if s.oidc.AdminGroups[g] {
+				role = store.RoleAdmin
+				break
+			}
+		}
 	}
 	secret, err := generateSecret()
 	if err != nil {
@@ -131,20 +167,22 @@ func (o *OIDC) exchange(ctx context.Context, code string) (string, error) {
 	return tr.AccessToken, nil
 }
 
-// userEmail fetches the authenticated user's email from the userinfo endpoint.
-func (o *OIDC) userEmail(ctx context.Context, accessToken string) (string, error) {
+// userInfo fetches the authenticated user's email and groups from the userinfo
+// endpoint.
+func (o *OIDC) userInfo(ctx context.Context, accessToken string) (string, []string, error) {
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, o.UserInfoURL, nil)
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	resp, err := o.client().Do(req)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 	defer resp.Body.Close()
 	var ui struct {
-		Email string `json:"email"`
+		Email  string   `json:"email"`
+		Groups []string `json:"groups"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&ui); err != nil {
-		return "", err
+		return "", nil, err
 	}
-	return ui.Email, nil
+	return ui.Email, ui.Groups, nil
 }

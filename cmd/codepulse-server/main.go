@@ -57,19 +57,28 @@ func main() {
 		srv.SetWebhook(hook)
 		log.Printf("notifications webhook enabled")
 	}
-	if au := os.Getenv("CODEPULSE_OIDC_AUTH_URL"); au != "" {
-		admins := map[string]bool{}
-		for _, e := range strings.Split(os.Getenv("CODEPULSE_OIDC_ADMIN_EMAILS"), ",") {
-			if e = strings.ToLower(strings.TrimSpace(e)); e != "" {
-				admins[e] = true
+	if au := os.Getenv("CODEPULSE_OIDC_AUTH_URL"); au != "" || os.Getenv("CODEPULSE_OIDC_PROVIDER") != "" {
+		csv := func(key string) map[string]bool {
+			m := map[string]bool{}
+			for _, e := range strings.Split(os.Getenv(key), ",") {
+				if e = strings.TrimSpace(e); e != "" {
+					m[e] = true
+				}
 			}
+			return m
+		}
+		admins := map[string]bool{}
+		for e := range csv("CODEPULSE_OIDC_ADMIN_EMAILS") {
+			admins[strings.ToLower(e)] = true
 		}
 		srv.SetOIDC(&server.OIDC{
-			AuthURL: au, TokenURL: os.Getenv("CODEPULSE_OIDC_TOKEN_URL"),
+			Provider: os.Getenv("CODEPULSE_OIDC_PROVIDER"),
+			AuthURL:  au, TokenURL: os.Getenv("CODEPULSE_OIDC_TOKEN_URL"),
 			UserInfoURL:  os.Getenv("CODEPULSE_OIDC_USERINFO_URL"),
 			ClientID:     os.Getenv("CODEPULSE_OIDC_CLIENT_ID"),
 			ClientSecret: os.Getenv("CODEPULSE_OIDC_CLIENT_SECRET"),
-			RedirectURL:  os.Getenv("CODEPULSE_OIDC_REDIRECT_URL"), AdminEmails: admins,
+			RedirectURL:  os.Getenv("CODEPULSE_OIDC_REDIRECT_URL"),
+			AdminEmails:  admins, AdminGroups: csv("CODEPULSE_OIDC_ADMIN_GROUPS"),
 		})
 		log.Printf("OIDC SSO enabled")
 	}
