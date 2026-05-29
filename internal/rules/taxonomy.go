@@ -23,6 +23,7 @@ var ruleTaxonomy = map[string]Taxonomy{
 	"py:yaml-unsafe-load": {Description: "yaml.load without SafeLoader can instantiate arbitrary Python objects (deserialization RCE).", CWE: []string{"CWE-502"}, OWASP: []string{"A08:2021-Software and Data Integrity Failures"}, Tags: []string{"security", "deserialization"}},
 	"py:pickle-load":      {Description: "Unpickling untrusted data can execute arbitrary code during object reconstruction.", CWE: []string{"CWE-502"}, OWASP: []string{"A08:2021-Software and Data Integrity Failures"}, Tags: []string{"security", "deserialization"}},
 	"py:os-system":        {Description: "os.system runs a string through the shell; untrusted input enables command injection.", CWE: []string{"CWE-78"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "command-injection"}},
+	"py:tainted-sql":      {Description: "Dataflow: untrusted input (input()/os.getenv/request) is concatenated into a SQL query passed to cursor.execute; use parameterized queries.", CWE: []string{"CWE-89"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "sql-injection", "taint"}},
 	"py:bare-except":      {Description: "A bare except: catches everything (including KeyboardInterrupt/SystemExit) and hides real errors.", CWE: []string{"CWE-396"}, Tags: []string{"error-handling"}},
 
 	// Go

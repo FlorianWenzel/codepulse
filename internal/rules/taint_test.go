@@ -70,3 +70,19 @@ func f(db *sql.DB, id string) { _, _ = db.Query("select * from t where id = $1",
 		t.Errorf("parameterized sql: go:tainted-sql fired %d, want 0", got)
 	}
 }
+
+func TestPyTaintSQL(t *testing.T) {
+	vuln := `def handler(request):
+    q = "select * from t where id = " + request.args.get("id")
+    cursor.execute(q)
+`
+	if got := runRulesSrc(t, lang.Python, vuln)["py:tainted-sql"]; got != 1 {
+		t.Errorf("tainted py sql: fired %d, want 1", got)
+	}
+	safe := `def handler(request):
+    cursor.execute("select * from t where id = %s", (request.args.get("id"),))
+`
+	if got := runRulesSrc(t, lang.Python, safe)["py:tainted-sql"]; got != 0 {
+		t.Errorf("parameterized py sql: fired %d, want 0", got)
+	}
+}

@@ -87,6 +87,7 @@ func pythonRules() []Rule {
 			Capture:   "flag",
 			Message:   "Remove this debug print(), or use the logging module.",
 		},
+		pythonTaintSQLRule(),
 		complexityRule(langspec.Python()),
 	}
 }
