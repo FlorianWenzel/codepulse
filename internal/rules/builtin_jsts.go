@@ -131,6 +131,16 @@ func jsLikeRules(spec langspec.Spec) []Rule {
 			Capture:   "flag",
 			Message:   "Throw an Error object (preserves stack/type), not a string/number literal.",
 		},
+		{
+			ID:        p + ":no-with",
+			Name:      "Avoid the with statement",
+			Type:      domain.TypeCodeSmell,
+			Severity:  domain.SevMajor,
+			EffortMin: 15,
+			Query:     `(with_statement) @flag`,
+			Capture:   "flag",
+			Message:   "Avoid `with`; it makes scope ambiguous and is disallowed in strict mode.",
+		},
 		complexityRule(spec),
 	}
 }
