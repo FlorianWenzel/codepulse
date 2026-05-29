@@ -65,6 +65,26 @@ func javaRules() []Rule {
 			Capture:   "flag",
 			Message:   "Log the exception through a logger instead of printStackTrace().",
 		},
+		{
+			ID:        "java:system-print",
+			Name:      "Remove System.out/err debug prints",
+			Type:      domain.TypeCodeSmell,
+			Severity:  domain.SevMinor,
+			EffortMin: 5,
+			Query:     `(method_invocation object: (field_access object: (identifier) @a field: (identifier) @b) name: (identifier) @m (#eq? @a "System") (#match? @b "^(out|err)$") (#match? @m "^(print|println|printf)$")) @flag`,
+			Capture:   "flag",
+			Message:   "Use a logger instead of System.out/System.err.",
+		},
+		{
+			ID:        "java:catch-generic",
+			Name:      "Catch specific exceptions, not Exception/Throwable",
+			Type:      domain.TypeCodeSmell,
+			Severity:  domain.SevMajor,
+			EffortMin: 10,
+			Query:     `(catch_clause (catch_formal_parameter (catch_type (type_identifier) @t (#match? @t "^(Exception|Throwable)$")))) @flag`,
+			Capture:   "flag",
+			Message:   "Catch a specific exception type rather than Exception/Throwable.",
+		},
 		complexityRule(langspec.Java()),
 	}
 }

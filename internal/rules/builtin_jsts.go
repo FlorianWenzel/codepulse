@@ -1,6 +1,8 @@
 package rules
 
 import (
+	sitter "github.com/smacker/go-tree-sitter"
+
 	"github.com/FlorianWenzel/codepulse/internal/domain"
 	"github.com/FlorianWenzel/codepulse/internal/langspec"
 )
@@ -69,6 +71,35 @@ func jsLikeRules(spec langspec.Spec) []Rule {
 			Query:     `(call_expression function: (member_expression object: (identifier) @o (#eq? @o "console"))) @flag`,
 			Capture:   "flag",
 			Message:   "Remove this console.* call, or use a proper logger.",
+		},
+		{
+			ID:        p + ":loose-equality",
+			Name:      "Use strict equality (=== / !==)",
+			Type:      domain.TypeCodeSmell,
+			Severity:  domain.SevMinor,
+			EffortMin: 5,
+			Query:     `(binary_expression) @flag`,
+			Capture:   "flag",
+			Predicate: func(n *sitter.Node, src []byte) (string, bool) {
+				op := n.ChildByFieldName("operator")
+				if op == nil {
+					return "", false
+				}
+				if t := op.Content(src); t == "==" || t == "!=" {
+					return "Use strict equality (=== / !==) to avoid type coercion.", true
+				}
+				return "", false
+			},
+		},
+		{
+			ID:        p + ":var-declaration",
+			Name:      "Prefer let/const over var",
+			Type:      domain.TypeCodeSmell,
+			Severity:  domain.SevMinor,
+			EffortMin: 5,
+			Query:     `(variable_declaration) @flag`,
+			Capture:   "flag",
+			Message:   "Use let or const instead of var (block scoping).",
 		},
 		complexityRule(spec),
 	}

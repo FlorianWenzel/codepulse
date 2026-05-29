@@ -138,9 +138,13 @@ metric domains, ratings, and a working clean-as-you-code gate.
 Phases 0–4 reached feature **breadth**; this phase closes the **depth** gap with SonarQube.
 Ordered by leverage.
 
-### 1. Rule coverage — *the* priority
+### 1. Rule coverage — *the* priority  *(in progress)*
 - Greatly expand first-party rule sets, focused on **JavaScript/TypeScript, Java, and Go**
   (then Python), growing from a handful toward tens→hundreds of rules per language.
+- **Added so far:** Go (`context-todo`, `error-new-fmt`, `debug-print`, `weak-hash`), JS/TS
+  (`loose-equality`, `var-declaration`, `console-usage`, `inner-html`, `eval`, `debugger`),
+  Java (`system-print`, `catch-generic`, `system-exit`, `empty-catch`, `process-exec`),
+  Python (`yaml-unsafe-load`, `pickle-load`, `os-system`, `bare-except`, …) — each fixture-tested.
 - Every rule ships good/bad fixtures + exact-match tests to keep false positives low.
 - Cover correctness/bug patterns, security, concurrency, resource & error handling, API
   misuse, performance, and maintainability. Track coverage vs SonarQube's catalogue per language.

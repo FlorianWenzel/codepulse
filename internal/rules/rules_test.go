@@ -91,6 +91,7 @@ func TestJavaRulesOnFixture(t *testing.T) {
 	assertExact(t, runRules(t, lang.Java, "../../testdata/javafixture/Sample.java"), map[string]int{
 		"java:todo-comment":    1,
 		"java:empty-catch":     1,
+		"java:catch-generic":   1, // catch (Exception e) is both empty and overly broad
 		"java:system-exit":     1,
 		"java:high-complexity": 1,
 	})
@@ -198,6 +199,29 @@ func TestSecurityRules(t *testing.T) {
 		{lang.Python, "import pickle\nx = pickle.loads(b)\n", "py:pickle-load"},
 		{lang.Go, "package p\nimport \"crypto/md5\"\nfunc f() { _ = md5.New() }\n", "go:weak-hash"},
 		{lang.JavaScript, "el.innerHTML = userInput;\n", "js:inner-html"},
+	}
+	for _, c := range cases {
+		t.Run(c.rule, func(t *testing.T) {
+			if got := runRulesSrc(t, c.l, c.src)[c.rule]; got != 1 {
+				t.Errorf("%s fired %d times, want 1", c.rule, got)
+			}
+		})
+	}
+}
+
+func TestExpandedRules(t *testing.T) {
+	cases := []struct {
+		l    lang.Language
+		src  string
+		rule string
+	}{
+		{lang.Go, "package p\nimport \"context\"\nfunc f() { _ = context.TODO() }\n", "go:context-todo"},
+		{lang.Go, "package p\nimport (\"errors\"; \"fmt\")\nfunc f() error { return errors.New(fmt.Sprintf(\"x %d\", 1)) }\n", "go:error-new-fmt"},
+		{lang.JavaScript, "const ok = (a == b);\n", "js:loose-equality"},
+		{lang.JavaScript, "var x = 1;\n", "js:var-declaration"},
+		{lang.TypeScript, "const ok = (a == b);\n", "ts:loose-equality"},
+		{lang.Java, "class C { void m() { System.out.println(\"x\"); } }\n", "java:system-print"},
+		{lang.Java, "class C { void m() { try { x(); } catch (Throwable t) { handle(); } } }\n", "java:catch-generic"},
 	}
 	for _, c := range cases {
 		t.Run(c.rule, func(t *testing.T) {

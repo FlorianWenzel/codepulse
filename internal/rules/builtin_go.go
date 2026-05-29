@@ -76,6 +76,30 @@ func goRules() []Rule {
 			Capture:   "flag",
 			Message:   "Remove this fmt debug print, or use a structured logger.",
 		},
+		{
+			ID:        "go:context-todo",
+			Name:      "context.TODO() should be replaced before release",
+			Type:      domain.TypeCodeSmell,
+			Severity:  domain.SevMinor,
+			EffortMin: 10,
+			Query:     `(call_expression function: (selector_expression operand: (identifier) @p field: (field_identifier) @f) (#eq? @p "context") (#eq? @f "TODO")) @flag`,
+			Capture:   "flag",
+			Message:   "Replace context.TODO() with a real context (e.g. the request's context).",
+		},
+		{
+			ID:        "go:error-new-fmt",
+			Name:      "Use fmt.Errorf instead of errors.New(fmt.Sprintf(...))",
+			Type:      domain.TypeCodeSmell,
+			Severity:  domain.SevMinor,
+			EffortMin: 5,
+			Query: `(call_expression
+				function: (selector_expression operand: (identifier) @pkg field: (field_identifier) @fn)
+				arguments: (argument_list (call_expression
+					function: (selector_expression operand: (identifier) @ipkg field: (field_identifier) @ifn)))
+				(#eq? @pkg "errors") (#eq? @fn "New") (#eq? @ipkg "fmt") (#eq? @ifn "Sprintf")) @flag`,
+			Capture: "flag",
+			Message: "Use fmt.Errorf(...) instead of errors.New(fmt.Sprintf(...)).",
+		},
 		complexityRule(langspec.Go()),
 	}
 }
