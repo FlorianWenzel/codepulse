@@ -90,4 +90,25 @@ type Summary struct {
 	LinesToCover           int               `json:"linesToCover,omitempty"`
 	CoveredLines           int               `json:"coveredLines,omitempty"`
 	Coverage               float64           `json:"coverage,omitempty"`
+	Ratings                Ratings           `json:"ratings"`
+}
+
+// Rating is a SonarQube-style A–E grade (A is best).
+type Rating string
+
+const (
+	RatingA Rating = "A"
+	RatingB Rating = "B"
+	RatingC Rating = "C"
+	RatingD Rating = "D"
+	RatingE Rating = "E"
+)
+
+// Ratings are the derived quality grades for a project.
+type Ratings struct {
+	Reliability     Rating  `json:"reliability"`     // from open bugs
+	Security        Rating  `json:"security"`        // from open vulnerabilities
+	Maintainability Rating  `json:"maintainability"` // from technical-debt ratio
+	TechDebtMin     int     `json:"techDebtMin"`     // sum of code-smell remediation effort
+	DebtRatio       float64 `json:"debtRatio"`       // debt vs estimated dev cost (%)
 }

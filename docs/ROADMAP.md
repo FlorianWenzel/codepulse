@@ -46,8 +46,13 @@ PR decoration, SCM integrations). Always keep "CodePulse scans CodePulse" green 
 > high-complexity), with cognitive complexity computed per language. Mixed-language
 > scans aggregate correctly. **Duplication detection** (token-window clone finder) and
 > **coverage import** (LCOV / Go coverprofile / Cobertura, suffix-matched onto files)
-> are implemented and fold into per-file + project metrics. e2e tested.
-> **Next:** ratings/tech-debt, then `codepulse-server` (Postgres ingest + quality gate).
+> are implemented and fold into per-file + project metrics. **Ratings** (reliability,
+> security, maintainability) + **technical debt** are derived from findings/size.
+> **`codepulse-server`** now exists: HTTP API (projects, analysis ingest, issues,
+> measures, quality-gate status) over a pluggable store (in-memory impl with
+> issue-tracking carry-over), and **quality-gate evaluation** (default "CodePulse Way"
+> gate). Full scan→upload→gate pipeline verified against the running binaries; e2e
+> tested via httptest. **Next:** Postgres-backed store + docker-compose, then the Vue dashboard.
 
 - Add **Python, JavaScript, TypeScript, Java** grammars + starter rule sets.
 - Cognitive complexity, comment density, **duplication detection**, coverage import

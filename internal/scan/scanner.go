@@ -15,6 +15,7 @@ import (
 	"github.com/FlorianWenzel/codepulse/internal/langspec"
 	"github.com/FlorianWenzel/codepulse/internal/metrics"
 	"github.com/FlorianWenzel/codepulse/internal/parse"
+	"github.com/FlorianWenzel/codepulse/internal/ratings"
 	"github.com/FlorianWenzel/codepulse/internal/rules"
 )
 
@@ -98,6 +99,7 @@ func Scan(opts Options) (domain.Report, error) {
 	}
 
 	applyDuplication(&rep, dupFiles, opts.MinDupTokens)
+	ratings.Compute(&rep)
 
 	rep.Language = joinLangs(langsSeen)
 	sortReport(&rep)

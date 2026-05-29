@@ -68,6 +68,26 @@ func TestScanPythonFixtureDir(t *testing.T) {
 	}
 }
 
+func TestScanRatings(t *testing.T) {
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/pyfixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	// pyfixture has a CRITICAL vulnerability (eval) and a MAJOR bug (bare-except).
+	if rep.Summary.Ratings.Security != domain.RatingD {
+		t.Errorf("security rating = %s, want D (critical vuln)", rep.Summary.Ratings.Security)
+	}
+	if rep.Summary.Ratings.Reliability != domain.RatingC {
+		t.Errorf("reliability rating = %s, want C (major bug)", rep.Summary.Ratings.Reliability)
+	}
+	if rep.Summary.Ratings.Maintainability == "" {
+		t.Error("maintainability rating should be set")
+	}
+	if rep.Summary.Ratings.TechDebtMin <= 0 {
+		t.Error("expected positive technical debt from code smells")
+	}
+}
+
 func TestScanDuplication(t *testing.T) {
 	rep, err := scan.Scan(scan.Options{Root: "../../testdata/dupfixture", MinDupTokens: 20})
 	if err != nil {
