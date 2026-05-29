@@ -52,7 +52,11 @@ PR decoration, SCM integrations). Always keep "CodePulse scans CodePulse" green 
 > measures, quality-gate status) over a pluggable store (in-memory impl with
 > issue-tracking carry-over), and **quality-gate evaluation** (default "CodePulse Way"
 > gate). Full scan→upload→gate pipeline verified against the running binaries; e2e
-> tested via httptest. **Next:** Postgres-backed store + docker-compose, then the Vue dashboard.
+> tested via httptest. A **PostgreSQL-backed store** (pgx) now implements the same
+> interface with SQL-level issue tracking, **integration-tested against a real
+> Postgres** (PG 18 via an embedded binary; carry-over + fixed detection verified);
+> `codepulse-server` selects it via `DATABASE_URL`. **docker-compose** + Dockerfile
+> ship for self-host. **Next:** the Vue dashboard, then branch/PR analysis + new-code period.
 
 - Add **Python, JavaScript, TypeScript, Java** grammars + starter rule sets.
 - Cognitive complexity, comment density, **duplication detection**, coverage import
