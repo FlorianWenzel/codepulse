@@ -31,6 +31,7 @@ func run() error {
 		failOn   = flag.String("fail-on", "", "exit non-zero if any finding is at least this severity (BLOCKER|CRITICAL|MAJOR|MINOR|INFO)")
 		covPath  = flag.String("coverage", "", "import a coverage report (LCOV, Go coverprofile, or Cobertura XML)")
 		dupTok   = flag.Int("dup-tokens", 0, "duplication window size in tokens (0 = default 100)")
+		newDays  = flag.Int("new-code-days", 0, "mark findings introduced within N days as new code (requires a git repo)")
 		quiet    = flag.Bool("quiet", false, "suppress the human-readable summary on stderr")
 	)
 	flag.Usage = func() {
@@ -49,7 +50,7 @@ func run() error {
 		excludes = strings.Split(*exclude, ",")
 	}
 
-	rep, err := scan.Scan(scan.Options{Root: root, Excludes: excludes, MinDupTokens: *dupTok})
+	rep, err := scan.Scan(scan.Options{Root: root, Excludes: excludes, MinDupTokens: *dupTok, NewCodeDays: *newDays})
 	if err != nil {
 		return err
 	}
@@ -122,6 +123,9 @@ func printSummary(r domain.Report) {
 		if n := r.Summary.BySeverity[s]; n > 0 {
 			fmt.Fprintf(os.Stderr, "  %-9s %d\n", s, n)
 		}
+	}
+	if r.Summary.NewFindings > 0 {
+		fmt.Fprintf(os.Stderr, "  new code   %d new finding(s)\n", r.Summary.NewFindings)
 	}
 	fmt.Fprintf(os.Stderr, "  duplication %.1f%% (%d lines)\n",
 		r.Summary.DuplicatedLinesDensity, r.Summary.DuplicatedLines)

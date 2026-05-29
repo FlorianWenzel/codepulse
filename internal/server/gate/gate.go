@@ -62,6 +62,9 @@ func Default() Gate {
 			{Metric: "blocker_issues", Op: OpGT, Threshold: 0},
 			{Metric: "duplicated_lines_density", Op: OpGT, Threshold: 3},
 			{Metric: "coverage", Op: OpLT, Threshold: 80},
+			// Clean-as-you-code: nothing new and dangerous on the changed code.
+			{Metric: "new_vulnerabilities", Op: OpGT, Threshold: 0},
+			{Metric: "new_blocker_issues", Op: OpGT, Threshold: 0},
 		},
 	}
 }
@@ -141,6 +144,18 @@ func metricValue(s domain.Summary, metric string) (float64, bool) {
 			return 0, false // no coverage data imported
 		}
 		return s.Coverage, true
+	case "new_findings":
+		return float64(s.NewFindings), true
+	case "new_vulnerabilities":
+		return float64(s.NewByType[domain.TypeVulnerability]), true
+	case "new_bugs":
+		return float64(s.NewByType[domain.TypeBug]), true
+	case "new_code_smells":
+		return float64(s.NewByType[domain.TypeCodeSmell]), true
+	case "new_blocker_issues":
+		return float64(s.NewBySeverity[domain.SevBlocker]), true
+	case "new_critical_issues":
+		return float64(s.NewBySeverity[domain.SevCritical]), true
 	case "reliability_rating":
 		return ratingValue(s.Ratings.Reliability), true
 	case "security_rating":

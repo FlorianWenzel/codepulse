@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/FlorianWenzel/codepulse/internal/domain"
 	"github.com/FlorianWenzel/codepulse/internal/dup"
@@ -17,6 +18,7 @@ import (
 	"github.com/FlorianWenzel/codepulse/internal/parse"
 	"github.com/FlorianWenzel/codepulse/internal/ratings"
 	"github.com/FlorianWenzel/codepulse/internal/rules"
+	"github.com/FlorianWenzel/codepulse/internal/scm/git"
 )
 
 // Version is the scanner version stamped into reports.
@@ -34,6 +36,7 @@ type Options struct {
 	Excludes     []string // path substrings to skip
 	MaxFileSize  int64    // skip files larger than this (bytes); 0 = no limit
 	MinDupTokens int      // duplication window size (0 = dup.DefaultMinTokens)
+	NewCodeDays  int      // findings introduced within this many days are "new" (0 = disabled)
 }
 
 // langContext bundles the per-language analysis state, built once and reused.
@@ -48,8 +51,10 @@ func Scan(opts Options) (domain.Report, error) {
 		Tool:    "codepulse-scan",
 		Version: Version,
 		Summary: domain.Summary{
-			BySeverity: map[domain.Severity]int{},
-			ByType:     map[domain.IssueType]int{},
+			BySeverity:    map[domain.Severity]int{},
+			ByType:        map[domain.IssueType]int{},
+			NewBySeverity: map[domain.Severity]int{},
+			NewByType:     map[domain.IssueType]int{},
 		},
 	}
 
@@ -57,6 +62,11 @@ func Scan(opts Options) (domain.Report, error) {
 	if err != nil {
 		return domain.Report{}, err
 	}
+
+	// New-code attribution via git blame (opt-in and only inside a repo).
+	newCode := opts.NewCodeDays > 0 && git.IsRepo(opts.Root)
+	absRoot, _ := filepath.Abs(opts.Root)
+	cutoff := time.Now().AddDate(0, 0, -opts.NewCodeDays)
 
 	contexts := map[lang.Language]*langContext{}
 	langsSeen := map[lang.Language]bool{}
@@ -90,11 +100,27 @@ func Scan(opts Options) (domain.Report, error) {
 		rep.Summary.FilesAnalyzed++
 		dupFiles = append(dupFiles, dup.File{Path: rel, Tokens: dup.Tokenize(root, src, ctx.spec.CommentType)})
 
+		// Blame the file once for new-code attribution.
+		var blame map[int]git.LineInfo
+		if newCode {
+			if abs, err := filepath.Abs(path); err == nil {
+				blame, _ = git.BlameFile(absRoot, abs)
+			}
+		}
+
 		for _, f := range ctx.engine.Run(rel, root, src) {
+			if newCode {
+				attributeNewCode(&f, blame, cutoff)
+			}
 			rep.Findings = append(rep.Findings, f)
 			rep.Summary.BySeverity[f.Severity]++
 			rep.Summary.ByType[f.Type]++
 			rep.Summary.TotalFindings++
+			if f.IsNew {
+				rep.Summary.NewBySeverity[f.Severity]++
+				rep.Summary.NewByType[f.Type]++
+				rep.Summary.NewFindings++
+			}
 		}
 	}
 
@@ -104,6 +130,22 @@ func Scan(opts Options) (domain.Report, error) {
 	rep.Language = joinLangs(langsSeen)
 	sortReport(&rep)
 	return rep, nil
+}
+
+// attributeNewCode tags a finding with its introducing author/date (from git
+// blame at its start line) and whether it falls within the new-code window.
+// Uncommitted or untracked lines are treated as new.
+func attributeNewCode(f *domain.Finding, blame map[int]git.LineInfo, cutoff time.Time) {
+	info, ok := blame[f.Location.StartLine]
+	if !ok || !info.Committed {
+		f.IsNew = true
+		return
+	}
+	f.Author = info.Author
+	f.IntroducedAt = info.Time.UTC().Format(time.RFC3339)
+	if info.Time.After(cutoff) {
+		f.IsNew = true
+	}
 }
 
 // applyDuplication runs clone detection and folds the results into per-file

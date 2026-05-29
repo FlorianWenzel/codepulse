@@ -63,7 +63,11 @@ PR decoration, SCM integrations). Always keep "CodePulse scans CodePulse" green 
 > (assign, comment, transition with sticky false-positive/won't-fix) and **security-hotspot
 > review workflow** (TO_REVIEW → REVIEWED: SAFE/FIXED/ACKNOWLEDGED) are implemented in
 > both stores with HTTP endpoints; httptest + real-Postgres integration tests cover them.
-> **Next:** branch/PR analysis + new-code period (git blame), then SSO/RBAC.
+> **New-code period** ✅ — the scanner blames each finding to its introducing commit
+> (author + date) and flags `isNew` within an N-day window (`-new-code-days`); the
+> report carries `new_*` measures and the gate has clean-as-you-code conditions
+> (`new_vulnerabilities`, `new_blocker_issues`). e2e tested against a real throwaway
+> git repo (old vs new commits). **Next:** server branch/PR dimension + PR decoration, then SSO/RBAC.
 
 - Add **Python, JavaScript, TypeScript, Java** grammars + starter rule sets.
 - Cognitive complexity, comment density, **duplication detection**, coverage import

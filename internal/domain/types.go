@@ -50,6 +50,11 @@ type Finding struct {
 	Type      IssueType `json:"type"`
 	Location  Location  `json:"location"`
 	EffortMin int       `json:"effortMin"`
+	// New-code attribution (populated when scanning a git repo with a
+	// new-code period configured).
+	Author       string `json:"author,omitempty"`
+	IntroducedAt string `json:"introducedAt,omitempty"` // RFC3339, or "" if uncommitted/unknown
+	IsNew        bool   `json:"isNew,omitempty"`
 }
 
 // FileMetrics holds the size/complexity measures computed for one file.
@@ -91,6 +96,10 @@ type Summary struct {
 	CoveredLines           int               `json:"coveredLines,omitempty"`
 	Coverage               float64           `json:"coverage,omitempty"`
 	Ratings                Ratings           `json:"ratings"`
+	// New-code measures (issues introduced within the new-code period).
+	NewFindings  int               `json:"newFindings"`
+	NewBySeverity map[Severity]int  `json:"newBySeverity,omitempty"`
+	NewByType     map[IssueType]int `json:"newByType,omitempty"`
 }
 
 // Rating is a SonarQube-style A–E grade (A is best).
