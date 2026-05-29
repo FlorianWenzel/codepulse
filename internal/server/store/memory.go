@@ -185,6 +185,17 @@ func (m *Memory) LatestAnalysis(projectKey, branch string) (Analysis, bool) {
 	return list[len(list)-1], true
 }
 
+func (m *Memory) AnalysisHistory(projectKey, branch string, limit int) []Analysis {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	list := m.analyses[bkey(projectKey, branchOrMain(branch))]
+	out := append([]Analysis(nil), list...)
+	if limit > 0 && len(out) > limit {
+		out = out[len(out)-limit:]
+	}
+	return out
+}
+
 func (m *Memory) Issues(projectKey, branch string, openOnly bool) []Issue {
 	m.mu.Lock()
 	defer m.mu.Unlock()

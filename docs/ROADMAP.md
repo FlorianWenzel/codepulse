@@ -92,7 +92,7 @@ metric domains, ratings, and a working clean-as-you-code gate.
 - **PR decoration & status checks** for GitHub / GitLab / Bitbucket; webhooks.
 - **Incremental analysis** in the scanner (only changed files; merge with last snapshot).
 - Issue workflow: assign, comment, false-positive/won't-fix stickiness, changelog UI.
-- Activity/trends charts; security hotspots review workflow.
+- Activity/trends charts ✅ (`/measures/history` + dashboard sparkline); security hotspots review workflow ✅ (backend + dashboard panel).
 - Semgrep-rule interop investigation.
 
 **Exit:** a team can adopt CodePulse on a legacy repo, gate PRs on new code only, and triage.

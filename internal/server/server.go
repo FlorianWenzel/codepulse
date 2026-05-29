@@ -70,6 +70,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/v1/hotspots", s.listHotspots)
 	s.mux.HandleFunc("POST /api/v1/hotspots/resolve", s.resolveHotspot)
 	s.mux.HandleFunc("GET /api/v1/measures", s.measures)
+	s.mux.HandleFunc("GET /api/v1/measures/history", s.measuresHistory)
 	s.mux.HandleFunc("GET /api/v1/quality-gates/status", s.gateStatus)
 }
 
@@ -384,6 +385,54 @@ func (s *Server) measures(w http.ResponseWriter, r *http.Request) {
 		"summary":    a.Summary,
 		"metrics":    a.Metrics,
 	})
+}
+
+// summaryMetric extracts a named scalar metric from a summary (for trends).
+func summaryMetric(s domain.Summary, metric string) float64 {
+	switch metric {
+	case "ncloc":
+		return float64(s.TotalNcloc)
+	case "coverage":
+		return s.Coverage
+	case "duplicated_lines_density":
+		return s.DuplicatedLinesDensity
+	case "vulnerabilities":
+		return float64(s.ByType[domain.TypeVulnerability])
+	case "bugs":
+		return float64(s.ByType[domain.TypeBug])
+	case "code_smells":
+		return float64(s.ByType[domain.TypeCodeSmell])
+	case "new_findings":
+		return float64(s.NewFindings)
+	default: // total_findings
+		return float64(s.TotalFindings)
+	}
+}
+
+// measuresHistory returns a metric's value across a branch's analyses (trend).
+func (s *Server) measuresHistory(w http.ResponseWriter, r *http.Request) {
+	key := r.URL.Query().Get("project")
+	if !s.guard(w, r, canRead(key)) {
+		return
+	}
+	if _, ok := s.store.GetProject(key); !ok {
+		httpError(w, http.StatusNotFound, "project not found")
+		return
+	}
+	metric := r.URL.Query().Get("metric")
+	if metric == "" {
+		metric = "total_findings"
+	}
+	type point struct {
+		AnalysisID string    `json:"analysisId"`
+		CreatedAt  time.Time `json:"createdAt"`
+		Value      float64   `json:"value"`
+	}
+	var points []point
+	for _, a := range s.store.AnalysisHistory(key, branchOf(r), 0) {
+		points = append(points, point{AnalysisID: a.ID, CreatedAt: a.CreatedAt, Value: summaryMetric(a.Summary, metric)})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"metric": metric, "points": points})
 }
 
 func (s *Server) gateStatus(w http.ResponseWriter, r *http.Request) {

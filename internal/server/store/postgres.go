@@ -247,6 +247,32 @@ func scanIssue(row pgx.Row) (Issue, error) {
 	return is, nil
 }
 
+func (p *Postgres) AnalysisHistory(projectKey, branch string, limit int) []Analysis {
+	q := `SELECT id, project_key, branch, created_at, summary, metrics, gate
+	      FROM analysis WHERE project_key=$1 AND branch=$2 ORDER BY created_at ASC, id ASC`
+	rows, err := p.pool.Query(context.Background(), q, projectKey, branchOr(branch))
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+	var out []Analysis
+	for rows.Next() {
+		var a Analysis
+		var summaryJSON, metricsJSON, gateJSON []byte
+		if err := rows.Scan(&a.ID, &a.ProjectKey, &a.Branch, &a.CreatedAt, &summaryJSON, &metricsJSON, &gateJSON); err != nil {
+			continue
+		}
+		_ = json.Unmarshal(summaryJSON, &a.Summary)
+		_ = json.Unmarshal(metricsJSON, &a.Metrics)
+		_ = json.Unmarshal(gateJSON, &a.Gate)
+		out = append(out, a)
+	}
+	if limit > 0 && len(out) > limit {
+		out = out[len(out)-limit:]
+	}
+	return out
+}
+
 func (p *Postgres) Issues(projectKey, branch string, openOnly bool) []Issue {
 	q := `SELECT ` + issueCols + ` FROM issue WHERE project_key=$1 AND branch=$2`
 	if openOnly {

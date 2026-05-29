@@ -158,6 +158,8 @@ type Store interface {
 	// findings against that branch's tracked issues and hotspots.
 	SaveAnalysis(a Analysis, findings []domain.Finding) (Analysis, error)
 	LatestAnalysis(projectKey, branch string) (Analysis, bool)
+	// AnalysisHistory returns a branch's analyses oldest-first (for trends).
+	AnalysisHistory(projectKey, branch string, limit int) []Analysis
 
 	Issues(projectKey, branch string, openOnly bool) []Issue
 	// NewIssues returns issues on branch whose identity is absent from base

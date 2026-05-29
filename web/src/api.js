@@ -30,6 +30,8 @@ export const api = {
   newIssues: (key, base = 'main', branch = 'main') =>
     request(`/issues/new?project=${q(key)}&branch=${q(branch)}&base=${q(base)}`),
   measures: (key) => request(`/measures?project=${q(key)}`),
+  measuresHistory: (key, metric = 'total_findings', branch = 'main') =>
+    request(`/measures/history?project=${q(key)}&branch=${q(branch)}&metric=${q(metric)}`),
   gateStatus: (key) => request(`/quality-gates/status?project=${q(key)}`),
   hotspots: (key, status = '') => request(`/hotspots?project=${q(key)}&status=${q(status)}`),
 

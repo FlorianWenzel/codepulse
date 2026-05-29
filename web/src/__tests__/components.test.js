@@ -4,6 +4,8 @@ import GateBadge from '../components/GateBadge.vue'
 import MeasuresPanel from '../components/MeasuresPanel.vue'
 import MeasuresTable from '../components/MeasuresTable.vue'
 import IssuesTable from '../components/IssuesTable.vue'
+import HotspotsTable from '../components/HotspotsTable.vue'
+import TrendSparkline from '../components/TrendSparkline.vue'
 
 describe('GateBadge', () => {
   it('shows Passed for OK', () => {
@@ -80,5 +82,26 @@ describe('IssuesTable', () => {
     expect(ev[0][0]).toEqual({ key: 'k1', transition: 'falsepositive' })
     await w.get('[data-test=resolve-btn]').trigger('click')
     expect(w.emitted('transition')[1][0]).toEqual({ key: 'k1', transition: 'resolve' })
+  })
+})
+
+describe('HotspotsTable', () => {
+  it('renders rows and emits resolve on Mark safe', async () => {
+    const hotspots = [{ key: 'h1', ruleId: 'go:exec-command', message: 'exec', file: 'a.go', line: 9, status: 'TO_REVIEW' }]
+    const w = mount(HotspotsTable, { props: { hotspots } })
+    expect(w.findAll('[data-test=hotspot-row]')).toHaveLength(1)
+    await w.get('[data-test=safe-btn]').trigger('click')
+    expect(w.emitted('resolve')[0][0]).toEqual({ key: 'h1', resolution: 'SAFE' })
+  })
+  it('shows empty state', () => {
+    expect(mount(HotspotsTable, { props: { hotspots: [] } }).text()).toContain('No security hotspots')
+  })
+})
+
+describe('TrendSparkline', () => {
+  it('renders one bar per point', () => {
+    const w = mount(TrendSparkline, { props: { points: [{ value: 1 }, { value: 3 }, { value: 2 }], label: 'X' } })
+    expect(w.findAll('[data-test=trend-bar]')).toHaveLength(3)
+    expect(w.text()).toContain('2') // current (last) value
   })
 })

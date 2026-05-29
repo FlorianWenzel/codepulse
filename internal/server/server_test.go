@@ -303,6 +303,38 @@ func TestNotificationWebhook(t *testing.T) {
 	}
 }
 
+func TestMeasuresHistory(t *testing.T) {
+	ts := httptest.NewServer(server.New(store.NewMemory()))
+	defer ts.Close()
+	mustPost(t, ts.URL+"/api/v1/projects", map[string]string{"key": "demo"}, http.StatusCreated)
+
+	rep, _ := scan.Scan(scan.Options{Root: "../../testdata/gofixture"})
+	var ignore map[string]any
+	for i := 0; i < 3; i++ {
+		postJSON(t, ts.URL+"/api/v1/analyses?project=demo", rep, http.StatusCreated, &ignore)
+	}
+
+	var hist struct {
+		Metric string `json:"metric"`
+		Points []struct {
+			AnalysisID string  `json:"analysisId"`
+			Value      float64 `json:"value"`
+		} `json:"points"`
+	}
+	getJSON(t, ts.URL+"/api/v1/measures/history?project=demo&metric=total_findings", http.StatusOK, &hist)
+	if hist.Metric != "total_findings" {
+		t.Errorf("metric = %q", hist.Metric)
+	}
+	if len(hist.Points) != 3 {
+		t.Fatalf("history points = %d, want 3", len(hist.Points))
+	}
+	for _, p := range hist.Points {
+		if p.Value != 4 {
+			t.Errorf("point value = %v, want 4 (gofixture findings)", p.Value)
+		}
+	}
+}
+
 func TestIngestUnknownProject(t *testing.T) {
 	ts := httptest.NewServer(server.New(store.NewMemory()))
 	defer ts.Close()
