@@ -30,13 +30,16 @@ var remediation = map[string]string{
 	"go:tainted-exec":     "Don't pass untrusted input as the command/args. Use a fixed binary + validated arg slice.",
 	"go:tainted-sql":      "Use parameterized queries with placeholders ($1, ?) and pass values as args; never concatenate input.",
 	"js:eval-usage":       "Remove eval(); parse JSON with JSON.parse or dispatch explicitly.",
-	"ts:eval-usage":       "Remove eval(); parse JSON with JSON.parse or dispatch explicitly.",
-	"js:inner-html":       "Use textContent, or sanitize HTML with a vetted library (e.g. DOMPurify) before assignment.",
-	"ts:inner-html":       "Use textContent, or sanitize HTML with a vetted library (e.g. DOMPurify) before assignment.",
-	"js:document-write":   "Build DOM nodes or set textContent; if HTML is required, sanitize it first.",
-	"ts:document-write":   "Build DOM nodes or set textContent; if HTML is required, sanitize it first.",
-	"java:process-exec":   "Use ProcessBuilder with an argument list and no shell; validate any input-derived arguments.",
-	"java:catch-generic":  "Catch the narrowest exception types you can handle; rethrow or wrap the rest.",
+	"js:tainted-eval":     "Never eval request data. Parse/validate it, or dispatch on an allow-list.",
+	"ts:tainted-eval":     "Never eval request data. Parse/validate it, or dispatch on an allow-list.",
+
+	"ts:eval-usage":      "Remove eval(); parse JSON with JSON.parse or dispatch explicitly.",
+	"js:inner-html":      "Use textContent, or sanitize HTML with a vetted library (e.g. DOMPurify) before assignment.",
+	"ts:inner-html":      "Use textContent, or sanitize HTML with a vetted library (e.g. DOMPurify) before assignment.",
+	"js:document-write":  "Build DOM nodes or set textContent; if HTML is required, sanitize it first.",
+	"ts:document-write":  "Build DOM nodes or set textContent; if HTML is required, sanitize it first.",
+	"java:process-exec":  "Use ProcessBuilder with an argument list and no shell; validate any input-derived arguments.",
+	"java:catch-generic": "Catch the narrowest exception types you can handle; rethrow or wrap the rest.",
 }
 
 // ruleTaxonomy maps rule id -> taxonomy. Security rules carry CWE/OWASP; others
@@ -64,6 +67,8 @@ var ruleTaxonomy = map[string]Taxonomy{
 	"ts:inner-html":         {Description: "Assigning untrusted data to innerHTML enables DOM-based XSS.", CWE: []string{"CWE-79"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "xss"}},
 	"js:child-process-exec": {Description: "child_process exec runs a shell; untrusted input enables command injection.", CWE: []string{"CWE-78"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "command-injection"}},
 	"ts:child-process-exec": {Description: "child_process exec runs a shell; untrusted input enables command injection.", CWE: []string{"CWE-78"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "command-injection"}},
+	"js:tainted-eval":       {Description: "Dataflow: request data (req.*/request.*) reaches eval(); arbitrary code execution.", CWE: []string{"CWE-95"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "injection", "taint"}},
+	"ts:tainted-eval":       {Description: "Dataflow: request data (req.*/request.*) reaches eval(); arbitrary code execution.", CWE: []string{"CWE-95"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "injection", "taint"}},
 	"js:loose-equality":     {Description: "== / != perform type coercion with surprising results; prefer === / !==.", Tags: []string{"pitfall"}},
 	"ts:loose-equality":     {Description: "== / != perform type coercion with surprising results; prefer === / !==.", Tags: []string{"pitfall"}},
 	"js:document-write":     {Description: "document.write with untrusted data enables DOM XSS (and blocks the parser).", CWE: []string{"CWE-79"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "xss"}},

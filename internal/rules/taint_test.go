@@ -86,3 +86,22 @@ func TestPyTaintSQL(t *testing.T) {
 		t.Errorf("parameterized py sql: fired %d, want 0", got)
 	}
 }
+
+func TestJSTaintEval(t *testing.T) {
+	vuln := "function h(req) { const id = req.query.id; eval(id); }\n"
+	if got := runRulesSrc(t, lang.JavaScript, vuln)["js:tainted-eval"]; got != 1 {
+		t.Errorf("tainted js eval (propagated): fired %d, want 1", got)
+	}
+	direct := "function h(req) { eval(req.body.code); }\n"
+	if got := runRulesSrc(t, lang.JavaScript, direct)["js:tainted-eval"]; got != 1 {
+		t.Errorf("tainted js eval (direct): fired %d, want 1", got)
+	}
+	clean := "function h(req) { eval('1 + 1'); }\n"
+	if got := runRulesSrc(t, lang.JavaScript, clean)["js:tainted-eval"]; got != 0 {
+		t.Errorf("clean js eval: fired %d, want 0", got)
+	}
+	ts := "function h(req: any) { const x = req.params.q; eval(x); }\n"
+	if got := runRulesSrc(t, lang.TypeScript, ts)["ts:tainted-eval"]; got != 1 {
+		t.Errorf("tainted ts eval: fired %d, want 1", got)
+	}
+}
