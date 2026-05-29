@@ -93,4 +93,35 @@ func TestPostgresStoreIntegration(t *testing.T) {
 	if fixed != 1 {
 		t.Errorf("fixed issues = %d, want 1", fixed)
 	}
+
+	// --- workflow: false-positive is sticky across re-ingest ---
+	smellKey := open[0].Key
+	if _, err := st.TransitionIssue("demo", smellKey, "falsepositive"); err != nil {
+		t.Fatalf("transition: %v", err)
+	}
+	if _, err := st.SaveAnalysis(store.Analysis{ProjectKey: "demo", CreatedAt: time.Now()},
+		[]domain.Finding{smell}); err != nil {
+		t.Fatalf("save 4: %v", err)
+	}
+	if got := len(st.Issues("demo", true)); got != 0 {
+		t.Errorf("after FP + re-ingest, open issues = %d, want 0 (sticky)", got)
+	}
+
+	// --- hotspot review workflow ---
+	hot := domain.Finding{RuleID: "go:exec-command", Type: domain.TypeHotspot, Severity: domain.SevMajor,
+		Message: "exec", Location: domain.Location{File: "c.go", StartLine: 9}}
+	if _, err := st.SaveAnalysis(store.Analysis{ProjectKey: "demo", CreatedAt: time.Now()},
+		[]domain.Finding{smell, hot}); err != nil {
+		t.Fatalf("save 5: %v", err)
+	}
+	if got := len(st.Hotspots("demo", store.HotspotToReview)); got != 1 {
+		t.Fatalf("hotspots to review = %d, want 1", got)
+	}
+	hk := st.Hotspots("demo", "")[0].Key
+	if _, err := st.ResolveHotspot("demo", hk, store.HotspotSafe); err != nil {
+		t.Fatalf("resolve hotspot: %v", err)
+	}
+	if got := len(st.Hotspots("demo", store.HotspotToReview)); got != 0 {
+		t.Errorf("hotspots to review after resolve = %d, want 0", got)
+	}
 }

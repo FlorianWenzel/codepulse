@@ -1,8 +1,9 @@
 // Package store defines the server's persistence model and an interface with
-// pluggable backends (in-memory now; Postgres later).
+// pluggable backends (in-memory and Postgres).
 package store
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/FlorianWenzel/codepulse/internal/domain"
@@ -26,6 +27,13 @@ type Analysis struct {
 	Gate       gate.Result          `json:"gate"`
 }
 
+// Comment is a note on an issue.
+type Comment struct {
+	Author string    `json:"author"`
+	Text   string    `json:"text"`
+	At     time.Time `json:"at"`
+}
+
 // Issue is a logical problem tracked across analyses.
 type Issue struct {
 	Key             string           `json:"key"` // stable identity across analyses
@@ -36,19 +44,85 @@ type Issue struct {
 	Message         string           `json:"message"`
 	File            string           `json:"file"`
 	Line            int              `json:"line"`
-	Status          string           `json:"status"`     // OPEN | CLOSED
-	Resolution      string           `json:"resolution"` // "" | FIXED
+	Status          string           `json:"status"`
+	Resolution      string           `json:"resolution"`
+	Assignee        string           `json:"assignee,omitempty"`
+	Comments        []Comment        `json:"comments,omitempty"`
 	FirstAnalysisID string           `json:"firstAnalysisId"`
 	LastAnalysisID  string           `json:"lastAnalysisId"`
 }
 
-// Issue statuses.
-const (
-	StatusOpen   = "OPEN"
-	StatusClosed = "CLOSED"
+// Hotspot is a security-sensitive location requiring human review.
+type Hotspot struct {
+	Key            string `json:"key"`
+	ProjectKey     string `json:"projectKey"`
+	RuleID         string `json:"ruleId"`
+	Message        string `json:"message"`
+	File           string `json:"file"`
+	Line           int    `json:"line"`
+	Status         string `json:"status"`     // TO_REVIEW | REVIEWED
+	Resolution     string `json:"resolution"` // "" | SAFE | FIXED | ACKNOWLEDGED
+	LastAnalysisID string `json:"lastAnalysisId"`
+}
 
-	ResolutionFixed = "FIXED"
+// Issue statuses and resolutions.
+const (
+	StatusOpen      = "OPEN"
+	StatusConfirmed = "CONFIRMED"
+	StatusReopened  = "REOPENED"
+	StatusClosed    = "CLOSED"
+
+	ResolutionFixed         = "FIXED"
+	ResolutionFalsePositive = "FALSE_POSITIVE"
+	ResolutionWontFix       = "WONT_FIX"
 )
+
+// Hotspot statuses and resolutions.
+const (
+	HotspotToReview = "TO_REVIEW"
+	HotspotReviewed = "REVIEWED"
+
+	HotspotSafe         = "SAFE"
+	HotspotFixed        = "FIXED"
+	HotspotAcknowledged = "ACKNOWLEDGED"
+)
+
+// isOpenStatus reports whether a status counts as currently open (i.e. should
+// be re-detected and can be auto-closed when it disappears).
+func isOpenStatus(s string) bool {
+	return s == StatusOpen || s == StatusConfirmed || s == StatusReopened
+}
+
+// stickyResolution reports whether a resolution should survive re-detection
+// (manual triage decisions), preventing the issue from reopening.
+func stickyResolution(r string) bool {
+	return r == ResolutionFalsePositive || r == ResolutionWontFix
+}
+
+// applyTransition mutates an issue per a workflow transition, returning an
+// error for invalid transitions.
+func applyTransition(is *Issue, transition string) error {
+	switch transition {
+	case "confirm":
+		is.Status, is.Resolution = StatusConfirmed, ""
+	case "reopen":
+		is.Status, is.Resolution = StatusReopened, ""
+	case "resolve":
+		is.Status, is.Resolution = StatusClosed, ResolutionFixed
+	case "falsepositive":
+		is.Status, is.Resolution = StatusClosed, ResolutionFalsePositive
+	case "wontfix":
+		is.Status, is.Resolution = StatusClosed, ResolutionWontFix
+	default:
+		return fmt.Errorf("unknown transition %q", transition)
+	}
+	return nil
+}
+
+// validHotspotResolution reports whether r is an accepted hotspot resolution.
+func validHotspotResolution(r string) bool {
+	return r == HotspotSafe || r == HotspotFixed || r == HotspotAcknowledged
+}
 
 // Store is the server's persistence interface.
 type Store interface {
@@ -57,12 +131,15 @@ type Store interface {
 	ListProjects() []Project
 
 	// SaveAnalysis persists an analysis and reconciles its findings against
-	// the project's tracked issues (carry-over / new / fixed). It assigns and
-	// returns the analysis with its ID populated.
+	// the project's tracked issues and hotspots (carry-over / new / fixed).
 	SaveAnalysis(a Analysis, findings []domain.Finding) (Analysis, error)
 	LatestAnalysis(projectKey string) (Analysis, bool)
 
-	// Issues returns the project's tracked issues; openOnly filters to those
-	// not yet resolved.
 	Issues(projectKey string, openOnly bool) []Issue
+	TransitionIssue(projectKey, key, transition string) (Issue, error)
+	AssignIssue(projectKey, key, assignee string) (Issue, error)
+	CommentIssue(projectKey, key, author, text string, at time.Time) (Issue, error)
+
+	Hotspots(projectKey, status string) []Hotspot
+	ResolveHotspot(projectKey, key, resolution string) (Hotspot, error)
 }

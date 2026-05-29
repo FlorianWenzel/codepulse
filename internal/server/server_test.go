@@ -86,6 +86,78 @@ func TestServerEndToEnd(t *testing.T) {
 	}
 }
 
+// TestIssueAndHotspotWorkflow covers triage: transition (sticky false-positive),
+// assign, comment, and the hotspot review workflow.
+func TestIssueAndHotspotWorkflow(t *testing.T) {
+	ts := httptest.NewServer(server.New(store.NewMemory()))
+	defer ts.Close()
+
+	mustPost(t, ts.URL+"/api/v1/projects", map[string]string{"key": "demo", "name": "Demo"}, http.StatusCreated)
+
+	// jsfixture: 5 findings = 4 issues + 1 hotspot (child-process exec)
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/jsfixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	var ing struct {
+		AnalysisID string `json:"analysisId"`
+	}
+	postJSON(t, ts.URL+"/api/v1/analyses?project=demo", rep, http.StatusCreated, &ing)
+
+	var issues []store.Issue
+	getJSON(t, ts.URL+"/api/v1/issues?project=demo&open=true", http.StatusOK, &issues)
+	if len(issues) != 4 {
+		t.Fatalf("open issues = %d, want 4", len(issues))
+	}
+	var hotspots []store.Hotspot
+	getJSON(t, ts.URL+"/api/v1/hotspots?project=demo&status=TO_REVIEW", http.StatusOK, &hotspots)
+	if len(hotspots) != 1 {
+		t.Fatalf("hotspots to review = %d, want 1", len(hotspots))
+	}
+
+	// mark an issue as false positive
+	key := issues[0].Key
+	var updated store.Issue
+	postJSON(t, ts.URL+"/api/v1/issues/transition",
+		map[string]string{"project": "demo", "key": key, "transition": "falsepositive"}, http.StatusOK, &updated)
+	if updated.Status != store.StatusClosed || updated.Resolution != store.ResolutionFalsePositive {
+		t.Errorf("after FP transition: status=%s resolution=%s", updated.Status, updated.Resolution)
+	}
+
+	// assign + comment
+	postJSON(t, ts.URL+"/api/v1/issues/assign",
+		map[string]string{"project": "demo", "key": key, "assignee": "alice"}, http.StatusOK, &updated)
+	if updated.Assignee != "alice" {
+		t.Errorf("assignee = %q, want alice", updated.Assignee)
+	}
+	postJSON(t, ts.URL+"/api/v1/issues/comment",
+		map[string]string{"project": "demo", "key": key, "author": "bob", "text": "reviewed, not exploitable"}, http.StatusOK, &updated)
+	if len(updated.Comments) != 1 || updated.Comments[0].Author != "bob" {
+		t.Errorf("comment not recorded: %+v", updated.Comments)
+	}
+
+	// re-ingest: false positive is sticky, so open issues drop to 3
+	postJSON(t, ts.URL+"/api/v1/analyses?project=demo", rep, http.StatusCreated, &ing)
+	var issues2 []store.Issue
+	getJSON(t, ts.URL+"/api/v1/issues?project=demo&open=true", http.StatusOK, &issues2)
+	if len(issues2) != 3 {
+		t.Errorf("after re-ingest, open issues = %d, want 3 (FP stayed closed)", len(issues2))
+	}
+
+	// review the hotspot
+	var hres store.Hotspot
+	postJSON(t, ts.URL+"/api/v1/hotspots/resolve",
+		map[string]string{"project": "demo", "key": hotspots[0].Key, "resolution": "SAFE"}, http.StatusOK, &hres)
+	if hres.Status != store.HotspotReviewed || hres.Resolution != store.HotspotSafe {
+		t.Errorf("hotspot after resolve: status=%s resolution=%s", hres.Status, hres.Resolution)
+	}
+	var hs2 []store.Hotspot
+	getJSON(t, ts.URL+"/api/v1/hotspots?project=demo&status=TO_REVIEW", http.StatusOK, &hs2)
+	if len(hs2) != 0 {
+		t.Errorf("hotspots to review after resolve = %d, want 0", len(hs2))
+	}
+}
+
 func TestIngestUnknownProject(t *testing.T) {
 	ts := httptest.NewServer(server.New(store.NewMemory()))
 	defer ts.Close()

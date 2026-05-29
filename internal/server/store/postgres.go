@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -39,8 +40,22 @@ CREATE TABLE IF NOT EXISTS issue (
     line              INT  NOT NULL,
     status            TEXT NOT NULL,
     resolution        TEXT NOT NULL DEFAULT '',
+    assignee          TEXT NOT NULL DEFAULT '',
+    comments          JSONB NOT NULL DEFAULT '[]',
     first_analysis_id TEXT NOT NULL,
     last_analysis_id  TEXT NOT NULL,
+    PRIMARY KEY (project_key, key)
+);
+CREATE TABLE IF NOT EXISTS hotspot (
+    project_key      TEXT NOT NULL REFERENCES project(key),
+    key              TEXT NOT NULL,
+    rule_id          TEXT NOT NULL,
+    message          TEXT NOT NULL,
+    file             TEXT NOT NULL,
+    line             INT  NOT NULL,
+    status           TEXT NOT NULL,
+    resolution       TEXT NOT NULL DEFAULT '',
+    last_analysis_id TEXT NOT NULL,
     PRIMARY KEY (project_key, key)
 );
 `
@@ -131,12 +146,23 @@ func (p *Postgres) SaveAnalysis(a Analysis, findings []domain.Finding) (Analysis
 		return Analysis{}, err
 	}
 
-	seen := make([]string, 0, len(findings))
+	seenIssues := make([]string, 0, len(findings))
+	seenHotspots := make([]string, 0)
 	for _, f := range findings {
-		k := issueKey(f)
-		seen = append(seen, k)
-		// Upsert: carry over an existing issue (reopening it if it was closed),
-		// or insert a new OPEN issue. first_analysis_id is never overwritten.
+		k := findingKey(f)
+		if f.Type == domain.TypeHotspot {
+			seenHotspots = append(seenHotspots, k)
+			if _, err := tx.Exec(ctx, `
+INSERT INTO hotspot(project_key, key, rule_id, message, file, line, status, resolution, last_analysis_id)
+VALUES ($1,$2,$3,$4,$5,$6,'TO_REVIEW','',$7)
+ON CONFLICT (project_key, key) DO UPDATE SET last_analysis_id=excluded.last_analysis_id, line=excluded.line`,
+				a.ProjectKey, k, f.RuleID, f.Message, f.Location.File, f.Location.StartLine, a.ID); err != nil {
+				return Analysis{}, err
+			}
+			continue
+		}
+
+		seenIssues = append(seenIssues, k)
 		if _, err := tx.Exec(ctx, `
 INSERT INTO issue(project_key, key, rule_id, type, severity, message, file, line, status, resolution, first_analysis_id, last_analysis_id)
 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'OPEN','',$9,$9)
@@ -144,19 +170,19 @@ ON CONFLICT (project_key, key) DO UPDATE SET
     last_analysis_id = excluded.last_analysis_id,
     line             = excluded.line,
     severity         = excluded.severity,
-    status           = CASE WHEN issue.status = 'CLOSED' THEN 'OPEN' ELSE issue.status END,
-    resolution       = CASE WHEN issue.status = 'CLOSED' THEN '' ELSE issue.resolution END`,
+    status           = CASE WHEN issue.status='CLOSED' AND issue.resolution='FIXED' THEN 'REOPENED' ELSE issue.status END,
+    resolution       = CASE WHEN issue.status='CLOSED' AND issue.resolution='FIXED' THEN ''         ELSE issue.resolution END`,
 			a.ProjectKey, k, f.RuleID, string(f.Type), string(f.Severity), f.Message,
 			f.Location.File, f.Location.StartLine, a.ID); err != nil {
 			return Analysis{}, err
 		}
 	}
 
-	// Issues open last time but absent now are fixed.
+	// Open issues absent this run are fixed; manual resolutions are left alone.
 	if _, err := tx.Exec(ctx, `
 UPDATE issue SET status='CLOSED', resolution='FIXED', last_analysis_id=$2
-WHERE project_key=$1 AND status='OPEN' AND key <> ALL($3)`,
-		a.ProjectKey, a.ID, seen); err != nil {
+WHERE project_key=$1 AND status IN ('OPEN','CONFIRMED','REOPENED') AND key <> ALL($3)`,
+		a.ProjectKey, a.ID, seenIssues); err != nil {
 		return Analysis{}, err
 	}
 
@@ -183,10 +209,10 @@ FROM analysis WHERE project_key=$1 ORDER BY created_at DESC, id DESC LIMIT 1`, p
 }
 
 func (p *Postgres) Issues(projectKey string, openOnly bool) []Issue {
-	q := `SELECT project_key, key, rule_id, type, severity, message, file, line, status, resolution, first_analysis_id, last_analysis_id
+	q := `SELECT project_key, key, rule_id, type, severity, message, file, line, status, resolution, assignee, comments, first_analysis_id, last_analysis_id
           FROM issue WHERE project_key=$1`
 	if openOnly {
-		q += ` AND status='OPEN'`
+		q += ` AND status IN ('OPEN','CONFIRMED','REOPENED')`
 	}
 	q += ` ORDER BY file, line, rule_id`
 	rows, err := p.pool.Query(context.Background(), q, projectKey)
@@ -196,22 +222,127 @@ func (p *Postgres) Issues(projectKey string, openOnly bool) []Issue {
 	defer rows.Close()
 	var out []Issue
 	for rows.Next() {
-		var is Issue
-		var typ, sev string
-		if err := rows.Scan(&is.ProjectKey, &is.Key, &is.RuleID, &typ, &sev, &is.Message,
-			&is.File, &is.Line, &is.Status, &is.Resolution, &is.FirstAnalysisID, &is.LastAnalysisID); err != nil {
-			continue
+		is, err := scanIssue(rows)
+		if err == nil {
+			out = append(out, is)
 		}
-		is.Type = domain.IssueType(typ)
-		is.Severity = domain.Severity(sev)
-		out = append(out, is)
 	}
 	return out
 }
 
-// compile-time check that both stores satisfy the interface.
+// scanIssue scans one issue row (shared by Issues and getIssue).
+func scanIssue(row pgx.Row) (Issue, error) {
+	var is Issue
+	var typ, sev string
+	var commentsJSON []byte
+	if err := row.Scan(&is.ProjectKey, &is.Key, &is.RuleID, &typ, &sev, &is.Message,
+		&is.File, &is.Line, &is.Status, &is.Resolution, &is.Assignee, &commentsJSON,
+		&is.FirstAnalysisID, &is.LastAnalysisID); err != nil {
+		return Issue{}, err
+	}
+	is.Type = domain.IssueType(typ)
+	is.Severity = domain.Severity(sev)
+	_ = json.Unmarshal(commentsJSON, &is.Comments)
+	return is, nil
+}
+
+func (p *Postgres) getIssue(projectKey, key string) (Issue, error) {
+	row := p.pool.QueryRow(context.Background(), `
+SELECT project_key, key, rule_id, type, severity, message, file, line, status, resolution, assignee, comments, first_analysis_id, last_analysis_id
+FROM issue WHERE project_key=$1 AND key=$2`, projectKey, key)
+	is, err := scanIssue(row)
+	if err != nil {
+		return Issue{}, fmt.Errorf("issue not found")
+	}
+	return is, nil
+}
+
+func (p *Postgres) TransitionIssue(projectKey, key, transition string) (Issue, error) {
+	is, err := p.getIssue(projectKey, key)
+	if err != nil {
+		return Issue{}, err
+	}
+	if err := applyTransition(&is, transition); err != nil {
+		return Issue{}, err
+	}
+	_, err = p.pool.Exec(context.Background(),
+		`UPDATE issue SET status=$3, resolution=$4 WHERE project_key=$1 AND key=$2`,
+		projectKey, key, is.Status, is.Resolution)
+	return is, err
+}
+
+func (p *Postgres) AssignIssue(projectKey, key, assignee string) (Issue, error) {
+	ct, err := p.pool.Exec(context.Background(),
+		`UPDATE issue SET assignee=$3 WHERE project_key=$1 AND key=$2`, projectKey, key, assignee)
+	if err != nil {
+		return Issue{}, err
+	}
+	if ct.RowsAffected() == 0 {
+		return Issue{}, fmt.Errorf("issue not found")
+	}
+	return p.getIssue(projectKey, key)
+}
+
+func (p *Postgres) CommentIssue(projectKey, key, author, text string, at time.Time) (Issue, error) {
+	is, err := p.getIssue(projectKey, key)
+	if err != nil {
+		return Issue{}, err
+	}
+	is.Comments = append(is.Comments, Comment{Author: author, Text: text, At: at})
+	cj, _ := json.Marshal(is.Comments)
+	_, err = p.pool.Exec(context.Background(),
+		`UPDATE issue SET comments=$3 WHERE project_key=$1 AND key=$2`, projectKey, key, cj)
+	return is, err
+}
+
+func (p *Postgres) Hotspots(projectKey, status string) []Hotspot {
+	q := `SELECT project_key, key, rule_id, message, file, line, status, resolution, last_analysis_id
+          FROM hotspot WHERE project_key=$1`
+	args := []any{projectKey}
+	if status != "" {
+		q += ` AND status=$2`
+		args = append(args, status)
+	}
+	q += ` ORDER BY file, line`
+	rows, err := p.pool.Query(context.Background(), q, args...)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+	var out []Hotspot
+	for rows.Next() {
+		var h Hotspot
+		if err := rows.Scan(&h.ProjectKey, &h.Key, &h.RuleID, &h.Message, &h.File, &h.Line,
+			&h.Status, &h.Resolution, &h.LastAnalysisID); err == nil {
+			out = append(out, h)
+		}
+	}
+	return out
+}
+
+func (p *Postgres) ResolveHotspot(projectKey, key, resolution string) (Hotspot, error) {
+	if !validHotspotResolution(resolution) {
+		return Hotspot{}, fmt.Errorf("invalid hotspot resolution %q", resolution)
+	}
+	ct, err := p.pool.Exec(context.Background(),
+		`UPDATE hotspot SET status='REVIEWED', resolution=$3 WHERE project_key=$1 AND key=$2`,
+		projectKey, key, resolution)
+	if err != nil {
+		return Hotspot{}, err
+	}
+	if ct.RowsAffected() == 0 {
+		return Hotspot{}, fmt.Errorf("hotspot not found")
+	}
+	var h Hotspot
+	err = p.pool.QueryRow(context.Background(), `
+SELECT project_key, key, rule_id, message, file, line, status, resolution, last_analysis_id
+FROM hotspot WHERE project_key=$1 AND key=$2`, projectKey, key).
+		Scan(&h.ProjectKey, &h.Key, &h.RuleID, &h.Message, &h.File, &h.Line, &h.Status, &h.Resolution, &h.LastAnalysisID)
+	return h, err
+}
+
+// compile-time checks that both stores satisfy the interface.
 var (
 	_ Store = (*Memory)(nil)
 	_ Store = (*Postgres)(nil)
-	_       = pgx.ErrNoRows
 )

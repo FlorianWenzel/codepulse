@@ -35,6 +35,11 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/v1/projects/{key}", s.getProject)
 	s.mux.HandleFunc("POST /api/v1/analyses", s.ingest)
 	s.mux.HandleFunc("GET /api/v1/issues", s.listIssues)
+	s.mux.HandleFunc("POST /api/v1/issues/transition", s.transitionIssue)
+	s.mux.HandleFunc("POST /api/v1/issues/assign", s.assignIssue)
+	s.mux.HandleFunc("POST /api/v1/issues/comment", s.commentIssue)
+	s.mux.HandleFunc("GET /api/v1/hotspots", s.listHotspots)
+	s.mux.HandleFunc("POST /api/v1/hotspots/resolve", s.resolveHotspot)
 	s.mux.HandleFunc("GET /api/v1/measures", s.measures)
 	s.mux.HandleFunc("GET /api/v1/quality-gates/status", s.gateStatus)
 }
@@ -123,6 +128,71 @@ func (s *Server) listIssues(w http.ResponseWriter, r *http.Request) {
 	}
 	openOnly := r.URL.Query().Get("open") == "true"
 	writeJSON(w, http.StatusOK, s.store.Issues(key, openOnly))
+}
+
+func (s *Server) transitionIssue(w http.ResponseWriter, r *http.Request) {
+	var body struct{ Project, Key, Transition string }
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httpError(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	is, err := s.store.TransitionIssue(body.Project, body.Key, body.Transition)
+	if err != nil {
+		httpError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, is)
+}
+
+func (s *Server) assignIssue(w http.ResponseWriter, r *http.Request) {
+	var body struct{ Project, Key, Assignee string }
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httpError(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	is, err := s.store.AssignIssue(body.Project, body.Key, body.Assignee)
+	if err != nil {
+		httpError(w, http.StatusNotFound, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, is)
+}
+
+func (s *Server) commentIssue(w http.ResponseWriter, r *http.Request) {
+	var body struct{ Project, Key, Author, Text string }
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httpError(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	is, err := s.store.CommentIssue(body.Project, body.Key, body.Author, body.Text, s.now())
+	if err != nil {
+		httpError(w, http.StatusNotFound, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, is)
+}
+
+func (s *Server) listHotspots(w http.ResponseWriter, r *http.Request) {
+	key := r.URL.Query().Get("project")
+	if _, ok := s.store.GetProject(key); !ok {
+		httpError(w, http.StatusNotFound, "project not found")
+		return
+	}
+	writeJSON(w, http.StatusOK, s.store.Hotspots(key, r.URL.Query().Get("status")))
+}
+
+func (s *Server) resolveHotspot(w http.ResponseWriter, r *http.Request) {
+	var body struct{ Project, Key, Resolution string }
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		httpError(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	h, err := s.store.ResolveHotspot(body.Project, body.Key, body.Resolution)
+	if err != nil {
+		httpError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, h)
 }
 
 func (s *Server) measures(w http.ResponseWriter, r *http.Request) {
