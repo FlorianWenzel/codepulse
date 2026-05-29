@@ -7,6 +7,10 @@ import { locale, setLocale, availableLocales, t } from './i18n.js'
   <div class="app">
     <header class="topbar">
       <RouterLink to="/" class="brand">CodePulse</RouterLink>
+      <nav class="nav">
+        <RouterLink to="/" class="navlink">Projects</RouterLink>
+        <RouterLink to="/gates" class="navlink">Gates</RouterLink>
+      </nav>
       <div class="controls">
         <label class="sr-only" for="locale">Language</label>
         <select id="locale" :value="locale" @change="setLocale($event.target.value)" aria-label="Language">
@@ -29,6 +33,9 @@ import { locale, setLocale, availableLocales, t } from './i18n.js'
 body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color: var(--fg); background: var(--bg); }
 .topbar { background: var(--bar); padding: 0.8rem 1.5rem; display: flex; align-items: center; justify-content: space-between; }
 .brand { color: #fff; font-weight: 700; font-size: 1.2rem; text-decoration: none; }
+.nav { display: flex; gap: 1rem; margin-left: 1.5rem; flex: 1; }
+.navlink { color: #cfd2ff; font-size: 0.95rem; text-decoration: none; }
+.navlink:hover { color: #fff; }
 .controls { display: flex; gap: 0.5rem; align-items: center; }
 .theme-toggle { background: transparent; border: 1px solid #ffffff55; border-radius: 6px; cursor: pointer; font-size: 1rem; padding: 2px 8px; }
 .content { max-width: 960px; margin: 1.5rem auto; padding: 0 1rem; }

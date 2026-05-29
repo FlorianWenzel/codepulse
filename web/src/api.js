@@ -35,6 +35,11 @@ export const api = {
   gateStatus: (key) => request(`/quality-gates/status?project=${q(key)}`),
   hotspots: (key, status = '') => request(`/hotspots?project=${q(key)}&status=${q(status)}`),
 
+  // Quality gates.
+  listGates: () => request('/quality-gates'),
+  createGate: (rec) => postJSON('/quality-gates', rec),
+  assignGate: (project, gateId) => postJSON(`/projects/${q(project)}/quality-gate`, { gateId }),
+
   // Triage actions.
   transitionIssue: (project, key, transition) => postJSON('/issues/transition', { project, key, transition }),
   assignIssue: (project, key, assignee) => postJSON('/issues/assign', { project, key, assignee }),
