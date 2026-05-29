@@ -121,6 +121,16 @@ func jsLikeRules(spec langspec.Spec) []Rule {
 			Capture:   "flag",
 			Message:   "Remove this alert/confirm/prompt; use proper UI.",
 		},
+		{
+			ID:        p + ":throw-literal",
+			Name:      "Throw an Error, not a literal",
+			Type:      domain.TypeCodeSmell,
+			Severity:  domain.SevMinor,
+			EffortMin: 5,
+			Query:     `(throw_statement [(string) (template_string) (number)]) @flag`,
+			Capture:   "flag",
+			Message:   "Throw an Error object (preserves stack/type), not a string/number literal.",
+		},
 		complexityRule(spec),
 	}
 }

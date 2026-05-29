@@ -95,6 +95,16 @@ func javaRules() []Rule {
 			Capture:   "flag",
 			Message:   "Don't rely on assert for validation; it's off unless -ea is set. Throw explicitly.",
 		},
+		{
+			ID:        "java:thread-sleep",
+			Name:      "Thread.sleep() in application code is a smell",
+			Type:      domain.TypeCodeSmell,
+			Severity:  domain.SevMinor,
+			EffortMin: 10,
+			Query:     `(method_invocation object: (identifier) @o name: (identifier) @m (#eq? @o "Thread") (#eq? @m "sleep")) @flag`,
+			Capture:   "flag",
+			Message:   "Avoid Thread.sleep(); use proper synchronization, schedulers, or awaitility.",
+		},
 		complexityRule(langspec.Java()),
 	}
 }

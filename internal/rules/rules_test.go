@@ -253,6 +253,26 @@ func TestExpandedRules2(t *testing.T) {
 	}
 }
 
+func TestExpandedRules3(t *testing.T) {
+	cases := []struct {
+		l    lang.Language
+		src  string
+		rule string
+	}{
+		{lang.Go, "package p\nimport \"io/ioutil\"\nfunc f() { _, _ = ioutil.ReadFile(\"x\") }\n", "go:ioutil-deprecated"},
+		{lang.JavaScript, "function f() { throw 'boom'; }\n", "js:throw-literal"},
+		{lang.TypeScript, "function f() { throw 'boom'; }\n", "ts:throw-literal"},
+		{lang.Java, "class C { void m() throws Exception { Thread.sleep(100); } }\n", "java:thread-sleep"},
+	}
+	for _, c := range cases {
+		t.Run(c.rule, func(t *testing.T) {
+			if got := runRulesSrc(t, c.l, c.src)[c.rule]; got != 1 {
+				t.Errorf("%s fired %d times, want 1", c.rule, got)
+			}
+		})
+	}
+}
+
 // TestBadQueryFailsLoudly ensures an invalid query is reported at engine
 // construction rather than silently skipped.
 func TestBadQueryFailsLoudly(t *testing.T) {
