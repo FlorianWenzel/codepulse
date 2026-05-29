@@ -141,6 +141,16 @@ func jsLikeRules(spec langspec.Spec) []Rule {
 			Capture:   "flag",
 			Message:   "Avoid `with`; it makes scope ambiguous and is disallowed in strict mode.",
 		},
+		{
+			ID:        p + ":no-new-wrappers",
+			Name:      "Don't use primitive wrapper constructors",
+			Type:      domain.TypeCodeSmell,
+			Severity:  domain.SevMinor,
+			EffortMin: 5,
+			Query:     `(new_expression constructor: (identifier) @c (#match? @c "^(String|Number|Boolean)$")) @flag`,
+			Capture:   "flag",
+			Message:   "new String/Number/Boolean creates objects, not primitives; call them without `new`.",
+		},
 		complexityRule(spec),
 	}
 }

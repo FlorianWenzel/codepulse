@@ -141,13 +141,7 @@ Ordered by leverage.
 ### 1. Rule coverage — *the* priority  *(in progress)*
 - Greatly expand first-party rule sets, focused on **JavaScript/TypeScript, Java, and Go**
   (then Python), growing from a handful toward tens→hundreds of rules per language.
-- **Added so far:** Go (`context-todo`, `error-new-fmt`, `debug-print`, `weak-hash`), JS/TS
-  (`loose-equality`, `var-declaration`, `console-usage`, `inner-html`, `eval`, `debugger`),
-  Java (`system-print`, `catch-generic`, `system-exit`, `empty-catch`, `process-exec`),
-  Python (`yaml-unsafe-load`, `pickle-load`, `os-system`, `bare-except`, …) — each fixture-tested.
-- Every rule ships good/bad fixtures + exact-match tests to keep false positives low.
-- Cover correctness/bug patterns, security, concurrency, resource & error handling, API
-  misuse, performance, and maintainability. Track coverage vs SonarQube's catalogue per language.
+- **Added so far (~80 rules, growing):** security/taint — Go (exec-command, weak-hash, **tainted-exec/tainted-sql** dataflow), Python (eval/exec, yaml/pickle RCE, os-system, **tainted-sql**), JS/TS (eval, inner-html, document-write, child-process-exec), Java (process-exec, catch-generic); correctness — py assert-tuple / mutable-default-arg, js/ts loose-equality, java empty-catch; smells — debug prints, var/with, throw-literal, os/System exit, ioutil/legacy-collection/wrappers/wildcard-import, TODO, high-complexity — each fixture- or inline-tested, with CWE/OWASP + remediation in the taxonomy.
 
 ### 2. Analysis sophistication (semantic + dataflow)  *(started)*
 - **First dataflow rule ✅** — `go:tainted-exec`: intra-procedural taint from a source

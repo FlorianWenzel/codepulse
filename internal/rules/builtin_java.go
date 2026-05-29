@@ -105,6 +105,16 @@ func javaRules() []Rule {
 			Capture:   "flag",
 			Message:   "Avoid Thread.sleep(); use proper synchronization, schedulers, or awaitility.",
 		},
+		{
+			ID:        "java:legacy-collection",
+			Name:      "Legacy synchronized collection",
+			Type:      domain.TypeCodeSmell,
+			Severity:  domain.SevMinor,
+			EffortMin: 10,
+			Query:     `(object_creation_expression type: (type_identifier) @t (#match? @t "^(Vector|Hashtable|Stack)$")) @flag`,
+			Capture:   "flag",
+			Message:   "Prefer ArrayList/ArrayDeque/HashMap (+ explicit synchronization) over Vector/Stack/Hashtable.",
+		},
 		complexityRule(langspec.Java()),
 	}
 }

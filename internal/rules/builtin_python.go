@@ -107,6 +107,16 @@ func pythonRules() []Rule {
 			Capture:   "flag",
 			Message:   "A mutable default ([], {}) is shared across calls; use None and create the value inside.",
 		},
+		{
+			ID:        "py:wildcard-import",
+			Name:      "Wildcard import pollutes the namespace",
+			Type:      domain.TypeCodeSmell,
+			Severity:  domain.SevMinor,
+			EffortMin: 5,
+			Query:     `(import_from_statement (wildcard_import)) @flag`,
+			Capture:   "flag",
+			Message:   "Avoid `from x import *`; import the names you use explicitly.",
+		},
 		pythonTaintSQLRule(),
 		complexityRule(langspec.Python()),
 	}

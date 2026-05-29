@@ -293,6 +293,26 @@ func TestExpandedRules4(t *testing.T) {
 	}
 }
 
+func TestExpandedRules5(t *testing.T) {
+	cases := []struct {
+		l    lang.Language
+		src  string
+		rule string
+	}{
+		{lang.JavaScript, "const s = new String('x');\n", "js:no-new-wrappers"},
+		{lang.TypeScript, "const s = new Number(1);\n", "ts:no-new-wrappers"},
+		{lang.Java, "import java.util.*;\nclass C { Object m() { return new Vector(); } }\n", "java:legacy-collection"},
+		{lang.Python, "from os import *\n", "py:wildcard-import"},
+	}
+	for _, c := range cases {
+		t.Run(c.rule, func(t *testing.T) {
+			if got := runRulesSrc(t, c.l, c.src)[c.rule]; got != 1 {
+				t.Errorf("%s fired %d times, want 1", c.rule, got)
+			}
+		})
+	}
+}
+
 // TestBadQueryFailsLoudly ensures an invalid query is reported at engine
 // construction rather than silently skipped.
 func TestBadQueryFailsLoudly(t *testing.T) {
