@@ -94,6 +94,34 @@ func isHex40(s string) bool {
 	return true
 }
 
+// ChangedFiles returns the set of absolute file paths changed since `ref`
+// (committed diffs vs the working tree, plus untracked files). Used for
+// incremental scans.
+func ChangedFiles(root, ref string) map[string]bool {
+	set := map[string]bool{}
+	topOut, err := exec.Command("git", "-C", root, "rev-parse", "--show-toplevel").Output()
+	if err != nil {
+		return set
+	}
+	top := strings.TrimSpace(string(topOut))
+
+	add := func(args ...string) {
+		out, err := exec.Command("git", append([]string{"-C", root}, args...)...).Output()
+		if err != nil {
+			return
+		}
+		for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+			if line == "" {
+				continue
+			}
+			set[filepath.Join(top, line)] = true
+		}
+	}
+	add("diff", "--name-only", ref)                   // ref → working tree
+	add("ls-files", "--others", "--exclude-standard") // untracked
+	return set
+}
+
 // Rel makes absFile relative to root (best-effort), for stable reporting.
 func Rel(root, absFile string) string {
 	if r, err := filepath.Rel(root, absFile); err == nil {

@@ -90,7 +90,7 @@ metric domains, ratings, and a working clean-as-you-code gate.
   conditions; clean-as-you-code default gate.
 - **Branch & pull-request analysis**; PR shows only newly-introduced issues.
 - **PR decoration & status checks** for GitHub / GitLab / Bitbucket; webhooks.
-- **Incremental analysis** in the scanner (only changed files; merge with last snapshot).
+- **Incremental analysis** ✅ — `-since <ref>` scans only files changed since a git ref (server-side issue tracking merges across analyses).
 - Issue workflow: assign, comment, false-positive/won't-fix stickiness, changelog UI.
 - Activity/trends charts ✅ (`/measures/history` + dashboard sparkline); security hotspots review workflow ✅ (backend + dashboard panel).
 - Semgrep-rule interop investigation.

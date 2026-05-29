@@ -92,6 +92,43 @@ func TestNewCodePeriod(t *testing.T) {
 	}
 }
 
+// TestIncrementalSince: -since restricts the scan to files changed after a ref.
+func TestIncrementalSince(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not available")
+	}
+	dir := t.TempDir()
+	gitRepo(t, dir)
+	commit(t, dir, "a.go", "package x\nfunc A() { panic(\"a\") }\n", "")
+	// capture the ref after the first commit
+	cmd := exec.Command("git", "rev-parse", "HEAD")
+	cmd.Dir = dir
+	refOut, err := cmd.Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ref := string(refOut[:len(refOut)-1])
+	// add a second file after the ref
+	commit(t, dir, "b.go", "package x\nfunc B() { panic(\"b\") }\n", "")
+
+	rep, err := scan.Scan(scan.Options{Root: dir, Since: ref})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if rep.Summary.FilesAnalyzed != 1 {
+		t.Fatalf("incremental files analyzed = %d, want 1 (only b.go)", rep.Summary.FilesAnalyzed)
+	}
+	if len(rep.Metrics) != 1 || rep.Metrics[0].Path != "b.go" {
+		t.Errorf("expected only b.go analyzed, got %+v", rep.Metrics)
+	}
+
+	// without -since, both files are analyzed
+	full, _ := scan.Scan(scan.Options{Root: dir})
+	if full.Summary.FilesAnalyzed != 2 {
+		t.Errorf("full scan files = %d, want 2", full.Summary.FilesAnalyzed)
+	}
+}
+
 // TestNewCodeDisabled: without a window, nothing is attributed/new.
 func TestNewCodeDisabled(t *testing.T) {
 	rep, err := scan.Scan(scan.Options{Root: "../../testdata/gofixture"})

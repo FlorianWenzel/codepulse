@@ -37,6 +37,7 @@ func run() error {
 		newDays    = flag.Int("new-code-days", 0, "mark findings introduced within N days as new code (requires a git repo)")
 		impSarif   = flag.String("import-sarif", "", "comma-separated SARIF files from other analyzers to merge")
 		semgrepCfg = flag.String("semgrep", "", "run semgrep with this --config and merge its findings (requires semgrep on PATH)")
+		since      = flag.String("since", "", "incremental: only analyze files changed since this git ref")
 		quiet      = flag.Bool("quiet", false, "suppress the human-readable summary on stderr")
 	)
 	flag.Usage = func() {
@@ -55,7 +56,7 @@ func run() error {
 		excludes = strings.Split(*exclude, ",")
 	}
 
-	rep, err := scan.Scan(scan.Options{Root: root, Excludes: excludes, MinDupTokens: *dupTok, NewCodeDays: *newDays})
+	rep, err := scan.Scan(scan.Options{Root: root, Excludes: excludes, MinDupTokens: *dupTok, NewCodeDays: *newDays, Since: *since})
 	if err != nil {
 		return err
 	}

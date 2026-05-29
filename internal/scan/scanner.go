@@ -37,6 +37,7 @@ type Options struct {
 	MaxFileSize  int64    // skip files larger than this (bytes); 0 = no limit
 	MinDupTokens int      // duplication window size (0 = dup.DefaultMinTokens)
 	NewCodeDays  int      // findings introduced within this many days are "new" (0 = disabled)
+	Since        string   // incremental: only analyze files changed since this git ref
 }
 
 // langContext bundles the per-language analysis state, built once and reused.
@@ -61,6 +62,18 @@ func Scan(opts Options) (domain.Report, error) {
 	files, err := collectFiles(opts)
 	if err != nil {
 		return domain.Report{}, err
+	}
+
+	// Incremental: restrict to files changed since a git ref.
+	if opts.Since != "" && git.IsRepo(opts.Root) {
+		changed := git.ChangedFiles(opts.Root, opts.Since)
+		kept := files[:0]
+		for _, f := range files {
+			if abs, err := filepath.Abs(f); err == nil && changed[abs] {
+				kept = append(kept, f)
+			}
+		}
+		files = kept
 	}
 
 	// New-code attribution via git blame (opt-in and only inside a repo).
