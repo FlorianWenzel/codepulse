@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/FlorianWenzel/codepulse/internal/domain"
@@ -26,6 +27,13 @@ type Server struct {
 	authEnabled bool
 	oidc        *OIDC
 	webhookURL  string
+
+	// async ingest
+	async   bool
+	jobs    chan ingestJob
+	tasks   map[string]*Task
+	taskMu  sync.Mutex
+	taskSeq int
 }
 
 // SetWebhook configures a URL that receives a JSON notification after each
@@ -64,6 +72,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("POST /api/v1/projects/{key}/prune", s.pruneProject)
 	s.mux.HandleFunc("GET /api/v1/portfolio", s.portfolio)
 	s.mux.HandleFunc("POST /api/v1/analyses", s.ingest)
+	s.mux.HandleFunc("GET /api/v1/tasks/{id}", s.taskStatus)
 	s.mux.HandleFunc("GET /api/v1/issues", s.listIssues)
 	s.mux.HandleFunc("GET /api/v1/issues/new", s.listNewIssues)
 	s.mux.HandleFunc("POST /api/v1/issues/transition", s.transitionIssue)
@@ -202,61 +211,34 @@ func (s *Server) ingest(w http.ResponseWriter, r *http.Request) {
 	if branch == "" {
 		branch = proj.MainBranch
 	}
-	base := r.URL.Query().Get("base") // set for PR/feature-branch analyses
-
 	var rep domain.Report
 	if err := json.NewDecoder(r.Body).Decode(&rep); err != nil {
 		httpError(w, http.StatusBadRequest, "invalid report JSON")
 		return
 	}
 
-	// Evaluate the project's assigned gate, falling back to the default.
-	g := s.gate
-	if proj.GateID != "" {
-		if rec, ok := s.store.GetGate(proj.GateID); ok {
-			g = rec.Gate()
-		}
+	job := ingestJob{
+		projectKey: key, branch: branch, base: r.URL.Query().Get("base"),
+		repo: r.URL.Query().Get("repo"), commit: r.URL.Query().Get("commit"), report: rep,
 	}
-	result := gate.Evaluate(g, rep.Summary)
-	a := store.Analysis{
-		ProjectKey: key,
-		Branch:     branch,
-		CreatedAt:  s.now(),
-		Summary:    rep.Summary,
-		Metrics:    rep.Metrics,
-		Gate:       result,
+
+	// Async: enqueue and return a task to poll.
+	if s.async {
+		task := s.enqueue(job)
+		writeJSON(w, http.StatusAccepted, map[string]any{"taskId": task.ID, "status": task.Status, "branch": branch})
+		return
 	}
-	saved, err := s.store.SaveAnalysis(a, rep.Findings)
+
+	// Synchronous: process inline.
+	id, result, newCount, err := s.runAnalysis(r.Context(), job)
 	if err != nil {
 		httpError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-
-	resp := map[string]any{"analysisId": saved.ID, "branch": branch, "gate": result}
-	if base != "" {
-		newIssues := s.store.NewIssues(key, branch, base)
-		resp["newIssues"] = len(newIssues)
+	resp := map[string]any{"analysisId": id, "branch": branch, "gate": result}
+	if job.base != "" {
+		resp["newIssues"] = newCount
 	}
-
-	// Best-effort PR decoration (no-op unless a decorator is configured).
-	if s.decorator != nil {
-		commit := r.URL.Query().Get("commit")
-		repo := r.URL.Query().Get("repo")
-		if repo != "" && commit != "" {
-			_ = s.decorator.Decorate(r.Context(), decorate.Status{
-				Repo: repo, Commit: commit, GateOK: result.Status == gate.StatusOK,
-				Description: "CodePulse quality gate: " + result.Status,
-			})
-		}
-	}
-
-	if s.webhookURL != "" {
-		s.notify(r.Context(), map[string]any{
-			"project": key, "branch": branch, "analysisId": saved.ID,
-			"gateStatus": result.Status, "newIssues": resp["newIssues"],
-		})
-	}
-
 	writeJSON(w, http.StatusCreated, resp)
 }
 

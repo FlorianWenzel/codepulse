@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/FlorianWenzel/codepulse/internal/server"
@@ -34,6 +35,12 @@ func main() {
 	}
 
 	srv := server.New(st)
+	if n := os.Getenv("CODEPULSE_INGEST_WORKERS"); n != "" {
+		if w, err := strconv.Atoi(n); err == nil && w > 0 {
+			srv.EnableAsyncIngest(w)
+			log.Printf("async ingest enabled (%d workers)", w)
+		}
+	}
 	if admin := os.Getenv("CODEPULSE_ADMIN_TOKEN"); admin != "" {
 		if err := srv.BootstrapAdmin(admin); err != nil {
 			log.Fatalf("bootstrap admin token: %v", err)

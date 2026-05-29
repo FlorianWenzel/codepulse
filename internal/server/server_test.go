@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/FlorianWenzel/codepulse/internal/domain"
 	"github.com/FlorianWenzel/codepulse/internal/scan"
@@ -366,6 +367,50 @@ func TestConfigurableQualityGate(t *testing.T) {
 	getJSON(t, ts.URL+"/api/v1/quality-gates", http.StatusOK, &gates)
 	if len(gates) != 2 {
 		t.Errorf("gates = %d, want 2 (default + lenient)", len(gates))
+	}
+}
+
+func TestAsyncIngest(t *testing.T) {
+	srv := server.New(store.NewMemory())
+	srv.EnableAsyncIngest(2)
+	ts := httptest.NewServer(srv)
+	defer ts.Close()
+
+	mustPost(t, ts.URL+"/api/v1/projects", map[string]string{"key": "demo"}, http.StatusCreated)
+	rep, _ := scan.Scan(scan.Options{Root: "../../testdata/pyfixture"})
+
+	// async ingest returns 202 + a task id
+	var acc struct {
+		TaskID string `json:"taskId"`
+		Status string `json:"status"`
+	}
+	postJSON(t, ts.URL+"/api/v1/analyses?project=demo", rep, http.StatusAccepted, &acc)
+	if acc.TaskID == "" || acc.Status != "queued" {
+		t.Fatalf("async ingest = %+v, want a queued task", acc)
+	}
+
+	// poll the task to completion
+	var task server.Task
+	deadline := time.Now().Add(3 * time.Second)
+	for time.Now().Before(deadline) {
+		getJSON(t, ts.URL+"/api/v1/tasks/"+acc.TaskID, http.StatusOK, &task)
+		if task.Status == "done" || task.Status == "failed" {
+			break
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	if task.Status != "done" {
+		t.Fatalf("task status = %q, want done", task.Status)
+	}
+	if task.AnalysisID == "" || task.Gate.Status != gate.StatusError {
+		t.Errorf("task result wrong: %+v", task)
+	}
+
+	// the analysis was persisted: issues are now queryable
+	var issues []store.Issue
+	getJSON(t, ts.URL+"/api/v1/issues?project=demo&open=true", http.StatusOK, &issues)
+	if len(issues) != 4 {
+		t.Errorf("open issues after async ingest = %d, want 4", len(issues))
 	}
 }
 
