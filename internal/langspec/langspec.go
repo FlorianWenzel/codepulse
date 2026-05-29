@@ -118,6 +118,10 @@ func For(l lang.Language) (Spec, bool) {
 		return PHP(), true
 	case lang.Kotlin:
 		return Kotlin(), true
+	case lang.Scala:
+		return Scala(), true
+	case lang.Swift:
+		return Swift(), true
 	default:
 		return Spec{}, false
 	}

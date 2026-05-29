@@ -44,6 +44,10 @@ func ForLanguage(l lang.Language) []Rule {
 		return phpRules()
 	case lang.Kotlin:
 		return ktRules()
+	case lang.Scala:
+		return scalaRules()
+	case lang.Swift:
+		return swiftRules()
 	default:
 		return nil
 	}

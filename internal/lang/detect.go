@@ -23,35 +23,39 @@ const (
 	CSharp     Language = "csharp"
 	PHP        Language = "php"
 	Kotlin     Language = "kotlin"
+	Scala      Language = "scala"
+	Swift      Language = "swift"
 	Unknown    Language = ""
 )
 
 // extMap maps file extensions to languages. Later phases add Java etc. here
 // (plus their grammars in langspec and rule sets in rules).
 var extMap = map[string]Language{
-	".go":   Go,
-	".py":   Python,
-	".js":   JavaScript,
-	".jsx":  JavaScript,
-	".mjs":  JavaScript,
-	".cjs":  JavaScript,
-	".ts":   TypeScript,
-	".tsx":  TypeScript,
-	".java": Java,
-	".rb":   Ruby,
-	".rs":   Rust,
-	".c":    C,
-	".h":    C,
-	".sh":   Bash,
-	".bash": Bash,
-	".cpp":  Cpp,
-	".cc":   Cpp,
-	".cxx":  Cpp,
-	".hpp":  Cpp,
-	".cs":   CSharp,
-	".php":  PHP,
-	".kt":   Kotlin,
-	".kts":  Kotlin,
+	".go":    Go,
+	".py":    Python,
+	".js":    JavaScript,
+	".jsx":   JavaScript,
+	".mjs":   JavaScript,
+	".cjs":   JavaScript,
+	".ts":    TypeScript,
+	".tsx":   TypeScript,
+	".java":  Java,
+	".rb":    Ruby,
+	".rs":    Rust,
+	".c":     C,
+	".h":     C,
+	".sh":    Bash,
+	".bash":  Bash,
+	".cpp":   Cpp,
+	".cc":    Cpp,
+	".cxx":   Cpp,
+	".hpp":   Cpp,
+	".cs":    CSharp,
+	".php":   PHP,
+	".kt":    Kotlin,
+	".kts":   Kotlin,
+	".scala": Scala,
+	".swift": Swift,
 }
 
 // Detect returns the language for a path, or Unknown if unsupported.

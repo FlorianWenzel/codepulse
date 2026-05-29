@@ -3,11 +3,13 @@ import { ref, onMounted } from 'vue'
 import api from '../api.js'
 import GateBadge from '../components/GateBadge.vue'
 import MeasuresPanel from '../components/MeasuresPanel.vue'
+import MeasuresTable from '../components/MeasuresTable.vue'
 import IssuesTable from '../components/IssuesTable.vue'
 
 const props = defineProps({ projectKey: { type: String, required: true } })
 
 const summary = ref({})
+const files = ref([])
 const issues = ref([])
 const gate = ref('')
 const error = ref('')
@@ -21,6 +23,7 @@ onMounted(async () => {
       api.gateStatus(props.projectKey).catch(() => ({ status: '' })),
     ])
     summary.value = m.summary || {}
+    files.value = m.metrics || []
     issues.value = is || []
     gate.value = g.status || ''
   } catch (e) {
@@ -41,6 +44,8 @@ onMounted(async () => {
     <p v-if="error" class="error">{{ error }}</p>
     <template v-else-if="loaded">
       <MeasuresPanel :summary="summary" />
+      <h2>Files</h2>
+      <MeasuresTable :files="files" />
       <h2>Open issues ({{ issues.length }})</h2>
       <IssuesTable :issues="issues" />
     </template>

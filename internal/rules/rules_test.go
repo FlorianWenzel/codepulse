@@ -136,6 +136,8 @@ func TestMoreLanguageRules(t *testing.T) {
 		{lang.CSharp, "../../testdata/csfixture/Sample.cs", "cs:todo-comment", "cs:high-complexity"},
 		{lang.PHP, "../../testdata/phpfixture/sample.php", "php:todo-comment", "php:high-complexity"},
 		{lang.Kotlin, "../../testdata/ktfixture/sample.kt", "kt:todo-comment", "kt:high-complexity"},
+		{lang.Scala, "../../testdata/scalafixture/sample.scala", "scala:todo-comment", "scala:high-complexity"},
+		{lang.Swift, "../../testdata/swiftfixture/sample.swift", "swift:todo-comment", "swift:high-complexity"},
 	}
 	for _, c := range cases {
 		t.Run(string(c.l), func(t *testing.T) {

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import GateBadge from '../components/GateBadge.vue'
 import MeasuresPanel from '../components/MeasuresPanel.vue'
+import MeasuresTable from '../components/MeasuresTable.vue'
 import IssuesTable from '../components/IssuesTable.vue'
 
 describe('GateBadge', () => {
@@ -38,6 +39,21 @@ describe('MeasuresPanel', () => {
   it('omits the coverage card when there is no coverage data', () => {
     const w = mount(MeasuresPanel, { props: { summary: { totalNcloc: 1, totalFindings: 0, duplicatedLinesDensity: 0 } } })
     expect(w.findAll('[data-test=measure-card]')).toHaveLength(3)
+  })
+})
+
+describe('MeasuresTable', () => {
+  it('renders one row per file sorted by complexity desc', () => {
+    const files = [
+      { path: 'a.go', ncloc: 10, complexity: 3, cognitiveComplexity: 1, duplicatedLines: 0 },
+      { path: 'b.go', ncloc: 50, complexity: 20, cognitiveComplexity: 12, duplicatedLines: 4, linesToCover: 10, coveredLines: 8 },
+    ]
+    const w = mount(MeasuresTable, { props: { files } })
+    const rows = w.findAll('[data-test=measure-row]')
+    expect(rows).toHaveLength(2)
+    // highest complexity (b.go) first
+    expect(rows[0].text()).toContain('b.go')
+    expect(rows[0].text()).toContain('80%') // coverage 8/10
   })
 })
 

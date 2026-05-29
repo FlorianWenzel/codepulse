@@ -137,7 +137,7 @@ metric domains, ratings, and a working clean-as-you-code gate.
 
 | Capability | SonarQube (CE / paid) | CodePulse target |
 |---|---|---|
-| Multi-language analysis | CE limited; many langs paid | **13 langs OSS** (tree-sitter) ✅ |
+| Multi-language analysis | CE limited; many langs paid | **15 langs OSS** (tree-sitter) ✅ |
 | Bugs / Vulnerabilities / Code smells | ✅ | ✅ *P1–P2* |
 | Security hotspots + review | ✅ | ✅ (done) |
 | Metrics (LOC, complexity, duplication) | ✅ | ✅ *P1–P2* |
@@ -180,7 +180,7 @@ integrating best-of-breed OSS engines rather than reimplementing taint analysis.
 
 ## Definition of done for v1.0 (public)
 
-- [x] ≥5 languages with default profiles — **13** (Go, Python, JS, TS, Java, Ruby, Rust, C, Bash, C++, C#, PHP, Kotlin).
+- [x] ≥5 languages with default profiles — **15** (…, C++, C#, PHP, Kotlin, Scala, Swift).
 - [x] Branch + PR analysis with GitHub decoration.
 - [x] Clean-as-you-code gate (new-code period via git blame; `new_*` gate conditions).
 - [x] External SARIF consolidation (`-import-sarif`).
@@ -190,8 +190,8 @@ integrating best-of-breed OSS engines rather than reimplementing taint analysis.
   embedded-Postgres integration test — is green.
 
 ### Remaining open-ended polish (post-v1.0)
-- Even more languages (Scala, Swift, Go templates, …) — cheap to add via `langspec`.
+- [x] Scala & Swift added (15 languages). Even more (Go templates, Lua, …) — cheap via `langspec`.
 - Richer first-party rule sets per language (current sets are deliberately small/low-FP).
 - [investigated] WASM grammars (wazero) to drop CGo — see docs/adr/0001-wasm-grammars.md (deferred post-v1.0; CGo is faster/complete now).
-- [x] Dashboard i18n (en/de), light/dark theme, basic a11y (sr-only labels, aria). Deeper drilldown/treemap views remain.
+- [x] Dashboard i18n (en/de), light/dark theme, a11y (sr-only/aria), and a **per-file measures drilldown** (sorted by complexity, with coverage).
 - Semgrep-rule native interop (today: consume via SARIF import).
