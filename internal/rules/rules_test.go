@@ -87,6 +87,15 @@ func TestTSRulesOnFixture(t *testing.T) {
 	})
 }
 
+func TestJavaRulesOnFixture(t *testing.T) {
+	assertExact(t, runRules(t, lang.Java, "../../testdata/javafixture/Sample.java"), map[string]int{
+		"java:todo-comment":    1,
+		"java:empty-catch":     1,
+		"java:system-exit":     1,
+		"java:high-complexity": 1,
+	})
+}
+
 // TestBadQueryFailsLoudly ensures an invalid query is reported at engine
 // construction rather than silently skipped.
 func TestBadQueryFailsLoudly(t *testing.T) {

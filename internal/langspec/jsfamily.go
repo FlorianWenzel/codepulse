@@ -20,7 +20,7 @@ func jsFamily(l lang.Language, prefix string, ts *sitter.Language) Spec {
 		NameField: "name",
 		CognitiveControl: set("if_statement", "for_statement", "for_in_statement",
 			"while_statement", "do_statement", "switch_statement"),
-		CommentType: "comment",
+		CommentTypes: set("comment"),
 		IsLogical: func(n *sitter.Node, src []byte) bool {
 			if n.Type() != "binary_expression" {
 				return false

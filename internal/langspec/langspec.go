@@ -28,12 +28,15 @@ type Spec struct {
 	// CognitiveControl lists node types that add a cognitive-complexity
 	// nesting level.
 	CognitiveControl map[string]bool
-	// CommentType is the node type for comments.
-	CommentType string
+	// CommentTypes is the set of node types that are comments.
+	CommentTypes map[string]bool
 	// IsLogical reports whether a node is a short-circuit logical operator
 	// (each one adds 1 to cyclomatic and cognitive complexity).
 	IsLogical func(n *sitter.Node, src []byte) bool
 }
+
+// IsComment reports whether a node type is a comment in this language.
+func (s Spec) IsComment(t string) bool { return s.CommentTypes[t] }
 
 func set(keys ...string) map[string]bool {
 	m := make(map[string]bool, len(keys))
@@ -53,7 +56,7 @@ func Go() Spec {
 		FuncDecl:         set("function_declaration", "method_declaration"),
 		NameField:        "name",
 		CognitiveControl: set("if_statement", "for_statement", "expression_switch_statement", "type_switch_statement", "select_statement"),
-		CommentType:      "comment",
+		CommentTypes:     set("comment"),
 		IsLogical: func(n *sitter.Node, src []byte) bool {
 			if n.Type() != "binary_expression" {
 				return false
@@ -78,7 +81,7 @@ func Python() Spec {
 		FuncDecl:         set("function_definition"),
 		NameField:        "name",
 		CognitiveControl: set("if_statement", "for_statement", "while_statement", "match_statement"),
-		CommentType:      "comment",
+		CommentTypes:     set("comment"),
 		// In tree-sitter-python, `and`/`or` are a single boolean_operator node.
 		IsLogical: func(n *sitter.Node, src []byte) bool {
 			return n.Type() == "boolean_operator"
@@ -97,6 +100,8 @@ func For(l lang.Language) (Spec, bool) {
 		return JavaScript(), true
 	case lang.TypeScript:
 		return TypeScript(), true
+	case lang.Java:
+		return Java(), true
 	default:
 		return Spec{}, false
 	}

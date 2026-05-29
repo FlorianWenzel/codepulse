@@ -86,7 +86,7 @@ func Compute(spec langspec.Spec, path string, root *sitter.Node, src []byte) dom
 			return // only leaf tokens carry line attribution
 		}
 		start := int(n.StartPoint().Row)
-		if n.Type() == spec.CommentType {
+		if spec.IsComment(n.Type()) {
 			for r := start; r <= int(n.EndPoint().Row); r++ {
 				commentLines[r] = true
 			}

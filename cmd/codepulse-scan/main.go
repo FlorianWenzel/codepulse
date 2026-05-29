@@ -10,6 +10,7 @@ import (
 
 	"github.com/FlorianWenzel/codepulse/internal/domain"
 	"github.com/FlorianWenzel/codepulse/internal/importers/coverage"
+	"github.com/FlorianWenzel/codepulse/internal/importers/sarif"
 	"github.com/FlorianWenzel/codepulse/internal/lang"
 	"github.com/FlorianWenzel/codepulse/internal/report"
 	"github.com/FlorianWenzel/codepulse/internal/rules"
@@ -32,6 +33,7 @@ func run() error {
 		covPath  = flag.String("coverage", "", "import a coverage report (LCOV, Go coverprofile, or Cobertura XML)")
 		dupTok   = flag.Int("dup-tokens", 0, "duplication window size in tokens (0 = default 100)")
 		newDays  = flag.Int("new-code-days", 0, "mark findings introduced within N days as new code (requires a git repo)")
+		impSarif = flag.String("import-sarif", "", "comma-separated SARIF files from other analyzers to merge")
 		quiet    = flag.Bool("quiet", false, "suppress the human-readable summary on stderr")
 	)
 	flag.Usage = func() {
@@ -53,6 +55,20 @@ func run() error {
 	rep, err := scan.Scan(scan.Options{Root: root, Excludes: excludes, MinDupTokens: *dupTok, NewCodeDays: *newDays})
 	if err != nil {
 		return err
+	}
+
+	if *impSarif != "" {
+		for _, path := range strings.Split(*impSarif, ",") {
+			data, err := os.ReadFile(strings.TrimSpace(path))
+			if err != nil {
+				return err
+			}
+			findings, err := sarif.Parse(data)
+			if err != nil {
+				return err
+			}
+			sarif.Merge(&rep, findings)
+		}
 	}
 
 	if *covPath != "" {
@@ -108,7 +124,7 @@ func run() error {
 // ruleMeta exposes every built-in rule's metadata for SARIF.
 func ruleMeta() []report.RuleMeta {
 	var m []report.RuleMeta
-	for _, l := range []lang.Language{lang.Go, lang.Python, lang.JavaScript, lang.TypeScript} {
+	for _, l := range []lang.Language{lang.Go, lang.Python, lang.JavaScript, lang.TypeScript, lang.Java} {
 		for _, r := range rules.ForLanguage(l) {
 			m = append(m, report.RuleMeta{ID: r.ID, Name: r.Name, Type: r.Type, Severity: r.Severity})
 		}

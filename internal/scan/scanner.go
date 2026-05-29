@@ -98,7 +98,7 @@ func Scan(opts Options) (domain.Report, error) {
 		rep.Metrics = append(rep.Metrics, fm)
 		rep.Summary.TotalNcloc += fm.Ncloc
 		rep.Summary.FilesAnalyzed++
-		dupFiles = append(dupFiles, dup.File{Path: rel, Tokens: dup.Tokenize(root, src, ctx.spec.CommentType)})
+		dupFiles = append(dupFiles, dup.File{Path: rel, Tokens: dup.Tokenize(root, src, ctx.spec.IsComment)})
 
 		// Blame the file once for new-code attribution.
 		var blame map[int]git.LineInfo

@@ -14,6 +14,7 @@ const (
 	Python     Language = "python"
 	JavaScript Language = "javascript"
 	TypeScript Language = "typescript"
+	Java       Language = "java"
 	Unknown    Language = ""
 )
 
@@ -26,8 +27,9 @@ var extMap = map[string]Language{
 	".jsx": JavaScript,
 	".mjs": JavaScript,
 	".cjs": JavaScript,
-	".ts":  TypeScript,
-	".tsx": TypeScript,
+	".ts":   TypeScript,
+	".tsx":  TypeScript,
+	".java": Java,
 }
 
 // Detect returns the language for a path, or Unknown if unsupported.

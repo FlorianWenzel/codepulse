@@ -107,6 +107,22 @@ func TestScanJavaScript(t *testing.T) {
 	}
 }
 
+func TestScanJava(t *testing.T) {
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/javafixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if rep.Language != "java" {
+		t.Errorf("language = %q, want java", rep.Language)
+	}
+	if rep.Summary.TotalFindings != 4 {
+		t.Errorf("findings = %d, want 4", rep.Summary.TotalFindings)
+	}
+	if rep.Summary.ByType[domain.TypeBug] != 1 {
+		t.Errorf("bugs = %d, want 1 (empty catch)", rep.Summary.ByType[domain.TypeBug])
+	}
+}
+
 func TestScanDuplication(t *testing.T) {
 	rep, err := scan.Scan(scan.Options{Root: "../../testdata/dupfixture", MinDupTokens: 20})
 	if err != nil {

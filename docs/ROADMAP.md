@@ -104,8 +104,11 @@ metric domains, ratings, and a working clean-as-you-code gate.
 > `CODEPULSE_ADMIN_TOKEN`); RBAC guards on every endpoint (admin-only project/token
 > management + triage; scan-token ingest restricted to its project; reads scoped to
 > project). `POST /tokens` mints credentials (secret shown once). e2e tested
-> (401/403/200 matrix). **Next:** SSO (OIDC), scale (partitioning/retention), more
-> languages, dataflow integration.
+> (401/403/200 matrix). **Java** is now the 5th language (rules: empty-catch, System.exit,
+> process-exec hotspot, TODO, high-complexity). **External-analyzer SARIF import** ✅ —
+> third-party results (gosec/ESLint/Bandit/…) are parsed and merged as namespaced
+> `external:<tool>:<rule>` findings (`-import-sarif`), unit-tested. **Next:** SSO (OIDC),
+> scale (retention/pruning), dataflow integration, portfolio/notifications.
 - AuthN/Z: local users + **OIDC/SAML/GitHub** SSO, groups, fine-grained RBAC.
 - Performance: partitioning, retention/pruning, read replicas; horizontal worker scaling.
 - More languages (C/C++, C#, Ruby, PHP, Rust, Kotlin, Bash, etc.).

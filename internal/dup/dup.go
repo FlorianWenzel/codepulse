@@ -42,11 +42,11 @@ type Result struct {
 }
 
 // Tokenize extracts significant tokens (leaf nodes that aren't comments or
-// whitespace) from a parsed file.
-func Tokenize(root *sitter.Node, src []byte, commentType string) []Token {
+// whitespace) from a parsed file. isComment reports comment node types.
+func Tokenize(root *sitter.Node, src []byte, isComment func(string) bool) []Token {
 	var toks []Token
 	parse.Walk(root, func(n *sitter.Node) {
-		if n.ChildCount() != 0 || n.Type() == commentType {
+		if n.ChildCount() != 0 || isComment(n.Type()) {
 			return
 		}
 		t := n.Content(src)
