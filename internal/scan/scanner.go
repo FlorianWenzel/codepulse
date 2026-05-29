@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/FlorianWenzel/codepulse/internal/domain"
+	"github.com/FlorianWenzel/codepulse/internal/dup"
 	"github.com/FlorianWenzel/codepulse/internal/lang"
 	"github.com/FlorianWenzel/codepulse/internal/langspec"
 	"github.com/FlorianWenzel/codepulse/internal/metrics"
@@ -28,9 +29,10 @@ var skipDirs = map[string]bool{
 
 // Options configures a scan.
 type Options struct {
-	Root        string   // directory or file to scan
-	Excludes    []string // path substrings to skip
-	MaxFileSize int64    // skip files larger than this (bytes); 0 = no limit
+	Root         string   // directory or file to scan
+	Excludes     []string // path substrings to skip
+	MaxFileSize  int64    // skip files larger than this (bytes); 0 = no limit
+	MinDupTokens int      // duplication window size (0 = dup.DefaultMinTokens)
 }
 
 // langContext bundles the per-language analysis state, built once and reused.
@@ -57,6 +59,7 @@ func Scan(opts Options) (domain.Report, error) {
 
 	contexts := map[lang.Language]*langContext{}
 	langsSeen := map[lang.Language]bool{}
+	var dupFiles []dup.File
 
 	for _, path := range files {
 		l := lang.Detect(path)
@@ -84,6 +87,7 @@ func Scan(opts Options) (domain.Report, error) {
 		rep.Metrics = append(rep.Metrics, fm)
 		rep.Summary.TotalNcloc += fm.Ncloc
 		rep.Summary.FilesAnalyzed++
+		dupFiles = append(dupFiles, dup.File{Path: rel, Tokens: dup.Tokenize(root, src, ctx.spec.CommentType)})
 
 		for _, f := range ctx.engine.Run(rel, root, src) {
 			rep.Findings = append(rep.Findings, f)
@@ -93,9 +97,27 @@ func Scan(opts Options) (domain.Report, error) {
 		}
 	}
 
+	applyDuplication(&rep, dupFiles, opts.MinDupTokens)
+
 	rep.Language = joinLangs(langsSeen)
 	sortReport(&rep)
 	return rep, nil
+}
+
+// applyDuplication runs clone detection and folds the results into per-file
+// metrics and the project summary (duplicated lines + density vs ncloc).
+func applyDuplication(rep *domain.Report, dupFiles []dup.File, minTokens int) {
+	res := dup.Detect(dupFiles, minTokens)
+	for i := range rep.Metrics {
+		if fr, ok := res.ByFile[rep.Metrics[i].Path]; ok {
+			rep.Metrics[i].DuplicatedLines = fr.DuplicatedLines
+		}
+	}
+	rep.Summary.DuplicatedLines = res.TotalDuplicatedLines
+	if rep.Summary.TotalNcloc > 0 {
+		rep.Summary.DuplicatedLinesDensity =
+			float64(res.TotalDuplicatedLines) / float64(rep.Summary.TotalNcloc) * 100
+	}
 }
 
 // contextFor returns (building if needed) the analysis context for a language,

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/FlorianWenzel/codepulse/internal/domain"
+	"github.com/FlorianWenzel/codepulse/internal/importers/coverage"
 	"github.com/FlorianWenzel/codepulse/internal/lang"
 	"github.com/FlorianWenzel/codepulse/internal/report"
 	"github.com/FlorianWenzel/codepulse/internal/rules"
@@ -27,8 +28,10 @@ func run() error {
 		format  = flag.String("format", "json", "output format: json | sarif")
 		out     = flag.String("o", "", "write report to this file (default: stdout)")
 		exclude = flag.String("exclude", "", "comma-separated path substrings to skip")
-		failOn  = flag.String("fail-on", "", "exit non-zero if any finding is at least this severity (BLOCKER|CRITICAL|MAJOR|MINOR|INFO)")
-		quiet   = flag.Bool("quiet", false, "suppress the human-readable summary on stderr")
+		failOn   = flag.String("fail-on", "", "exit non-zero if any finding is at least this severity (BLOCKER|CRITICAL|MAJOR|MINOR|INFO)")
+		covPath  = flag.String("coverage", "", "import a coverage report (LCOV, Go coverprofile, or Cobertura XML)")
+		dupTok   = flag.Int("dup-tokens", 0, "duplication window size in tokens (0 = default 100)")
+		quiet    = flag.Bool("quiet", false, "suppress the human-readable summary on stderr")
 	)
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: codepulse-scan [flags] [path]\n\nFlags:\n")
@@ -46,9 +49,21 @@ func run() error {
 		excludes = strings.Split(*exclude, ",")
 	}
 
-	rep, err := scan.Scan(scan.Options{Root: root, Excludes: excludes})
+	rep, err := scan.Scan(scan.Options{Root: root, Excludes: excludes, MinDupTokens: *dupTok})
 	if err != nil {
 		return err
+	}
+
+	if *covPath != "" {
+		data, err := os.ReadFile(*covPath)
+		if err != nil {
+			return err
+		}
+		cov, err := coverage.Parse(data)
+		if err != nil {
+			return err
+		}
+		coverage.Apply(&rep, cov)
 	}
 
 	w := os.Stdout
@@ -107,5 +122,11 @@ func printSummary(r domain.Report) {
 		if n := r.Summary.BySeverity[s]; n > 0 {
 			fmt.Fprintf(os.Stderr, "  %-9s %d\n", s, n)
 		}
+	}
+	fmt.Fprintf(os.Stderr, "  duplication %.1f%% (%d lines)\n",
+		r.Summary.DuplicatedLinesDensity, r.Summary.DuplicatedLines)
+	if r.Summary.LinesToCover > 0 {
+		fmt.Fprintf(os.Stderr, "  coverage    %.1f%% (%d/%d lines)\n",
+			r.Summary.Coverage, r.Summary.CoveredLines, r.Summary.LinesToCover)
 	}
 }

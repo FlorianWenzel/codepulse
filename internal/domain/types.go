@@ -59,9 +59,12 @@ type FileMetrics struct {
 	Ncloc                int    `json:"ncloc"` // non-comment lines of code
 	CommentLines         int    `json:"commentLines"`
 	Functions            int    `json:"functions"`
-	Complexity           int    `json:"complexity"`           // cyclomatic, whole file
-	CognitiveComplexity  int    `json:"cognitiveComplexity"`  // whole file
-	MaxFuncComplexity    int    `json:"maxFuncComplexity"`    // worst single function
+	Complexity           int    `json:"complexity"`          // cyclomatic, whole file
+	CognitiveComplexity  int    `json:"cognitiveComplexity"` // whole file
+	MaxFuncComplexity    int    `json:"maxFuncComplexity"`   // worst single function
+	DuplicatedLines      int    `json:"duplicatedLines"`
+	LinesToCover         int    `json:"linesToCover,omitempty"`
+	CoveredLines         int    `json:"coveredLines,omitempty"`
 }
 
 // Report is the full result of a scan: every finding, every file's metrics,
@@ -77,9 +80,14 @@ type Report struct {
 
 // Summary is the project-level rollup shown at the end of a scan.
 type Summary struct {
-	FilesAnalyzed int                `json:"filesAnalyzed"`
-	TotalNcloc    int                `json:"totalNcloc"`
-	TotalFindings int                `json:"totalFindings"`
-	BySeverity    map[Severity]int   `json:"bySeverity"`
-	ByType        map[IssueType]int  `json:"byType"`
+	FilesAnalyzed          int               `json:"filesAnalyzed"`
+	TotalNcloc             int               `json:"totalNcloc"`
+	TotalFindings          int               `json:"totalFindings"`
+	BySeverity             map[Severity]int  `json:"bySeverity"`
+	ByType                 map[IssueType]int `json:"byType"`
+	DuplicatedLines        int               `json:"duplicatedLines"`
+	DuplicatedLinesDensity float64           `json:"duplicatedLinesDensity"`
+	LinesToCover           int               `json:"linesToCover,omitempty"`
+	CoveredLines           int               `json:"coveredLines,omitempty"`
+	Coverage               float64           `json:"coverage,omitempty"`
 }

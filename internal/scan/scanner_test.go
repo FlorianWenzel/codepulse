@@ -67,3 +67,24 @@ func TestScanPythonFixtureDir(t *testing.T) {
 		t.Errorf("vulnerabilities = %d, want 1", rep.Summary.ByType[domain.TypeVulnerability])
 	}
 }
+
+func TestScanDuplication(t *testing.T) {
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/dupfixture", MinDupTokens: 20})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if rep.Summary.FilesAnalyzed != 2 {
+		t.Fatalf("files analyzed = %d, want 2", rep.Summary.FilesAnalyzed)
+	}
+	if rep.Summary.DuplicatedLines == 0 {
+		t.Error("expected duplicated lines across the two identical files")
+	}
+	if rep.Summary.DuplicatedLinesDensity <= 0 {
+		t.Error("expected positive duplication density")
+	}
+	for _, m := range rep.Metrics {
+		if m.DuplicatedLines == 0 {
+			t.Errorf("file %s should report duplicated lines", m.Path)
+		}
+	}
+}

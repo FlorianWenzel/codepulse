@@ -44,7 +44,10 @@ PR decoration, SCM integrations). Always keep "CodePulse scans CodePulse" green 
 > node-kind mappings) so the metrics + rule engine are language-agnostic. **Python**
 > is now supported alongside Go (rules: exec/eval, TODO/FIXME, bare-except,
 > high-complexity), with cognitive complexity computed per language. Mixed-language
-> scans aggregate correctly. e2e tested. **Next:** duplication detection + coverage import.
+> scans aggregate correctly. **Duplication detection** (token-window clone finder) and
+> **coverage import** (LCOV / Go coverprofile / Cobertura, suffix-matched onto files)
+> are implemented and fold into per-file + project metrics. e2e tested.
+> **Next:** ratings/tech-debt, then `codepulse-server` (Postgres ingest + quality gate).
 
 - Add **Python, JavaScript, TypeScript, Java** grammars + starter rule sets.
 - Cognitive complexity, comment density, **duplication detection**, coverage import
