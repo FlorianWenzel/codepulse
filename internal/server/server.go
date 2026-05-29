@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -29,6 +30,7 @@ type Server struct {
 	decorator   decorate.Decorator
 	authEnabled bool
 	oidc        *OIDC
+	ciAuth      *CIAuth
 	webhookURL  string
 
 	// async ingest
@@ -54,6 +56,42 @@ func New(s store.Store) *Server {
 
 // SetDecorator configures PR decoration (commit-status posting).
 func (s *Server) SetDecorator(d decorate.Decorator) { s.decorator = d }
+
+// SetCIAuth enables keyless CI ingest (OIDC tokens verified via JWKS).
+func (s *Server) SetCIAuth(c *CIAuth) { s.ciAuth = c }
+
+// bearerToken returns the raw bearer credential, or "".
+func bearerToken(r *http.Request) string {
+	h := r.Header.Get("Authorization")
+	if strings.HasPrefix(h, "Bearer ") {
+		return strings.TrimPrefix(h, "Bearer ")
+	}
+	return ""
+}
+
+// allowIngest authorizes an ingest request: a matching static token, or a
+// verified CI-OIDC token whose repository claim equals the project key.
+func (s *Server) allowIngest(w http.ResponseWriter, r *http.Request, project string) bool {
+	if !s.authEnabled {
+		return true
+	}
+	if tok, ok := s.principal(r); ok && canIngest(project)(tok) {
+		return true
+	}
+	if s.ciAuth != nil {
+		if raw := bearerToken(r); raw != "" {
+			if cl, err := s.ciAuth.Verify(raw); err == nil && cl.Repository == project {
+				return true
+			}
+		}
+	}
+	if bearerToken(r) == "" {
+		httpError(w, http.StatusUnauthorized, "missing or invalid token")
+	} else {
+		httpError(w, http.StatusForbidden, "insufficient permissions")
+	}
+	return false
+}
 
 // branchOf returns the requested branch or "main".
 func branchOf(r *http.Request) string {
@@ -214,7 +252,7 @@ func (s *Server) pruneProject(w http.ResponseWriter, r *http.Request) {
 // the analysis id + gate result.
 func (s *Server) ingest(w http.ResponseWriter, r *http.Request) {
 	key := r.URL.Query().Get("project")
-	if !s.guard(w, r, canIngest(key)) {
+	if !s.allowIngest(w, r, key) {
 		return
 	}
 	proj, ok := s.store.GetProject(key)

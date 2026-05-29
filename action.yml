@@ -20,6 +20,12 @@ inputs:
   token:
     description: "Project analysis token (Bearer) for upload."
     default: ""
+  keyless:
+    description: "Use GitHub Actions OIDC (needs permissions: id-token: write) instead of a static token; the server must have CI keyless OIDC enabled."
+    default: "false"
+  audience:
+    description: "OIDC token audience (must match the server's CODEPULSE_CI_OIDC_AUDIENCE)."
+    default: "codepulse"
   project:
     description: "Project key to upload to."
     default: ""
@@ -57,6 +63,13 @@ runs:
         if [ -n "$CODEPULSE_SERVER" ] && [ -n "$CODEPULSE_PROJECT" ]; then
           # Server mode: upload and enforce the project's server-side quality gate.
           "$SCAN" -quiet -o "$REPORT" ${{ inputs.args }} "${{ inputs.path }}"
+          if [ "${{ inputs.keyless }}" = "true" ]; then
+            # Mint a short-lived GitHub OIDC token and use it as the bearer.
+            CODEPULSE_TOKEN="$(curl -sf -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+              "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=${{ inputs.audience }}" \
+              | python3 -c 'import sys,json;print(json.load(sys.stdin)["value"])')"
+            export CODEPULSE_TOKEN
+          fi
           bash "$GITHUB_ACTION_PATH/deploy/ci/gate.sh"
         else
           # Local mode: enforce a severity threshold without a server.

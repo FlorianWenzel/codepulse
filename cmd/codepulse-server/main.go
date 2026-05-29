@@ -57,6 +57,18 @@ func main() {
 		srv.SetWebhook(hook)
 		log.Printf("notifications webhook enabled")
 	}
+	if iss := os.Getenv("CODEPULSE_CI_OIDC_ISSUER"); iss != "" {
+		aud := os.Getenv("CODEPULSE_CI_OIDC_AUDIENCE")
+		if aud == "" {
+			aud = "codepulse"
+		}
+		jwks := os.Getenv("CODEPULSE_CI_OIDC_JWKS_URL")
+		if jwks == "" {
+			jwks = strings.TrimRight(iss, "/") + "/.well-known/jwks"
+		}
+		srv.SetCIAuth(&server.CIAuth{Issuer: iss, Audience: aud, JWKSURL: jwks})
+		log.Printf("CI keyless OIDC ingest enabled (issuer %s)", iss)
+	}
 	if au := os.Getenv("CODEPULSE_OIDC_AUTH_URL"); au != "" || os.Getenv("CODEPULSE_OIDC_PROVIDER") != "" {
 		csv := func(key string) map[string]bool {
 			m := map[string]bool{}

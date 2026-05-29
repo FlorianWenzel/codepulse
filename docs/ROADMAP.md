@@ -171,8 +171,11 @@ Ordered by leverage.
 ### 5. OIDC (extend what's shipped)  *(in progress)*
 - OIDC SSO login ✅. **Provider presets ✅** (`CODEPULSE_OIDC_PROVIDER`: google/github/gitlab
   fill the endpoint URLs) and **group → role mapping ✅** (`CODEPULSE_OIDC_ADMIN_GROUPS`: an
-  IdP `groups` claim grants admin), both tested against a fake IdP. **Next:** GitHub Actions
-  OIDC keyless auth (short-lived token instead of a static project token); Okta/Keycloak issuer discovery.
+  IdP `groups` claim grants admin), both tested against a fake IdP. **GitHub Actions OIDC
+  keyless auth ✅** — the Action mints a short-lived OIDC token (id-token: write); the server
+  verifies it via JWKS (issuer/audience/expiry/signature) and authorizes ingest from the
+  matching `repository` claim, so CI uploads need no static token (`CODEPULSE_CI_OIDC_*`).
+  **Next:** Okta/Keycloak issuer discovery (`.well-known/openid-configuration`).
 
 ### More languages
 - Keep widening via `langspec` (C++/C#/PHP/Kotlin/Scala/Swift already added; next Go templates,

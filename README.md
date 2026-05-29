@@ -49,6 +49,11 @@ Run the analysis and **fail the build on the quality gate** in one step (like `s
 In server mode the step uploads the report (branch/PR-aware) and exits non-zero if the
 gate is `ERROR`. The same logic is in [`deploy/ci/gate.sh`](deploy/ci/gate.sh) for other CI.
 
+**Keyless (no static token):** set `keyless: true` and `permissions: { id-token: write }`; the
+Action mints a GitHub OIDC token the server verifies via JWKS (enable with
+`CODEPULSE_CI_OIDC_ISSUER=https://token.actions.githubusercontent.com`). Ingest is authorized
+when the token's `repository` claim matches the project key.
+
 ---
 
 ## What is this?
