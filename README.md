@@ -2,7 +2,14 @@
 
 > An open-source, self-hostable code quality & security platform — a permissively-licensed alternative to SonarQube.
 
-**Status:** Design phase. No code yet. This repository currently contains the architecture and design documents that define what we're building and in what order.
+**Status:** Phase 1 in progress. The design docs (below) define the full plan; the **Go scanner** is now implemented end-to-end — it walks a repo, parses Go with tree-sitter, runs built-in rules, computes metrics, and emits SARIF 2.1.0 or internal JSON. See [docs/ROADMAP.md](docs/ROADMAP.md) for what's done vs. next.
+
+```sh
+make build                       # build bin/codepulse-scan
+./bin/codepulse-scan ./path      # scan a Go project (JSON to stdout, summary to stderr)
+./bin/codepulse-scan -format sarif -o out.sarif ./path
+make test                        # unit + end-to-end tests
+```
 
 > ℹ️ **Note:** Before a public launch, verify the "CodePulse" name is clear of trademark conflicts.
 

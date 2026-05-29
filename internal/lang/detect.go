@@ -1,0 +1,30 @@
+// Package lang maps files to the language CodePulse should analyze them as.
+package lang
+
+import (
+	"path/filepath"
+	"strings"
+)
+
+// Language is a supported analysis language.
+type Language string
+
+const (
+	Go      Language = "go"
+	Unknown Language = ""
+)
+
+// extMap maps file extensions to languages. Phase 1 ships Go; later phases
+// add Python/JS/TS/Java here (and wire up their grammars in parse).
+var extMap = map[string]Language{
+	".go": Go,
+}
+
+// Detect returns the language for a path, or Unknown if unsupported.
+func Detect(path string) Language {
+	ext := strings.ToLower(filepath.Ext(path))
+	return extMap[ext]
+}
+
+// IsSupported reports whether the path is a language CodePulse can analyze.
+func IsSupported(path string) bool { return Detect(path) != Unknown }

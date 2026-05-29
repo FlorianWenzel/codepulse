@@ -21,6 +21,13 @@ PR decoration, SCM integrations). Always keep "CodePulse scans CodePulse" green 
 **Exit:** a `docker compose up` brings up empty server + Postgres + blank dashboard; `codepulse-scan --version` runs.
 
 ## Phase 1 — Vertical slice (single language, end-to-end)
+
+> **Progress:** scanner core ✅ — `codepulse-scan` walks a repo, parses Go via
+> tree-sitter, runs built-in rules (panic usage, TODO/FIXME, empty blocks, high
+> cyclomatic complexity), computes size/complexity/comment metrics, and emits
+> SARIF 2.1.0 + internal JSON. Unit + e2e tests green; dogfoods on its own source.
+> **Next:** grow the rule set, then the server + dashboard.
+
 - `codepulse-scan`: walk + ignore rules, **Go** parsing, ~15 first-party Go query rules,
   size + cyclomatic complexity metrics, SARIF + internal report output.
 - `codepulse-server`: token auth, ingest (synchronous first), persist analysis/issues/measures,
