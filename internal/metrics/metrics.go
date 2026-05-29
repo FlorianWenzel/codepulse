@@ -1,48 +1,21 @@
-// Package metrics computes size and complexity measures from a Go syntax tree.
+// Package metrics computes size and complexity measures from a syntax tree,
+// driven by a per-language Spec so the same code works across languages.
 package metrics
 
 import (
 	sitter "github.com/smacker/go-tree-sitter"
 
 	"github.com/FlorianWenzel/codepulse/internal/domain"
+	"github.com/FlorianWenzel/codepulse/internal/langspec"
 	"github.com/FlorianWenzel/codepulse/internal/parse"
 )
 
-// decisionNodes are the node types that add a branch to cyclomatic complexity.
-var decisionNodes = map[string]bool{
-	"if_statement":       true,
-	"for_statement":      true,
-	"expression_case":    true,
-	"type_case":          true,
-	"communication_case": true,
-}
-
-// funcNodes are the node types that introduce a function scope.
-var funcNodes = map[string]bool{
-	"function_declaration": true,
-	"method_declaration":   true,
-	"func_literal":         true,
-}
-
-// isLogicalOp reports whether a binary_expression node uses && or ||.
-func isLogicalOp(n *sitter.Node, src []byte) bool {
-	if n.Type() != "binary_expression" {
-		return false
-	}
-	op := n.ChildByFieldName("operator")
-	if op == nil {
-		return false
-	}
-	t := op.Content(src)
-	return t == "&&" || t == "||"
-}
-
 // cyclomaticOf returns the cyclomatic complexity of a subtree: 1 plus the
 // number of decision points (branches and logical operators) inside it.
-func cyclomaticOf(n *sitter.Node, src []byte) int {
+func cyclomaticOf(spec langspec.Spec, n *sitter.Node, src []byte) int {
 	c := 1
 	parse.Walk(n, func(node *sitter.Node) {
-		if decisionNodes[node.Type()] || isLogicalOp(node, src) {
+		if spec.Decision[node.Type()] || spec.IsLogical(node, src) {
 			c++
 		}
 	})
@@ -50,7 +23,9 @@ func cyclomaticOf(n *sitter.Node, src []byte) int {
 }
 
 // CyclomaticOfFunc is cyclomaticOf exposed for the complexity rule.
-func CyclomaticOfFunc(n *sitter.Node, src []byte) int { return cyclomaticOf(n, src) }
+func CyclomaticOfFunc(spec langspec.Spec, n *sitter.Node, src []byte) int {
+	return cyclomaticOf(spec, n, src)
+}
 
 // FuncInfo describes one function found in a file.
 type FuncInfo struct {
@@ -59,42 +34,38 @@ type FuncInfo struct {
 	Complexity int
 }
 
-// Functions returns every top-level function/method declaration with its
-// name node and cyclomatic complexity. (func literals are excluded so we
-// report on named functions only.)
-func Functions(root *sitter.Node, src []byte) []FuncInfo {
+// Functions returns every named function/method declaration with its name and
+// cyclomatic complexity.
+func Functions(spec langspec.Spec, root *sitter.Node, src []byte) []FuncInfo {
 	var out []FuncInfo
 	parse.Walk(root, func(n *sitter.Node) {
-		t := n.Type()
-		if t != "function_declaration" && t != "method_declaration" {
+		if !spec.FuncDecl[n.Type()] {
 			return
 		}
 		name := ""
-		if id := n.ChildByFieldName("name"); id != nil {
+		if id := n.ChildByFieldName(spec.NameField); id != nil {
 			name = id.Content(src)
 		}
-		out = append(out, FuncInfo{Node: n, Name: name, Complexity: cyclomaticOf(n, src)})
+		out = append(out, FuncInfo{Node: n, Name: name, Complexity: cyclomaticOf(spec, n, src)})
 	})
 	return out
 }
 
 // cognitiveOf computes a simplified cognitive complexity: control-flow
-// structures cost 1 plus the current nesting depth, and each && / || costs 1.
-func cognitiveOf(root *sitter.Node, src []byte) int {
+// structures cost 1 plus the current nesting depth, and each logical operator
+// costs 1.
+func cognitiveOf(spec langspec.Spec, root *sitter.Node, src []byte) int {
 	var rec func(n *sitter.Node, nesting int) int
 	rec = func(n *sitter.Node, nesting int) int {
 		total := 0
 		for i := 0; i < int(n.NamedChildCount()); i++ {
 			c := n.NamedChild(i)
-			switch c.Type() {
-			case "if_statement", "for_statement",
-				"expression_switch_statement", "type_switch_statement", "select_statement":
+			switch {
+			case spec.CognitiveControl[c.Type()]:
 				total += 1 + nesting
 				total += rec(c, nesting+1)
-			case "binary_expression":
-				if isLogicalOp(c, src) {
-					total++
-				}
+			case spec.IsLogical(c, src):
+				total++
 				total += rec(c, nesting)
 			default:
 				total += rec(c, nesting)
@@ -105,8 +76,8 @@ func cognitiveOf(root *sitter.Node, src []byte) int {
 	return rec(root, 0)
 }
 
-// Compute returns all file-level metrics for a parsed Go file.
-func Compute(path string, root *sitter.Node, src []byte) domain.FileMetrics {
+// Compute returns all file-level metrics for a parsed file.
+func Compute(spec langspec.Spec, path string, root *sitter.Node, src []byte) domain.FileMetrics {
 	codeLines := map[int]bool{}
 	commentLines := map[int]bool{}
 
@@ -115,7 +86,7 @@ func Compute(path string, root *sitter.Node, src []byte) domain.FileMetrics {
 			return // only leaf tokens carry line attribution
 		}
 		start := int(n.StartPoint().Row)
-		if n.Type() == "comment" {
+		if n.Type() == spec.CommentType {
 			for r := start; r <= int(n.EndPoint().Row); r++ {
 				commentLines[r] = true
 			}
@@ -132,7 +103,7 @@ func Compute(path string, root *sitter.Node, src []byte) domain.FileMetrics {
 		}
 	}
 
-	funcs := Functions(root, src)
+	funcs := Functions(spec, root, src)
 	fileComplexity, maxFunc := 0, 0
 	for _, f := range funcs {
 		fileComplexity += f.Complexity
@@ -148,7 +119,7 @@ func Compute(path string, root *sitter.Node, src []byte) domain.FileMetrics {
 		CommentLines:        commentOnly,
 		Functions:           len(funcs),
 		Complexity:          fileComplexity,
-		CognitiveComplexity: cognitiveOf(root, src),
+		CognitiveComplexity: cognitiveOf(spec, root, src),
 		MaxFuncComplexity:   maxFunc,
 	}
 }
@@ -164,12 +135,8 @@ func countLines(src []byte) int {
 			n++
 		}
 	}
-	// don't count a trailing newline as an extra empty line
 	if src[len(src)-1] == '\n' {
-		n--
+		n-- // don't count a trailing newline as an extra empty line
 	}
 	return n
 }
-
-// avoid unused import if funcNodes/decisionNodes set tweaked later
-var _ = funcNodes

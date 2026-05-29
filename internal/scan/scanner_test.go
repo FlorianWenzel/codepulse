@@ -47,3 +47,23 @@ func TestScanRelativePaths(t *testing.T) {
 		}
 	}
 }
+
+func TestScanPythonFixtureDir(t *testing.T) {
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/pyfixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if rep.Summary.FilesAnalyzed != 1 {
+		t.Errorf("files analyzed = %d, want 1", rep.Summary.FilesAnalyzed)
+	}
+	if rep.Summary.TotalFindings != 4 {
+		t.Errorf("total findings = %d, want 4", rep.Summary.TotalFindings)
+	}
+	if rep.Language != "python" {
+		t.Errorf("language = %q, want python", rep.Language)
+	}
+	// one of the python findings is a VULNERABILITY (eval/exec)
+	if rep.Summary.ByType[domain.TypeVulnerability] != 1 {
+		t.Errorf("vulnerabilities = %d, want 1", rep.Summary.ByType[domain.TypeVulnerability])
+	}
+}

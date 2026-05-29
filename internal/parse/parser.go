@@ -6,18 +6,14 @@ import (
 	"context"
 
 	sitter "github.com/smacker/go-tree-sitter"
-	"github.com/smacker/go-tree-sitter/golang"
 )
 
-// GoLanguage returns the tree-sitter grammar for Go.
-func GoLanguage() *sitter.Language { return golang.GetLanguage() }
-
-// Parse parses Go source into a syntax tree. Parse errors do not fail the
-// call — tree-sitter returns a partial tree with ERROR nodes, which the
-// caller can still analyze.
-func Parse(src []byte) (*sitter.Tree, error) {
+// Parse parses source with the given tree-sitter grammar into a syntax tree.
+// Parse errors do not fail the call — tree-sitter returns a partial tree with
+// ERROR nodes, which the caller can still analyze.
+func Parse(tsLang *sitter.Language, src []byte) (*sitter.Tree, error) {
 	p := sitter.NewParser()
-	p.SetLanguage(GoLanguage())
+	p.SetLanguage(tsLang)
 	return p.ParseCtx(context.Background(), nil, src)
 }
 

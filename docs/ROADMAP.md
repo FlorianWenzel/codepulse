@@ -39,6 +39,13 @@ PR decoration, SCM integrations). Always keep "CodePulse scans CodePulse" green 
 **Exit:** point it at a Go repo in CI, see issues + measures + gate pass/fail in the dashboard.
 
 ## Phase 2 — Breadth & the metrics that matter
+
+> **Progress:** multi-language core ✅ — added a `langspec` abstraction (per-language
+> node-kind mappings) so the metrics + rule engine are language-agnostic. **Python**
+> is now supported alongside Go (rules: exec/eval, TODO/FIXME, bare-except,
+> high-complexity), with cognitive complexity computed per language. Mixed-language
+> scans aggregate correctly. e2e tested. **Next:** duplication detection + coverage import.
+
 - Add **Python, JavaScript, TypeScript, Java** grammars + starter rule sets.
 - Cognitive complexity, comment density, **duplication detection**, coverage import
   (Cobertura/LCOV/JaCoCo/Go), test results import.

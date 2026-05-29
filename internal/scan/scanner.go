@@ -11,13 +11,14 @@ import (
 
 	"github.com/FlorianWenzel/codepulse/internal/domain"
 	"github.com/FlorianWenzel/codepulse/internal/lang"
+	"github.com/FlorianWenzel/codepulse/internal/langspec"
 	"github.com/FlorianWenzel/codepulse/internal/metrics"
 	"github.com/FlorianWenzel/codepulse/internal/parse"
 	"github.com/FlorianWenzel/codepulse/internal/rules"
 )
 
 // Version is the scanner version stamped into reports.
-const Version = "0.1.0"
+const Version = "0.2.0"
 
 // skipDirs are directory names never descended into.
 var skipDirs = map[string]bool{
@@ -32,17 +33,17 @@ type Options struct {
 	MaxFileSize int64    // skip files larger than this (bytes); 0 = no limit
 }
 
+// langContext bundles the per-language analysis state, built once and reused.
+type langContext struct {
+	spec   langspec.Spec
+	engine *rules.Engine
+}
+
 // Scan walks opts.Root, analyzes every supported file, and returns a report.
 func Scan(opts Options) (domain.Report, error) {
-	engine, err := rules.NewEngine(parse.GoLanguage(), rules.GoRules())
-	if err != nil {
-		return domain.Report{}, err
-	}
-
 	rep := domain.Report{
-		Tool:     "codepulse-scan",
-		Version:  Version,
-		Language: "go",
+		Tool:    "codepulse-scan",
+		Version: Version,
 		Summary: domain.Summary{
 			BySeverity: map[domain.Severity]int{},
 			ByType:     map[domain.IssueType]int{},
@@ -54,25 +55,37 @@ func Scan(opts Options) (domain.Report, error) {
 		return domain.Report{}, err
 	}
 
+	contexts := map[lang.Language]*langContext{}
+	langsSeen := map[lang.Language]bool{}
+
 	for _, path := range files {
+		l := lang.Detect(path)
+		ctx, err := contextFor(l, contexts)
+		if err != nil {
+			return domain.Report{}, err
+		}
+		if ctx == nil {
+			continue // unsupported language
+		}
+		langsSeen[l] = true
+
 		src, err := os.ReadFile(path)
 		if err != nil {
 			return domain.Report{}, err
 		}
-		tree, err := parse.Parse(src)
+		tree, err := parse.Parse(ctx.spec.TS, src)
 		if err != nil {
 			return domain.Report{}, err
 		}
 		root := tree.RootNode()
-
 		rel := relPath(opts.Root, path)
 
-		fm := metrics.Compute(rel, root, src)
+		fm := metrics.Compute(ctx.spec, rel, root, src)
 		rep.Metrics = append(rep.Metrics, fm)
 		rep.Summary.TotalNcloc += fm.Ncloc
 		rep.Summary.FilesAnalyzed++
 
-		for _, f := range engine.Run(rel, root, src) {
+		for _, f := range ctx.engine.Run(rel, root, src) {
 			rep.Findings = append(rep.Findings, f)
 			rep.Summary.BySeverity[f.Severity]++
 			rep.Summary.ByType[f.Type]++
@@ -80,7 +93,46 @@ func Scan(opts Options) (domain.Report, error) {
 		}
 	}
 
-	// Deterministic ordering: by file, then line, then rule.
+	rep.Language = joinLangs(langsSeen)
+	sortReport(&rep)
+	return rep, nil
+}
+
+// contextFor returns (building if needed) the analysis context for a language,
+// or nil if the language is unsupported.
+func contextFor(l lang.Language, cache map[lang.Language]*langContext) (*langContext, error) {
+	if ctx, ok := cache[l]; ok {
+		return ctx, nil
+	}
+	spec, ok := langspec.For(l)
+	if !ok {
+		cache[l] = nil
+		return nil, nil
+	}
+	rs := rules.ForLanguage(l)
+	if len(rs) == 0 {
+		cache[l] = nil
+		return nil, nil
+	}
+	eng, err := rules.NewEngine(spec.TS, rs)
+	if err != nil {
+		return nil, err
+	}
+	ctx := &langContext{spec: spec, engine: eng}
+	cache[l] = ctx
+	return ctx, nil
+}
+
+func joinLangs(seen map[lang.Language]bool) string {
+	var ls []string
+	for l := range seen {
+		ls = append(ls, string(l))
+	}
+	sort.Strings(ls)
+	return strings.Join(ls, ",")
+}
+
+func sortReport(rep *domain.Report) {
 	sort.Slice(rep.Findings, func(i, j int) bool {
 		a, b := rep.Findings[i], rep.Findings[j]
 		if a.Location.File != b.Location.File {
@@ -92,8 +144,6 @@ func Scan(opts Options) (domain.Report, error) {
 		return a.RuleID < b.RuleID
 	})
 	sort.Slice(rep.Metrics, func(i, j int) bool { return rep.Metrics[i].Path < rep.Metrics[j].Path })
-
-	return rep, nil
 }
 
 // collectFiles returns the sorted list of supported files under opts.Root.

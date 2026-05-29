@@ -11,13 +11,15 @@ type Language string
 
 const (
 	Go      Language = "go"
+	Python  Language = "python"
 	Unknown Language = ""
 )
 
-// extMap maps file extensions to languages. Phase 1 ships Go; later phases
-// add Python/JS/TS/Java here (and wire up their grammars in parse).
+// extMap maps file extensions to languages. Later phases add JS/TS/Java here
+// (plus their grammars in langspec and rule sets in rules).
 var extMap = map[string]Language{
 	".go": Go,
+	".py": Python,
 }
 
 // Detect returns the language for a path, or Unknown if unsupported.

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/FlorianWenzel/codepulse/internal/domain"
+	"github.com/FlorianWenzel/codepulse/internal/lang"
 	"github.com/FlorianWenzel/codepulse/internal/report"
 	"github.com/FlorianWenzel/codepulse/internal/rules"
 	"github.com/FlorianWenzel/codepulse/internal/scan"
@@ -88,11 +89,13 @@ func run() error {
 	return nil
 }
 
-// ruleMeta exposes the built-in rule set's metadata for SARIF.
+// ruleMeta exposes every built-in rule's metadata for SARIF.
 func ruleMeta() []report.RuleMeta {
 	var m []report.RuleMeta
-	for _, r := range rules.GoRules() {
-		m = append(m, report.RuleMeta{ID: r.ID, Name: r.Name, Type: r.Type, Severity: r.Severity})
+	for _, l := range []lang.Language{lang.Go, lang.Python} {
+		for _, r := range rules.ForLanguage(l) {
+			m = append(m, report.RuleMeta{ID: r.ID, Name: r.Name, Type: r.Type, Severity: r.Severity})
+		}
 	}
 	return m
 }
