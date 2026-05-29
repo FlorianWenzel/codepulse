@@ -1,0 +1,29 @@
+# Binaries
+/bin/
+/dist/
+codepulse-scan
+codepulse-server
+*.exe
+
+# Go
+*.test
+*.out
+/vendor/
+
+# Node / web
+node_modules/
+web/dist/
+
+# Reports & scan artifacts
+codepulse-report.json
+*.sarif
+
+# Env & secrets
+.env
+.env.local
+*.local
+
+# Editor / OS
+.idea/
+.vscode/
+.DS_Store
