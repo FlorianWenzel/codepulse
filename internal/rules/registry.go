@@ -14,6 +14,15 @@ import (
 // is flagged by the <lang>:high-complexity rule.
 const HighComplexityThreshold = 15
 
+// Languages lists every language with a built-in rule set.
+func Languages() []lang.Language {
+	return []lang.Language{
+		lang.Go, lang.Python, lang.JavaScript, lang.TypeScript, lang.Java,
+		lang.Ruby, lang.Rust, lang.C, lang.Bash, lang.Cpp, lang.CSharp,
+		lang.PHP, lang.Kotlin, lang.Scala, lang.Swift,
+	}
+}
+
 // ForLanguage returns the built-in rule set for a language (empty if the
 // language is unsupported).
 func ForLanguage(l lang.Language) []Rule {

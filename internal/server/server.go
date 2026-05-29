@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/FlorianWenzel/codepulse/internal/domain"
+	"github.com/FlorianWenzel/codepulse/internal/lang"
+	"github.com/FlorianWenzel/codepulse/internal/rules"
 	"github.com/FlorianWenzel/codepulse/internal/server/decorate"
 	"github.com/FlorianWenzel/codepulse/internal/server/gate"
 	"github.com/FlorianWenzel/codepulse/internal/server/store"
@@ -63,6 +65,7 @@ func branchOf(r *http.Request) string {
 func (s *Server) routes() {
 	s.mux = http.NewServeMux()
 	s.mux.HandleFunc("GET /healthz", s.health)
+	s.mux.HandleFunc("GET /api/v1/rules", s.listRules)
 	s.mux.HandleFunc("GET /auth/login", s.login)
 	s.mux.HandleFunc("GET /auth/callback", s.callback)
 	s.mux.HandleFunc("POST /api/v1/tokens", s.createToken)
@@ -94,6 +97,16 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) { s.mux.Serve
 
 func (s *Server) health(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+// listRules returns the built-in rule catalogue (id, name, type, severity,
+// description, CWE/OWASP, tags), optionally filtered by ?language.
+func (s *Server) listRules(w http.ResponseWriter, r *http.Request) {
+	if l := r.URL.Query().Get("language"); l != "" {
+		writeJSON(w, http.StatusOK, rules.CatalogFor(lang.Language(l)))
+		return
+	}
+	writeJSON(w, http.StatusOK, rules.Catalog())
 }
 
 func (s *Server) createProject(w http.ResponseWriter, r *http.Request) {

@@ -13,7 +13,6 @@ import (
 	"github.com/FlorianWenzel/codepulse/internal/importers/coverage"
 	"github.com/FlorianWenzel/codepulse/internal/importers/sarif"
 	"github.com/FlorianWenzel/codepulse/internal/importers/semgrep"
-	"github.com/FlorianWenzel/codepulse/internal/lang"
 	"github.com/FlorianWenzel/codepulse/internal/report"
 	"github.com/FlorianWenzel/codepulse/internal/rules"
 	"github.com/FlorianWenzel/codepulse/internal/scan"
@@ -137,13 +136,15 @@ func run() error {
 	return nil
 }
 
-// ruleMeta exposes every built-in rule's metadata for SARIF.
+// ruleMeta exposes every built-in rule's metadata (incl. description + CWE/tags)
+// for SARIF, sourced from the rule catalogue.
 func ruleMeta() []report.RuleMeta {
 	var m []report.RuleMeta
-	for _, l := range []lang.Language{lang.Go, lang.Python, lang.JavaScript, lang.TypeScript, lang.Java, lang.Ruby, lang.Rust, lang.C, lang.Bash, lang.Cpp, lang.CSharp, lang.PHP, lang.Kotlin, lang.Scala, lang.Swift} {
-		for _, r := range rules.ForLanguage(l) {
-			m = append(m, report.RuleMeta{ID: r.ID, Name: r.Name, Type: r.Type, Severity: r.Severity})
-		}
+	for _, c := range rules.Catalog() {
+		m = append(m, report.RuleMeta{
+			ID: c.ID, Name: c.Name, Type: c.Type, Severity: c.Severity,
+			Description: c.Description, CWE: c.CWE, Tags: c.Tags,
+		})
 	}
 	return m
 }

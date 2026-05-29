@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/FlorianWenzel/codepulse/internal/domain"
+	"github.com/FlorianWenzel/codepulse/internal/rules"
 	"github.com/FlorianWenzel/codepulse/internal/scan"
 	"github.com/FlorianWenzel/codepulse/internal/server"
 	"github.com/FlorianWenzel/codepulse/internal/server/decorate"
@@ -411,6 +412,41 @@ func TestAsyncIngest(t *testing.T) {
 	getJSON(t, ts.URL+"/api/v1/issues?project=demo&open=true", http.StatusOK, &issues)
 	if len(issues) != 4 {
 		t.Errorf("open issues after async ingest = %d, want 4", len(issues))
+	}
+}
+
+func TestRulesCatalog(t *testing.T) {
+	ts := httptest.NewServer(server.New(store.NewMemory()))
+	defer ts.Close()
+
+	var all []rules.Meta
+	getJSON(t, ts.URL+"/api/v1/rules", http.StatusOK, &all)
+	if len(all) < 20 {
+		t.Fatalf("rule catalog = %d, want many", len(all))
+	}
+	var eval *rules.Meta
+	for i := range all {
+		if all[i].ID == "py:exec-eval" {
+			eval = &all[i]
+		}
+	}
+	if eval == nil {
+		t.Fatal("py:exec-eval missing from catalog")
+	}
+	if eval.Description == "" || len(eval.CWE) == 0 {
+		t.Errorf("py:exec-eval lacks description/CWE: %+v", eval)
+	}
+
+	// language filter
+	var goRules []rules.Meta
+	getJSON(t, ts.URL+"/api/v1/rules?language=go", http.StatusOK, &goRules)
+	if len(goRules) == 0 {
+		t.Fatal("no go rules returned")
+	}
+	for _, m := range goRules {
+		if m.Language != "go" {
+			t.Errorf("filter leaked %s rule", m.Language)
+		}
 	}
 }
 

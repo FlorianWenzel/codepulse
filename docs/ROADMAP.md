@@ -157,11 +157,11 @@ Ordered by leverage.
 - Type-aware checks where grammar/imports permit. Keep **Semgrep/CodeQL via SARIF** as the
   deep-engine path for what we don't implement natively.
 
-### 3. Rule content & security reporting
-- Rich rule metadata: full **descriptions, remediation guidance, code examples**, severity
-  rationale, tags — served via the API and rendered in the dashboard rule/issue views.
-- **CWE / OWASP Top 10 (+ CWE Top 25)** mappings on rules, plus an OWASP-style **security
-  report** per project. Adopt a clean-code-style issue taxonomy.
+### 3. Rule content & security reporting  *(in progress)*
+- Rich rule metadata ✅ (started): descriptions + **CWE / OWASP** mappings + tags via a rule
+  **taxonomy**, exposed at **`GET /api/v1/rules`** (filterable by language) and embedded in
+  **SARIF** rule descriptors (`fullDescription` + `properties.cwe/tags`). **Next:** remediation
+  guidance + code examples, dashboard rule/issue rendering, and an OWASP-style security report.
 
 ### 4. CI/CD — premade GitHub Action (like SonarQube's scan action) ✅
 - **Shipped:** composite GitHub Action at repo root (`action.yml`, used as

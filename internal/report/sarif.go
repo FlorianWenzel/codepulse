@@ -32,10 +32,11 @@ type sarifDriver struct {
 }
 
 type sarifRule struct {
-	ID               string            `json:"id"`
-	Name             string            `json:"name"`
-	ShortDescription sarifText         `json:"shortDescription"`
-	Properties       map[string]string `json:"properties,omitempty"`
+	ID               string         `json:"id"`
+	Name             string         `json:"name"`
+	ShortDescription sarifText      `json:"shortDescription"`
+	FullDescription  *sarifText     `json:"fullDescription,omitempty"`
+	Properties       map[string]any `json:"properties,omitempty"`
 }
 
 type sarifText struct {
@@ -81,11 +82,14 @@ func sarifLevel(s domain.Severity) string {
 	}
 }
 
-// RuleMeta is the minimal rule metadata SARIF needs in its driver section.
+// RuleMeta is the rule metadata SARIF needs in its driver section.
 type RuleMeta struct {
-	ID, Name string
-	Type     domain.IssueType
-	Severity domain.Severity
+	ID, Name    string
+	Type        domain.IssueType
+	Severity    domain.Severity
+	Description string
+	CWE         []string
+	Tags        []string
 }
 
 // WriteSARIF writes the report as SARIF 2.1.0. ruleMeta supplies the rule
@@ -93,15 +97,26 @@ type RuleMeta struct {
 func WriteSARIF(w io.Writer, r domain.Report, ruleMeta []RuleMeta) error {
 	rules := make([]sarifRule, 0, len(ruleMeta))
 	for _, m := range ruleMeta {
-		rules = append(rules, sarifRule{
+		props := map[string]any{
+			"type":     string(m.Type),
+			"severity": string(m.Severity),
+		}
+		if len(m.CWE) > 0 {
+			props["cwe"] = m.CWE
+		}
+		if len(m.Tags) > 0 {
+			props["tags"] = m.Tags
+		}
+		sr := sarifRule{
 			ID:               m.ID,
 			Name:             m.Name,
 			ShortDescription: sarifText{Text: m.Name},
-			Properties: map[string]string{
-				"type":     string(m.Type),
-				"severity": string(m.Severity),
-			},
-		})
+			Properties:       props,
+		}
+		if m.Description != "" {
+			sr.FullDescription = &sarifText{Text: m.Description}
+		}
+		rules = append(rules, sr)
 	}
 
 	results := make([]sarifResult, 0, len(r.Findings))
