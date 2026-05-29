@@ -5,6 +5,7 @@ import (
 
 	"github.com/FlorianWenzel/codepulse/internal/domain"
 	"github.com/FlorianWenzel/codepulse/internal/langspec"
+	"github.com/FlorianWenzel/codepulse/internal/parse"
 )
 
 // goRules returns CodePulse's built-in Go rule set ("the CodePulse Way"
@@ -120,8 +121,58 @@ func goRules() []Rule {
 			Capture:   "flag",
 			Message:   "io/ioutil is deprecated; use the equivalent functions in os and io.",
 		},
+		{
+			ID:        "go:tls-insecure-skip-verify",
+			Name:      "TLS certificate verification disabled (InsecureSkipVerify)",
+			Type:      domain.TypeHotspot,
+			Severity:  domain.SevCritical,
+			EffortMin: 20,
+			Query:     `(keyed_element (literal_element (identifier) @k) (literal_element (true) @v) (#eq? @k "InsecureSkipVerify")) @flag`,
+			Capture:   "flag",
+			Message:   "InsecureSkipVerify: true disables TLS certificate validation, enabling man-in-the-middle attacks.",
+		},
+		{
+			ID:        "go:discarded-append",
+			Name:      "Result of append() is discarded",
+			Type:      domain.TypeBug,
+			Severity:  domain.SevMajor,
+			EffortMin: 10,
+			Query:     `(expression_statement (call_expression function: (identifier) @fn (#eq? @fn "append"))) @flag`,
+			Capture:   "flag",
+			Message:   "append() returns a new slice; ignoring the result is a no-op. Assign it back (s = append(s, ...)).",
+		},
+		goDeferInLoopRule(),
 		goTaintExecRule(),
 		goTaintSQLRule(),
 		complexityRule(langspec.Go()),
+	}
+}
+
+// goDeferInLoopRule flags defer statements whose nearest enclosing scope is a
+// loop (not a function/closure boundary): the deferred calls do not run until
+// the surrounding function returns, so resources pile up across iterations.
+func goDeferInLoopRule() Rule {
+	return Rule{
+		ID:        "go:defer-in-loop",
+		Name:      "defer inside a loop",
+		Type:      domain.TypeBug,
+		Severity:  domain.SevMajor,
+		EffortMin: 15,
+		Visit: func(root *sitter.Node, src []byte, emit func(*sitter.Node, string)) {
+			parse.Walk(root, func(n *sitter.Node) {
+				if n.Type() != "defer_statement" {
+					return
+				}
+				for p := n.Parent(); p != nil; p = p.Parent() {
+					switch p.Type() {
+					case "func_literal", "function_declaration", "method_declaration":
+						return // hit a function boundary before any loop
+					case "for_statement":
+						emit(n, "defer inside a loop runs only when the function returns; resources accumulate each iteration. Wrap the body in a function or call Close() explicitly.")
+						return
+					}
+				}
+			})
+		},
 	}
 }

@@ -124,6 +124,45 @@ func TestScanJava(t *testing.T) {
 	}
 }
 
+// TestScanGoBugRules covers the bug/hotspot rules that need AST context:
+// defer-in-loop (not the closure variant), discarded append, and TLS
+// InsecureSkipVerify.
+func TestScanGoBugRules(t *testing.T) {
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/gobugfixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	want := map[string]bool{
+		"go:defer-in-loop":            false,
+		"go:discarded-append":         false,
+		"go:tls-insecure-skip-verify": false,
+	}
+	for _, f := range rep.Findings {
+		if _, ok := want[f.RuleID]; ok {
+			want[f.RuleID] = true
+		}
+	}
+	for id, seen := range want {
+		if !seen {
+			t.Errorf("expected rule %s to fire on gobugfixture", id)
+		}
+	}
+	// The defer inside a per-iteration closure must NOT be flagged.
+	if n := countRule(rep, "go:defer-in-loop"); n != 1 {
+		t.Errorf("go:defer-in-loop fired %d times, want 1 (closure variant excluded)", n)
+	}
+}
+
+func countRule(rep domain.Report, id string) int {
+	n := 0
+	for _, f := range rep.Findings {
+		if f.RuleID == id {
+			n++
+		}
+	}
+	return n
+}
+
 func TestScanDuplication(t *testing.T) {
 	rep, err := scan.Scan(scan.Options{Root: "../../testdata/dupfixture", MinDupTokens: 20})
 	if err != nil {

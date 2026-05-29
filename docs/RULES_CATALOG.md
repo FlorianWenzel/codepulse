@@ -3,7 +3,7 @@
 > Auto-generated from `codepulse-scan -rules`. Do not edit by hand —
 > regenerate with `make rules-catalog`.
 
-**91 built-in rules** across **15 languages**. Each rule carries a
+**94 built-in rules** across **15 languages**. Each rule carries a
 type (BUG / VULNERABILITY / CODE_SMELL / SECURITY_HOTSPOT), a default severity,
 a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings.
 
@@ -15,7 +15,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | c | 2 |
 | cpp | 2 |
 | csharp | 2 |
-| go | 13 |
+| go | 16 |
 | java | 11 |
 | javascript | 17 |
 | kotlin | 2 |
@@ -26,7 +26,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | scala | 2 |
 | swift | 2 |
 | typescript | 17 |
-| **Total** | **91** |
+| **Total** | **94** |
 
 ## bash
 
@@ -62,6 +62,8 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 |---------|------|------|----------|-----|-------|
 | `go:context-todo` | context.TODO() should be replaced before release | CODE_SMELL | MINOR | — | — |
 | `go:debug-print` | Remove debug print statements | CODE_SMELL | MINOR | — | — |
+| `go:defer-in-loop` | defer inside a loop | BUG | MAJOR | CWE-404 | — |
+| `go:discarded-append` | Result of append() is discarded | BUG | MAJOR | CWE-1164 | — |
 | `go:empty-block` | Empty blocks should be removed or documented | CODE_SMELL | MINOR | — | — |
 | `go:error-new-fmt` | Use fmt.Errorf instead of errors.New(fmt.Sprintf(...)) | CODE_SMELL | MINOR | — | — |
 | `go:exec-command` | OS command execution is security-sensitive | SECURITY_HOTSPOT | MAJOR | CWE-78 | A03:2021-Injection |
@@ -71,6 +73,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | `go:panic-usage` | panic() should not be used for normal control flow | CODE_SMELL | MAJOR | — | — |
 | `go:tainted-exec` | Untrusted input flows into command execution | VULNERABILITY | CRITICAL | CWE-78 | A03:2021-Injection |
 | `go:tainted-sql` | Untrusted input concatenated into a SQL query | VULNERABILITY | CRITICAL | CWE-89 | A03:2021-Injection |
+| `go:tls-insecure-skip-verify` | TLS certificate verification disabled (InsecureSkipVerify) | SECURITY_HOTSPOT | CRITICAL | CWE-295 | A02:2021-Cryptographic Failures |
 | `go:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |
 | `go:weak-hash` | Weak cryptographic hash (MD5/SHA-1) | SECURITY_HOTSPOT | MAJOR | CWE-327, CWE-328 | A02:2021-Cryptographic Failures |
 
