@@ -16,6 +16,7 @@ import (
 // admin if their email is in AdminEmails, otherwise a global read-only viewer.
 type OIDC struct {
 	Provider     string // optional preset: google | github | gitlab (fills URLs if unset)
+	Issuer       string // optional: discover endpoints via {issuer}/.well-known/openid-configuration
 	AuthURL      string
 	TokenURL     string
 	UserInfoURL  string
@@ -51,9 +52,40 @@ func (o *OIDC) applyPreset() {
 	}
 }
 
-// SetOIDC enables SSO with the given provider config (applies provider presets).
+// discover fills empty endpoint URLs from the issuer's OIDC discovery document
+// ({issuer}/.well-known/openid-configuration) — works for Okta, Keycloak, etc.
+func (o *OIDC) discover() {
+	if o.Issuer == "" || (o.AuthURL != "" && o.TokenURL != "" && o.UserInfoURL != "") {
+		return
+	}
+	resp, err := o.client().Get(strings.TrimRight(o.Issuer, "/") + "/.well-known/openid-configuration")
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+	var d struct {
+		AuthorizationEndpoint string `json:"authorization_endpoint"`
+		TokenEndpoint         string `json:"token_endpoint"`
+		UserinfoEndpoint      string `json:"userinfo_endpoint"`
+	}
+	if json.NewDecoder(resp.Body).Decode(&d) != nil {
+		return
+	}
+	if o.AuthURL == "" {
+		o.AuthURL = d.AuthorizationEndpoint
+	}
+	if o.TokenURL == "" {
+		o.TokenURL = d.TokenEndpoint
+	}
+	if o.UserInfoURL == "" {
+		o.UserInfoURL = d.UserinfoEndpoint
+	}
+}
+
+// SetOIDC enables SSO with the given provider config (presets, then discovery).
 func (s *Server) SetOIDC(o *OIDC) {
 	o.applyPreset()
+	o.discover()
 	s.oidc = o
 }
 

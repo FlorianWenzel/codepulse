@@ -175,7 +175,7 @@ Ordered by leverage.
   keyless auth ✅** — the Action mints a short-lived OIDC token (id-token: write); the server
   verifies it via JWKS (issuer/audience/expiry/signature) and authorizes ingest from the
   matching `repository` claim, so CI uploads need no static token (`CODEPULSE_CI_OIDC_*`).
-  **Next:** Okta/Keycloak issuer discovery (`.well-known/openid-configuration`).
+  **Okta/Keycloak issuer discovery ✅** (`CODEPULSE_OIDC_ISSUER` → `.well-known/openid-configuration` fills the endpoints).
 
 ### More languages
 - Keep widening via `langspec` (C++/C#/PHP/Kotlin/Scala/Swift already added; next Go templates,

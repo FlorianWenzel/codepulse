@@ -69,7 +69,7 @@ func main() {
 		srv.SetCIAuth(&server.CIAuth{Issuer: iss, Audience: aud, JWKSURL: jwks})
 		log.Printf("CI keyless OIDC ingest enabled (issuer %s)", iss)
 	}
-	if au := os.Getenv("CODEPULSE_OIDC_AUTH_URL"); au != "" || os.Getenv("CODEPULSE_OIDC_PROVIDER") != "" {
+	if au := os.Getenv("CODEPULSE_OIDC_AUTH_URL"); au != "" || os.Getenv("CODEPULSE_OIDC_PROVIDER") != "" || os.Getenv("CODEPULSE_OIDC_ISSUER") != "" {
 		csv := func(key string) map[string]bool {
 			m := map[string]bool{}
 			for _, e := range strings.Split(os.Getenv(key), ",") {
@@ -85,6 +85,7 @@ func main() {
 		}
 		srv.SetOIDC(&server.OIDC{
 			Provider: os.Getenv("CODEPULSE_OIDC_PROVIDER"),
+			Issuer:   os.Getenv("CODEPULSE_OIDC_ISSUER"),
 			AuthURL:  au, TokenURL: os.Getenv("CODEPULSE_OIDC_TOKEN_URL"),
 			UserInfoURL:  os.Getenv("CODEPULSE_OIDC_USERINFO_URL"),
 			ClientID:     os.Getenv("CODEPULSE_OIDC_CLIENT_ID"),

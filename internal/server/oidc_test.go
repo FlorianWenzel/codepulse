@@ -187,3 +187,32 @@ func TestSSOGroupAdmin(t *testing.T) {
 		t.Errorf("group-admin create project = %d, want 201", r.StatusCode)
 	}
 }
+
+func TestOIDCDiscovery(t *testing.T) {
+	disco := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		base := "http://" + r.Host
+		json.NewEncoder(w).Encode(map[string]string{
+			"authorization_endpoint": base + "/authorize",
+			"token_endpoint":         base + "/token",
+			"userinfo_endpoint":      base + "/userinfo",
+		})
+	}))
+	defer disco.Close()
+
+	srv := server.New(store.NewMemory())
+	srv.SetOIDC(&server.OIDC{Issuer: disco.URL, ClientID: "x", RedirectURL: "http://cb/auth/callback"})
+	ts := httptest.NewServer(srv)
+	defer ts.Close()
+
+	resp, err := noRedirect().Get(ts.URL + "/auth/login")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusFound {
+		t.Fatalf("login status = %d, want 302", resp.StatusCode)
+	}
+	loc, _ := url.Parse(resp.Header.Get("Location"))
+	if loc.Path != "/authorize" {
+		t.Errorf("discovered authorize path = %q, want /authorize (Location=%s)", loc.Path, resp.Header.Get("Location"))
+	}
+}
