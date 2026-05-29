@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/FlorianWenzel/codepulse/internal/server"
 	"github.com/FlorianWenzel/codepulse/internal/server/decorate"
@@ -44,6 +45,22 @@ func main() {
 	if tok := os.Getenv("GITHUB_TOKEN"); tok != "" {
 		srv.SetDecorator(&decorate.GitHub{Token: tok})
 		log.Printf("GitHub PR decoration enabled")
+	}
+	if au := os.Getenv("CODEPULSE_OIDC_AUTH_URL"); au != "" {
+		admins := map[string]bool{}
+		for _, e := range strings.Split(os.Getenv("CODEPULSE_OIDC_ADMIN_EMAILS"), ",") {
+			if e = strings.ToLower(strings.TrimSpace(e)); e != "" {
+				admins[e] = true
+			}
+		}
+		srv.SetOIDC(&server.OIDC{
+			AuthURL: au, TokenURL: os.Getenv("CODEPULSE_OIDC_TOKEN_URL"),
+			UserInfoURL:  os.Getenv("CODEPULSE_OIDC_USERINFO_URL"),
+			ClientID:     os.Getenv("CODEPULSE_OIDC_CLIENT_ID"),
+			ClientSecret: os.Getenv("CODEPULSE_OIDC_CLIENT_SECRET"),
+			RedirectURL:  os.Getenv("CODEPULSE_OIDC_REDIRECT_URL"), AdminEmails: admins,
+		})
+		log.Printf("OIDC SSO enabled")
 	}
 
 	log.Printf("codepulse-server listening on %s", *addr)

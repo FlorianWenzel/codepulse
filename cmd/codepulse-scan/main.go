@@ -26,9 +26,9 @@ func main() {
 
 func run() error {
 	var (
-		format  = flag.String("format", "json", "output format: json | sarif")
-		out     = flag.String("o", "", "write report to this file (default: stdout)")
-		exclude = flag.String("exclude", "", "comma-separated path substrings to skip")
+		format   = flag.String("format", "json", "output format: json | sarif")
+		out      = flag.String("o", "", "write report to this file (default: stdout)")
+		exclude  = flag.String("exclude", "", "comma-separated path substrings to skip")
 		failOn   = flag.String("fail-on", "", "exit non-zero if any finding is at least this severity (BLOCKER|CRITICAL|MAJOR|MINOR|INFO)")
 		covPath  = flag.String("coverage", "", "import a coverage report (LCOV, Go coverprofile, or Cobertura XML)")
 		dupTok   = flag.Int("dup-tokens", 0, "duplication window size in tokens (0 = default 100)")

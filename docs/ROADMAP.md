@@ -110,7 +110,11 @@ metric domains, ratings, and a working clean-as-you-code gate.
 > `external:<tool>:<rule>` findings (`-import-sarif`), unit-tested. **Portfolio/aggregation**
 > ✅ (`GET /portfolio`: every project's latest gate + ratings + size) and **retention/pruning**
 > ✅ (`POST /projects/{key}/prune?keep=N`, both stores) are done and e2e tested.
-> **Next:** SSO (OIDC login) and a documented dataflow integration (Semgrep/CodeQL via SARIF).
+> **SSO (OIDC)** ✅ — `/auth/login` → IdP → `/auth/callback` exchanges the code, reads the
+> user's email, and mints a CodePulse token (admin if allow-listed, else a global read-only
+> viewer); state-cookie CSRF guard; configured via `CODEPULSE_OIDC_*`; tested against a fake
+> IdP (admin + viewer paths). **Next:** dataflow integration (Semgrep/CodeQL via SARIF import)
+> + notifications webhook to finish the roadmap.
 - AuthN/Z: local users + **OIDC/SAML/GitHub** SSO, groups, fine-grained RBAC.
 - Performance: partitioning, retention/pruning, read replicas; horizontal worker scaling.
 - More languages (C/C++, C#, Ruby, PHP, Rust, Kotlin, Bash, etc.).

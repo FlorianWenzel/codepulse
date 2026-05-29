@@ -59,17 +59,17 @@ type Finding struct {
 
 // FileMetrics holds the size/complexity measures computed for one file.
 type FileMetrics struct {
-	Path                 string `json:"path"`
-	Lines                int    `json:"lines"`
-	Ncloc                int    `json:"ncloc"` // non-comment lines of code
-	CommentLines         int    `json:"commentLines"`
-	Functions            int    `json:"functions"`
-	Complexity           int    `json:"complexity"`          // cyclomatic, whole file
-	CognitiveComplexity  int    `json:"cognitiveComplexity"` // whole file
-	MaxFuncComplexity    int    `json:"maxFuncComplexity"`   // worst single function
-	DuplicatedLines      int    `json:"duplicatedLines"`
-	LinesToCover         int    `json:"linesToCover,omitempty"`
-	CoveredLines         int    `json:"coveredLines,omitempty"`
+	Path                string `json:"path"`
+	Lines               int    `json:"lines"`
+	Ncloc               int    `json:"ncloc"` // non-comment lines of code
+	CommentLines        int    `json:"commentLines"`
+	Functions           int    `json:"functions"`
+	Complexity          int    `json:"complexity"`          // cyclomatic, whole file
+	CognitiveComplexity int    `json:"cognitiveComplexity"` // whole file
+	MaxFuncComplexity   int    `json:"maxFuncComplexity"`   // worst single function
+	DuplicatedLines     int    `json:"duplicatedLines"`
+	LinesToCover        int    `json:"linesToCover,omitempty"`
+	CoveredLines        int    `json:"coveredLines,omitempty"`
 }
 
 // Report is the full result of a scan: every finding, every file's metrics,
@@ -97,7 +97,7 @@ type Summary struct {
 	Coverage               float64           `json:"coverage,omitempty"`
 	Ratings                Ratings           `json:"ratings"`
 	// New-code measures (issues introduced within the new-code period).
-	NewFindings  int               `json:"newFindings"`
+	NewFindings   int               `json:"newFindings"`
 	NewBySeverity map[Severity]int  `json:"newBySeverity,omitempty"`
 	NewByType     map[IssueType]int `json:"newByType,omitempty"`
 }

@@ -21,12 +21,12 @@ const (
 // extMap maps file extensions to languages. Later phases add Java etc. here
 // (plus their grammars in langspec and rule sets in rules).
 var extMap = map[string]Language{
-	".go":  Go,
-	".py":  Python,
-	".js":  JavaScript,
-	".jsx": JavaScript,
-	".mjs": JavaScript,
-	".cjs": JavaScript,
+	".go":   Go,
+	".py":   Python,
+	".js":   JavaScript,
+	".jsx":  JavaScript,
+	".mjs":  JavaScript,
+	".cjs":  JavaScript,
 	".ts":   TypeScript,
 	".tsx":  TypeScript,
 	".java": Java,

@@ -79,10 +79,14 @@ func canIngest(project string) func(store.Token) bool {
 	}
 }
 
-// canRead: admin, or any token scoped to the project.
+// canRead: admin, a global viewer (SSO user, empty project), or any token
+// scoped to the project.
 func canRead(project string) func(store.Token) bool {
 	return func(t store.Token) bool {
-		return isAdmin(t) || t.ProjectKey == project
+		if isAdmin(t) || (t.Role == store.RoleViewer && t.ProjectKey == "") {
+			return true
+		}
+		return t.ProjectKey == project
 	}
 }
 

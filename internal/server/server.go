@@ -16,12 +16,13 @@ import (
 
 // Server is the HTTP API handler.
 type Server struct {
-	store     store.Store
-	gate      gate.Gate
+	store       store.Store
+	gate        gate.Gate
 	mux         *http.ServeMux
 	now         func() time.Time
 	decorator   decorate.Decorator
 	authEnabled bool
+	oidc        *OIDC
 }
 
 // New builds a Server backed by the given store and the default quality gate.
@@ -45,6 +46,8 @@ func branchOf(r *http.Request) string {
 func (s *Server) routes() {
 	s.mux = http.NewServeMux()
 	s.mux.HandleFunc("GET /healthz", s.health)
+	s.mux.HandleFunc("GET /auth/login", s.login)
+	s.mux.HandleFunc("GET /auth/callback", s.callback)
 	s.mux.HandleFunc("POST /api/v1/tokens", s.createToken)
 	s.mux.HandleFunc("POST /api/v1/projects", s.createProject)
 	s.mux.HandleFunc("GET /api/v1/projects", s.listProjects)
@@ -116,13 +119,13 @@ func (s *Server) getProject(w http.ResponseWriter, r *http.Request) {
 
 // portfolioEntry is one project's headline status for the overview.
 type portfolioEntry struct {
-	Key        string         `json:"key"`
-	Name       string         `json:"name"`
-	GateStatus string         `json:"gateStatus"`
-	Ratings    domain.Ratings `json:"ratings"`
-	Ncloc      int            `json:"ncloc"`
-	Findings   int            `json:"findings"`
-	HasAnalysis bool          `json:"hasAnalysis"`
+	Key         string         `json:"key"`
+	Name        string         `json:"name"`
+	GateStatus  string         `json:"gateStatus"`
+	Ratings     domain.Ratings `json:"ratings"`
+	Ncloc       int            `json:"ncloc"`
+	Findings    int            `json:"findings"`
+	HasAnalysis bool           `json:"hasAnalysis"`
 }
 
 // portfolio returns every project's latest main-branch status (aggregation).
