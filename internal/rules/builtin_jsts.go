@@ -152,6 +152,8 @@ func jsLikeRules(spec langspec.Spec) []Rule {
 			Message:   "new String/Number/Boolean creates objects, not primitives; call them without `new`.",
 		},
 		jsTaintEvalRule(p),
+		jsTaintXSSRule(p),
+		jsTaintExecRule(p),
 		complexityRule(spec),
 	}
 }

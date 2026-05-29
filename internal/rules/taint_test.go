@@ -105,3 +105,18 @@ func TestJSTaintEval(t *testing.T) {
 		t.Errorf("tainted ts eval: fired %d, want 1", got)
 	}
 }
+
+func TestJSTaintXSSExec(t *testing.T) {
+	xss := "function h(req, el) { el.innerHTML = req.body.html; }\n"
+	if got := runRulesSrc(t, lang.JavaScript, xss)["js:tainted-xss"]; got != 1 {
+		t.Errorf("tainted xss: fired %d, want 1", got)
+	}
+	exec := "function h(req, cp) { const c = req.query.cmd; cp.exec(c); }\n"
+	if got := runRulesSrc(t, lang.JavaScript, exec)["js:tainted-exec"]; got != 1 {
+		t.Errorf("tainted exec: fired %d, want 1", got)
+	}
+	clean := "function h(el) { el.innerHTML = 'static'; }\n"
+	if got := runRulesSrc(t, lang.JavaScript, clean)["js:tainted-xss"]; got != 0 {
+		t.Errorf("clean xss: fired %d, want 0", got)
+	}
+}

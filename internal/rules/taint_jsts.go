@@ -23,18 +23,47 @@ func jsTaintEvalRule(prefix string) Rule {
 	}
 }
 
-func visitJSTaintEval(root *sitter.Node, src []byte, emit func(*sitter.Node, string)) {
+// jsForEachFn calls do(body, taintedSet) for each function body.
+func jsForEachFn(root *sitter.Node, src []byte, do func(body *sitter.Node, tainted map[string]bool)) {
 	parse.Walk(root, func(fn *sitter.Node) {
 		switch fn.Type() {
 		case "function_declaration", "method_definition", "arrow_function", "function_expression", "function":
 		default:
 			return
 		}
-		body := fn.ChildByFieldName("body")
-		if body == nil {
-			return
+		if body := fn.ChildByFieldName("body"); body != nil {
+			do(body, collectTaintedJS(body, src))
 		}
-		tainted := collectTaintedJS(body, src)
+	})
+}
+
+// anyArgTainted reports whether any argument of a call is tainted.
+func anyArgTainted(call *sitter.Node, src []byte, tainted map[string]bool) bool {
+	args := call.ChildByFieldName("arguments")
+	if args == nil {
+		return false
+	}
+	for i := 0; i < int(args.NamedChildCount()); i++ {
+		if exprTaintedJS(args.NamedChild(i), src, tainted) {
+			return true
+		}
+	}
+	return false
+}
+
+// jsMemberProp returns the property name of a member_expression (or "").
+func jsMemberProp(n *sitter.Node, src []byte) string {
+	if n == nil || n.Type() != "member_expression" {
+		return ""
+	}
+	if p := n.ChildByFieldName("property"); p != nil {
+		return p.Content(src)
+	}
+	return ""
+}
+
+func visitJSTaintEval(root *sitter.Node, src []byte, emit func(*sitter.Node, string)) {
+	jsForEachFn(root, src, func(body *sitter.Node, tainted map[string]bool) {
 		parse.Walk(body, func(n *sitter.Node) {
 			if n.Type() != "call_expression" {
 				return
@@ -43,18 +72,51 @@ func visitJSTaintEval(root *sitter.Node, src []byte, emit func(*sitter.Node, str
 			if callee == nil || callee.Type() != "identifier" || callee.Content(src) != "eval" {
 				return
 			}
-			args := n.ChildByFieldName("arguments")
-			if args == nil {
-				return
-			}
-			for i := 0; i < int(args.NamedChildCount()); i++ {
-				if exprTaintedJS(args.NamedChild(i), src, tainted) {
-					emit(n, "Request data reaches eval(); never eval untrusted input.")
-					return
-				}
+			if anyArgTainted(n, src, tainted) {
+				emit(n, "Request data reaches eval(); never eval untrusted input.")
 			}
 		})
 	})
+}
+
+func jsTaintXSSRule(prefix string) Rule {
+	return Rule{
+		ID: prefix + ":tainted-xss", Name: "Request data assigned to innerHTML",
+		Type: domain.TypeVulnerability, Severity: domain.SevCritical, EffortMin: 30,
+		Visit: func(root *sitter.Node, src []byte, emit func(*sitter.Node, string)) {
+			jsForEachFn(root, src, func(body *sitter.Node, tainted map[string]bool) {
+				parse.Walk(body, func(n *sitter.Node) {
+					if n.Type() != "assignment_expression" {
+						return
+					}
+					p := jsMemberProp(n.ChildByFieldName("left"), src)
+					if (p == "innerHTML" || p == "outerHTML") && exprTaintedJS(n.ChildByFieldName("right"), src, tainted) {
+						emit(n, "Request data assigned to innerHTML enables XSS; use textContent or sanitize.")
+					}
+				})
+			})
+		},
+	}
+}
+
+func jsTaintExecRule(prefix string) Rule {
+	return Rule{
+		ID: prefix + ":tainted-exec", Name: "Request data flows into command execution",
+		Type: domain.TypeVulnerability, Severity: domain.SevCritical, EffortMin: 30,
+		Visit: func(root *sitter.Node, src []byte, emit func(*sitter.Node, string)) {
+			jsForEachFn(root, src, func(body *sitter.Node, tainted map[string]bool) {
+				parse.Walk(body, func(n *sitter.Node) {
+					if n.Type() != "call_expression" {
+						return
+					}
+					p := jsMemberProp(n.ChildByFieldName("function"), src)
+					if (p == "exec" || p == "execSync") && anyArgTainted(n, src, tainted) {
+						emit(n, "Request data reaches a command-execution call; validate input or avoid shell exec.")
+					}
+				})
+			})
+		},
+	}
 }
 
 func collectTaintedJS(body *sitter.Node, src []byte) map[string]bool {
