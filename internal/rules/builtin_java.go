@@ -55,6 +55,16 @@ func javaRules() []Rule {
 			Capture:   "flag",
 			Message:   "Review this process execution: ensure the command and arguments are trusted.",
 		},
+		{
+			ID:        "java:print-stacktrace",
+			Name:      "Don't expose stack traces via printStackTrace()",
+			Type:      domain.TypeCodeSmell,
+			Severity:  domain.SevMinor,
+			EffortMin: 10,
+			Query:     `(method_invocation name: (identifier) @m (#eq? @m "printStackTrace")) @flag`,
+			Capture:   "flag",
+			Message:   "Log the exception through a logger instead of printStackTrace().",
+		},
 		complexityRule(langspec.Java()),
 	}
 }

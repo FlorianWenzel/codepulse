@@ -146,6 +146,48 @@ func TestMoreLanguageRules(t *testing.T) {
 	}
 }
 
+// runRulesSrc runs the rules for a language over inline source.
+func runRulesSrc(t *testing.T, l lang.Language, src string) map[string]int {
+	t.Helper()
+	spec, ok := langspec.For(l)
+	if !ok {
+		t.Fatalf("no spec for %s", l)
+	}
+	tree, err := parse.Parse(spec.TS, []byte(src))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	eng, err := rules.NewEngine(spec.TS, rules.ForLanguage(l))
+	if err != nil {
+		t.Fatalf("engine: %v", err)
+	}
+	counts := map[string]int{}
+	for _, f := range eng.Run("x", tree.RootNode(), []byte(src)) {
+		counts[f.RuleID]++
+	}
+	return counts
+}
+
+func TestDebugLeftoverRules(t *testing.T) {
+	cases := []struct {
+		l    lang.Language
+		src  string
+		rule string
+	}{
+		{lang.Go, "package p\nimport \"fmt\"\nfunc f() { fmt.Println(\"x\") }\n", "go:debug-print"},
+		{lang.Python, "print('x')\n", "py:debug-print"},
+		{lang.JavaScript, "console.log('x');\n", "js:console-usage"},
+		{lang.Java, "class C { void m(Exception e) { e.printStackTrace(); } }\n", "java:print-stacktrace"},
+	}
+	for _, c := range cases {
+		t.Run(c.rule, func(t *testing.T) {
+			if got := runRulesSrc(t, c.l, c.src)[c.rule]; got != 1 {
+				t.Errorf("%s fired %d times, want 1", c.rule, got)
+			}
+		})
+	}
+}
+
 // TestBadQueryFailsLoudly ensures an invalid query is reported at engine
 // construction rather than silently skipped.
 func TestBadQueryFailsLoudly(t *testing.T) {

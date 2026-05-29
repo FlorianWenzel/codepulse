@@ -57,6 +57,16 @@ func pythonRules() []Rule {
 			Capture:   "flag",
 			Message:   "Review this os.system() call: prefer subprocess with a list of args and no shell.",
 		},
+		{
+			ID:        "py:debug-print",
+			Name:      "Remove debug print() calls",
+			Type:      domain.TypeCodeSmell,
+			Severity:  domain.SevInfo,
+			EffortMin: 5,
+			Query:     `(call function: (identifier) @fn (#eq? @fn "print")) @flag`,
+			Capture:   "flag",
+			Message:   "Remove this debug print(), or use the logging module.",
+		},
 		complexityRule(langspec.Python()),
 	}
 }

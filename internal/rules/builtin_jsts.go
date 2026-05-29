@@ -50,6 +50,16 @@ func jsLikeRules(spec langspec.Spec) []Rule {
 			Capture:   "flag",
 			Message:   "Complete the task described by this TODO/FIXME marker.",
 		},
+		{
+			ID:        p + ":console-usage",
+			Name:      "Remove console statements",
+			Type:      domain.TypeCodeSmell,
+			Severity:  domain.SevMinor,
+			EffortMin: 5,
+			Query:     `(call_expression function: (member_expression object: (identifier) @o (#eq? @o "console"))) @flag`,
+			Capture:   "flag",
+			Message:   "Remove this console.* call, or use a proper logger.",
+		},
 		complexityRule(spec),
 	}
 }

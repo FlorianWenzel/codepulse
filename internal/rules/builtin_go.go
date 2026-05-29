@@ -56,6 +56,16 @@ func goRules() []Rule {
 			Capture:   "flag",
 			Message:   "Review this command execution: ensure arguments are trusted and not attacker-controlled.",
 		},
+		{
+			ID:        "go:debug-print",
+			Name:      "Remove debug print statements",
+			Type:      domain.TypeCodeSmell,
+			Severity:  domain.SevMinor,
+			EffortMin: 5,
+			Query:     `(call_expression function: (selector_expression operand: (identifier) @pkg field: (field_identifier) @fn) (#eq? @pkg "fmt") (#match? @fn "^(Print|Printf|Println)$")) @flag`,
+			Capture:   "flag",
+			Message:   "Remove this fmt debug print, or use a structured logger.",
+		},
 		complexityRule(langspec.Go()),
 	}
 }

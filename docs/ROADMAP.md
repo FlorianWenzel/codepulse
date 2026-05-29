@@ -191,7 +191,7 @@ integrating best-of-breed OSS engines rather than reimplementing taint analysis.
 
 ### Remaining open-ended polish (post-v1.0)
 - [x] Scala & Swift added (15 languages). Even more (Go templates, Lua, …) — cheap via `langspec`.
-- Richer first-party rule sets per language (current sets are deliberately small/low-FP).
+- [in progress] Richer rule sets — added debug-leftover rules (fmt print, print(), console.*, printStackTrace) across Go/Python/JS/TS/Java; ongoing low-FP expansion.
 - [investigated] WASM grammars (wazero) to drop CGo — see docs/adr/0001-wasm-grammars.md (deferred post-v1.0; CGo is faster/complete now).
 - [x] Dashboard i18n (en/de), light/dark theme, a11y (sr-only/aria), and a **per-file measures drilldown** (sorted by complexity, with coverage).
 - Semgrep-rule native interop (today: consume via SARIF import).
