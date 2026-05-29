@@ -33,6 +33,14 @@ func main() {
 	}
 
 	srv := server.New(st)
+	if admin := os.Getenv("CODEPULSE_ADMIN_TOKEN"); admin != "" {
+		if err := srv.BootstrapAdmin(admin); err != nil {
+			log.Fatalf("bootstrap admin token: %v", err)
+		}
+		log.Printf("auth enabled (admin token configured)")
+	} else {
+		log.Printf("auth DISABLED (set CODEPULSE_ADMIN_TOKEN to enable)")
+	}
 	if tok := os.Getenv("GITHUB_TOKEN"); tok != "" {
 		srv.SetDecorator(&decorate.GitHub{Token: tok})
 		log.Printf("GitHub PR decoration enabled")

@@ -98,6 +98,14 @@ metric domains, ratings, and a working clean-as-you-code gate.
 **Exit:** a team can adopt CodePulse on a legacy repo, gate PRs on new code only, and triage.
 
 ## Phase 4 — Scale, polish, ecosystem
+
+> **Progress:** **AuthN/Z** ✅ — hashed API tokens (project-scoped `scan`/`viewer`,
+> global `admin`); opt-in enforcement (enabled by a bootstrap admin token / 
+> `CODEPULSE_ADMIN_TOKEN`); RBAC guards on every endpoint (admin-only project/token
+> management + triage; scan-token ingest restricted to its project; reads scoped to
+> project). `POST /tokens` mints credentials (secret shown once). e2e tested
+> (401/403/200 matrix). **Next:** SSO (OIDC), scale (partitioning/retention), more
+> languages, dataflow integration.
 - AuthN/Z: local users + **OIDC/SAML/GitHub** SSO, groups, fine-grained RBAC.
 - Performance: partitioning, retention/pruning, read replicas; horizontal worker scaling.
 - More languages (C/C++, C#, Ruby, PHP, Rust, Kotlin, Bash, etc.).

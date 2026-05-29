@@ -67,6 +67,28 @@ type Hotspot struct {
 	LastAnalysisID string `json:"lastAnalysisId"`
 }
 
+// Token is an API credential. Only its hash is stored; the secret is shown
+// once at creation. A global admin token has no ProjectKey; scan/viewer
+// tokens are scoped to one project.
+type Token struct {
+	ID         string    `json:"id"`
+	Name       string    `json:"name"`
+	Role       string    `json:"role"`
+	ProjectKey string    `json:"projectKey,omitempty"`
+	Hash       string    `json:"-"`
+	CreatedAt  time.Time `json:"createdAt"`
+}
+
+// Roles.
+const (
+	RoleAdmin  = "admin"  // global: manage projects/tokens, ingest, triage
+	RoleScan   = "scan"   // project-scoped: ingest only
+	RoleViewer = "viewer" // project-scoped: read only
+)
+
+// ValidRole reports whether r is a known role.
+func ValidRole(r string) bool { return r == RoleAdmin || r == RoleScan || r == RoleViewer }
+
 // Issue statuses and resolutions.
 const (
 	StatusOpen      = "OPEN"
@@ -147,4 +169,7 @@ type Store interface {
 
 	Hotspots(projectKey, branch, status string) []Hotspot
 	ResolveHotspot(projectKey, branch, key, resolution string) (Hotspot, error)
+
+	CreateToken(t Token) error
+	AuthToken(hash string) (Token, bool)
 }

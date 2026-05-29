@@ -17,9 +17,10 @@ import (
 type Server struct {
 	store     store.Store
 	gate      gate.Gate
-	mux       *http.ServeMux
-	now       func() time.Time
-	decorator decorate.Decorator
+	mux         *http.ServeMux
+	now         func() time.Time
+	decorator   decorate.Decorator
+	authEnabled bool
 }
 
 // New builds a Server backed by the given store and the default quality gate.
@@ -43,6 +44,7 @@ func branchOf(r *http.Request) string {
 func (s *Server) routes() {
 	s.mux = http.NewServeMux()
 	s.mux.HandleFunc("GET /healthz", s.health)
+	s.mux.HandleFunc("POST /api/v1/tokens", s.createToken)
 	s.mux.HandleFunc("POST /api/v1/projects", s.createProject)
 	s.mux.HandleFunc("GET /api/v1/projects", s.listProjects)
 	s.mux.HandleFunc("GET /api/v1/projects/{key}", s.getProject)
@@ -67,6 +69,9 @@ func (s *Server) health(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *Server) createProject(w http.ResponseWriter, r *http.Request) {
+	if !s.guard(w, r, isAdmin) {
+		return
+	}
 	var body struct{ Key, Name string }
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httpError(w, http.StatusBadRequest, "invalid JSON")
@@ -87,11 +92,17 @@ func (s *Server) createProject(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, p)
 }
 
-func (s *Server) listProjects(w http.ResponseWriter, _ *http.Request) {
+func (s *Server) listProjects(w http.ResponseWriter, r *http.Request) {
+	if !s.guard(w, r, func(store.Token) bool { return true }) {
+		return
+	}
 	writeJSON(w, http.StatusOK, s.store.ListProjects())
 }
 
 func (s *Server) getProject(w http.ResponseWriter, r *http.Request) {
+	if !s.guard(w, r, canRead(r.PathValue("key"))) {
+		return
+	}
 	p, ok := s.store.GetProject(r.PathValue("key"))
 	if !ok {
 		httpError(w, http.StatusNotFound, "project not found")
@@ -105,6 +116,9 @@ func (s *Server) getProject(w http.ResponseWriter, r *http.Request) {
 // the analysis id + gate result.
 func (s *Server) ingest(w http.ResponseWriter, r *http.Request) {
 	key := r.URL.Query().Get("project")
+	if !s.guard(w, r, canIngest(key)) {
+		return
+	}
 	proj, ok := s.store.GetProject(key)
 	if !ok {
 		httpError(w, http.StatusNotFound, "unknown project; create it first")
@@ -164,6 +178,9 @@ func (s *Server) listIssues(w http.ResponseWriter, r *http.Request) {
 		httpError(w, http.StatusNotFound, "project not found")
 		return
 	}
+	if !s.guard(w, r, canRead(key)) {
+		return
+	}
 	openOnly := r.URL.Query().Get("open") == "true"
 	writeJSON(w, http.StatusOK, s.store.Issues(key, branchOf(r), openOnly))
 }
@@ -174,6 +191,9 @@ func (s *Server) listNewIssues(w http.ResponseWriter, r *http.Request) {
 		httpError(w, http.StatusNotFound, "project not found")
 		return
 	}
+	if !s.guard(w, r, canRead(key)) {
+		return
+	}
 	base := r.URL.Query().Get("base")
 	if base == "" {
 		base = "main"
@@ -182,6 +202,9 @@ func (s *Server) listNewIssues(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) transitionIssue(w http.ResponseWriter, r *http.Request) {
+	if !s.guard(w, r, isAdmin) {
+		return
+	}
 	var body struct{ Project, Branch, Key, Transition string }
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httpError(w, http.StatusBadRequest, "invalid JSON")
@@ -196,6 +219,9 @@ func (s *Server) transitionIssue(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) assignIssue(w http.ResponseWriter, r *http.Request) {
+	if !s.guard(w, r, isAdmin) {
+		return
+	}
 	var body struct{ Project, Branch, Key, Assignee string }
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httpError(w, http.StatusBadRequest, "invalid JSON")
@@ -210,6 +236,9 @@ func (s *Server) assignIssue(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) commentIssue(w http.ResponseWriter, r *http.Request) {
+	if !s.guard(w, r, isAdmin) {
+		return
+	}
 	var body struct{ Project, Branch, Key, Author, Text string }
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httpError(w, http.StatusBadRequest, "invalid JSON")
@@ -229,10 +258,16 @@ func (s *Server) listHotspots(w http.ResponseWriter, r *http.Request) {
 		httpError(w, http.StatusNotFound, "project not found")
 		return
 	}
+	if !s.guard(w, r, canRead(key)) {
+		return
+	}
 	writeJSON(w, http.StatusOK, s.store.Hotspots(key, branchOf(r), r.URL.Query().Get("status")))
 }
 
 func (s *Server) resolveHotspot(w http.ResponseWriter, r *http.Request) {
+	if !s.guard(w, r, isAdmin) {
+		return
+	}
 	var body struct{ Project, Branch, Key, Resolution string }
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		httpError(w, http.StatusBadRequest, "invalid JSON")
@@ -248,6 +283,9 @@ func (s *Server) resolveHotspot(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) measures(w http.ResponseWriter, r *http.Request) {
 	key := r.URL.Query().Get("project")
+	if !s.guard(w, r, canRead(key)) {
+		return
+	}
 	a, ok := s.store.LatestAnalysis(key, branchOf(r))
 	if !ok {
 		httpError(w, http.StatusNotFound, "no analysis for project")
@@ -262,6 +300,9 @@ func (s *Server) measures(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) gateStatus(w http.ResponseWriter, r *http.Request) {
 	key := r.URL.Query().Get("project")
+	if !s.guard(w, r, canRead(key)) {
+		return
+	}
 	a, ok := s.store.LatestAnalysis(key, branchOf(r))
 	if !ok {
 		httpError(w, http.StatusNotFound, "no analysis for project")

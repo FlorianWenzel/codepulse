@@ -49,6 +49,14 @@ CREATE TABLE IF NOT EXISTS issue (
     last_analysis_id  TEXT NOT NULL,
     PRIMARY KEY (project_key, branch, key)
 );
+CREATE TABLE IF NOT EXISTS token (
+    id          TEXT PRIMARY KEY,
+    name        TEXT NOT NULL,
+    role        TEXT NOT NULL,
+    project_key TEXT NOT NULL DEFAULT '',
+    hash        TEXT NOT NULL UNIQUE,
+    created_at  TIMESTAMPTZ NOT NULL
+);
 CREATE TABLE IF NOT EXISTS hotspot (
     project_key      TEXT NOT NULL REFERENCES project(key),
     branch           TEXT NOT NULL DEFAULT 'main',
@@ -373,6 +381,27 @@ SELECT project_key, key, rule_id, message, file, line, status, resolution, last_
 FROM hotspot WHERE project_key=$1 AND branch=$2 AND key=$3`, projectKey, branchOr(branch), key).
 		Scan(&h.ProjectKey, &h.Key, &h.RuleID, &h.Message, &h.File, &h.Line, &h.Status, &h.Resolution, &h.LastAnalysisID)
 	return h, err
+}
+
+func (p *Postgres) CreateToken(t Token) error {
+	if t.Hash == "" {
+		return fmt.Errorf("token hash required")
+	}
+	_, err := p.pool.Exec(context.Background(),
+		`INSERT INTO token(id, name, role, project_key, hash, created_at) VALUES ($1,$2,$3,$4,$5,$6)`,
+		t.ID, t.Name, t.Role, t.ProjectKey, t.Hash, t.CreatedAt)
+	return err
+}
+
+func (p *Postgres) AuthToken(hash string) (Token, bool) {
+	var t Token
+	err := p.pool.QueryRow(context.Background(),
+		`SELECT id, name, role, project_key, hash, created_at FROM token WHERE hash=$1`, hash).
+		Scan(&t.ID, &t.Name, &t.Role, &t.ProjectKey, &t.Hash, &t.CreatedAt)
+	if err != nil {
+		return Token{}, false
+	}
+	return t, true
 }
 
 // compile-time checks that both stores satisfy the interface.

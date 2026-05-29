@@ -18,6 +18,7 @@ type Memory struct {
 	analyses map[string][]Analysis        // bkey -> analyses (oldest first)
 	issues   map[string]map[string]*Issue // bkey -> issueKey -> issue
 	hotspots map[string]map[string]*Hotspot
+	tokens   map[string]Token // hash -> token
 	seq      int
 }
 
@@ -28,7 +29,25 @@ func NewMemory() *Memory {
 		analyses: map[string][]Analysis{},
 		issues:   map[string]map[string]*Issue{},
 		hotspots: map[string]map[string]*Hotspot{},
+		tokens:   map[string]Token{},
 	}
+}
+
+func (m *Memory) CreateToken(t Token) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if t.Hash == "" {
+		return fmt.Errorf("token hash required")
+	}
+	m.tokens[t.Hash] = t
+	return nil
+}
+
+func (m *Memory) AuthToken(hash string) (Token, bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	t, ok := m.tokens[hash]
+	return t, ok
 }
 
 // bkey is the per-branch namespace key.
