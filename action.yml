@@ -1,0 +1,64 @@
+name: "CodePulse Scan"
+description: "Run CodePulse static analysis and enforce the quality gate (fails the build on gate ERROR)."
+branding:
+  icon: "activity"
+  color: "blue"
+
+inputs:
+  path:
+    description: "Directory to scan."
+    default: "."
+  args:
+    description: "Extra flags passed to codepulse-scan (e.g. --coverage cover.out --new-code-days 30)."
+    default: ""
+  fail-on:
+    description: "Local gate: fail if any finding is at least this severity (used when no server is configured)."
+    default: "CRITICAL"
+  server-url:
+    description: "CodePulse server base URL. If set (with project), the analysis is uploaded and the SERVER quality gate is enforced."
+    default: ""
+  token:
+    description: "Project analysis token (Bearer) for upload."
+    default: ""
+  project:
+    description: "Project key to upload to."
+    default: ""
+  branch:
+    description: "Branch name (defaults to the project's main branch)."
+    default: ""
+  base:
+    description: "Base branch for PR analysis (new-vs-base)."
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: "1.23"
+
+    - name: Build CodePulse scanner
+      shell: bash
+      run: go build -o "$RUNNER_TEMP/codepulse-scan" "$GITHUB_ACTION_PATH/cmd/codepulse-scan"
+
+    - name: Scan & enforce quality gate
+      shell: bash
+      env:
+        CODEPULSE_SERVER: ${{ inputs.server-url }}
+        CODEPULSE_TOKEN: ${{ inputs.token }}
+        CODEPULSE_PROJECT: ${{ inputs.project }}
+        CODEPULSE_BRANCH: ${{ inputs.branch }}
+        CODEPULSE_BASE: ${{ inputs.base }}
+        REPORT: ${{ runner.temp }}/codepulse-report.json
+      run: |
+        set -euo pipefail
+        SCAN="$RUNNER_TEMP/codepulse-scan"
+        if [ -n "$CODEPULSE_SERVER" ] && [ -n "$CODEPULSE_PROJECT" ]; then
+          # Server mode: upload and enforce the project's server-side quality gate.
+          "$SCAN" -quiet -o "$REPORT" ${{ inputs.args }} "${{ inputs.path }}"
+          bash "$GITHUB_ACTION_PATH/deploy/ci/gate.sh"
+        else
+          # Local mode: enforce a severity threshold without a server.
+          "$SCAN" -fail-on "${{ inputs.fail-on }}" ${{ inputs.args }} "${{ inputs.path }}"
+        fi

@@ -159,12 +159,12 @@ Ordered by leverage.
 - **CWE / OWASP Top 10 (+ CWE Top 25)** mappings on rules, plus an OWASP-style **security
   report** per project. Adopt a clean-code-style issue taxonomy.
 
-### 4. CI/CD — premade GitHub Action (like SonarQube's scan action)
-- Ship a **composite/Docker GitHub Action** (`codepulse/scan-action`) that installs the
-  scanner, runs the analysis, uploads to the server (branch/PR aware), and **enforces the
-  quality gate** — failing the workflow on gate ERROR, with PR decoration. One-step setup,
-  mirroring `sonarqube-scan-action` + the gate check. Ship copy-paste workflow snippets and a
-  GitLab CI template too.
+### 4. CI/CD — premade GitHub Action (like SonarQube's scan action) ✅
+- **Shipped:** composite GitHub Action at repo root (`action.yml`, used as
+  `FlorianWenzel/codepulse@v1`) — builds the scanner, runs the analysis, and **enforces the
+  quality gate** (local `-fail-on`, or server mode: upload branch/PR-aware + fail on gate
+  ERROR via `deploy/ci/gate.sh`). Dogfooded by a CI job (`uses: ./`). README has the snippet.
+  **Next:** publish to the Actions Marketplace; add a GitLab CI template.
 
 ### 5. OIDC (extend what's shipped)
 - OIDC **SSO login is already implemented** (`/auth/login` → `/auth/callback`; admin/viewer

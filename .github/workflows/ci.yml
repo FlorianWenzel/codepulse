@@ -39,3 +39,15 @@ jobs:
         run: cd web && npm run test
       - name: Build
         run: cd web && npm run build
+
+  action:
+    name: Dogfood the scan action
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run CodePulse action (local quality gate)
+        uses: ./
+        with:
+          path: .
+          args: "-exclude testdata,web"
+          fail-on: CRITICAL

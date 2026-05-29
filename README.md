@@ -28,6 +28,27 @@ cd web && npm install && npm run dev         # proxies /api to :8080
 
 > ℹ️ **Note:** Before a public launch, verify the "CodePulse" name is clear of trademark conflicts.
 
+## GitHub Action
+
+Run the analysis and **fail the build on the quality gate** in one step (like `sonarqube-scan-action`):
+
+```yaml
+# .github/workflows/codepulse.yml
+- uses: FlorianWenzel/codepulse@v1
+  with:
+    path: .
+    # Local gate (no server): fail on findings at/above this severity
+    fail-on: CRITICAL
+    # — or — server mode: upload and enforce the project's quality gate
+    # server-url: https://codepulse.example.com
+    # token: ${{ secrets.CODEPULSE_TOKEN }}
+    # project: my-project
+    # base: ${{ github.base_ref }}   # PR: only new-vs-base issues
+```
+
+In server mode the step uploads the report (branch/PR-aware) and exits non-zero if the
+gate is `ERROR`. The same logic is in [`deploy/ci/gate.sh`](deploy/ci/gate.sh) for other CI.
+
 ---
 
 ## What is this?
