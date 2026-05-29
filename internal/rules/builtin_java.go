@@ -85,6 +85,16 @@ func javaRules() []Rule {
 			Capture:   "flag",
 			Message:   "Catch a specific exception type rather than Exception/Throwable.",
 		},
+		{
+			ID:        "java:assert-usage",
+			Name:      "assert is disabled at runtime by default",
+			Type:      domain.TypeCodeSmell,
+			Severity:  domain.SevMinor,
+			EffortMin: 10,
+			Query:     `(assert_statement) @flag`,
+			Capture:   "flag",
+			Message:   "Don't rely on assert for validation; it's off unless -ea is set. Throw explicitly.",
+		},
 		complexityRule(langspec.Java()),
 	}
 }

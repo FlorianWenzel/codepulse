@@ -232,6 +232,27 @@ func TestExpandedRules(t *testing.T) {
 	}
 }
 
+func TestExpandedRules2(t *testing.T) {
+	cases := []struct {
+		l    lang.Language
+		src  string
+		rule string
+	}{
+		{lang.Go, "package p\nimport \"os\"\nfunc f() { os.Exit(1) }\n", "go:os-exit"},
+		{lang.JavaScript, "document.write(userInput);\n", "js:document-write"},
+		{lang.JavaScript, "alert('hi');\n", "js:alert"},
+		{lang.TypeScript, "document.write(x);\n", "ts:document-write"},
+		{lang.Java, "class C { void m(int x) { assert x > 0; } }\n", "java:assert-usage"},
+	}
+	for _, c := range cases {
+		t.Run(c.rule, func(t *testing.T) {
+			if got := runRulesSrc(t, c.l, c.src)[c.rule]; got != 1 {
+				t.Errorf("%s fired %d times, want 1", c.rule, got)
+			}
+		})
+	}
+}
+
 // TestBadQueryFailsLoudly ensures an invalid query is reported at engine
 // construction rather than silently skipped.
 func TestBadQueryFailsLoudly(t *testing.T) {

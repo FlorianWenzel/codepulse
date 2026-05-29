@@ -101,6 +101,26 @@ func jsLikeRules(spec langspec.Spec) []Rule {
 			Capture:   "flag",
 			Message:   "Use let or const instead of var (block scoping).",
 		},
+		{
+			ID:        p + ":document-write",
+			Name:      "document.write enables XSS and blocks parsing",
+			Type:      domain.TypeHotspot,
+			Severity:  domain.SevMajor,
+			EffortMin: 15,
+			Query:     `(call_expression function: (member_expression object: (identifier) @o property: (property_identifier) @prop) (#eq? @o "document") (#eq? @prop "write")) @flag`,
+			Capture:   "flag",
+			Message:   "Avoid document.write; build DOM nodes / set textContent and sanitize input.",
+		},
+		{
+			ID:        p + ":alert",
+			Name:      "Leftover alert()/confirm()/prompt()",
+			Type:      domain.TypeCodeSmell,
+			Severity:  domain.SevMinor,
+			EffortMin: 5,
+			Query:     `(call_expression function: (identifier) @fn (#match? @fn "^(alert|confirm|prompt)$")) @flag`,
+			Capture:   "flag",
+			Message:   "Remove this alert/confirm/prompt; use proper UI.",
+		},
 		complexityRule(spec),
 	}
 }

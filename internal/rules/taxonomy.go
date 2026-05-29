@@ -39,6 +39,8 @@ var ruleTaxonomy = map[string]Taxonomy{
 	"ts:child-process-exec": {Description: "child_process exec runs a shell; untrusted input enables command injection.", CWE: []string{"CWE-78"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "command-injection"}},
 	"js:loose-equality":     {Description: "== / != perform type coercion with surprising results; prefer === / !==.", Tags: []string{"pitfall"}},
 	"ts:loose-equality":     {Description: "== / != perform type coercion with surprising results; prefer === / !==.", Tags: []string{"pitfall"}},
+	"js:document-write":     {Description: "document.write with untrusted data enables DOM XSS (and blocks the parser).", CWE: []string{"CWE-79"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "xss"}},
+	"ts:document-write":     {Description: "document.write with untrusted data enables DOM XSS (and blocks the parser).", CWE: []string{"CWE-79"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "xss"}},
 
 	// Java
 	"java:process-exec":  {Description: "Runtime/ProcessBuilder exec with untrusted input enables command injection.", CWE: []string{"CWE-78"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "command-injection"}},

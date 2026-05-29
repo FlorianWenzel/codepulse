@@ -100,6 +100,16 @@ func goRules() []Rule {
 			Capture: "flag",
 			Message: "Use fmt.Errorf(...) instead of errors.New(fmt.Sprintf(...)).",
 		},
+		{
+			ID:        "go:os-exit",
+			Name:      "os.Exit() should not be used in library code",
+			Type:      domain.TypeCodeSmell,
+			Severity:  domain.SevMajor,
+			EffortMin: 15,
+			Query:     `(call_expression function: (selector_expression operand: (identifier) @p field: (field_identifier) @f) (#eq? @p "os") (#eq? @f "Exit")) @flag`,
+			Capture:   "flag",
+			Message:   "Avoid os.Exit() outside main(); it skips deferred cleanup. Return an error instead.",
+		},
 		complexityRule(langspec.Go()),
 	}
 }
