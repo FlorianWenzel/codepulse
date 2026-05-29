@@ -1,12 +1,13 @@
 <script setup>
 import { computed } from 'vue'
+import { t } from '../i18n.js'
 
 const props = defineProps({ status: { type: String, default: '' } })
 
 const label = computed(() => {
-  if (props.status === 'OK') return 'Passed'
-  if (props.status === 'ERROR') return 'Failed'
-  return 'No analysis'
+  if (props.status === 'OK') return t('gatePassed')
+  if (props.status === 'ERROR') return t('gateFailed')
+  return t('noAnalysis')
 })
 const cls = computed(() => ({
   'gate-badge': true,
