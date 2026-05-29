@@ -450,6 +450,45 @@ func TestRulesCatalog(t *testing.T) {
 	}
 }
 
+func TestSecurityReport(t *testing.T) {
+	ts := httptest.NewServer(server.New(store.NewMemory()))
+	defer ts.Close()
+	mustPost(t, ts.URL+"/api/v1/projects", map[string]string{"key": "demo"}, http.StatusCreated)
+
+	rep, _ := scan.Scan(scan.Options{Root: "../../testdata/pyfixture"})
+	var ignore map[string]any
+	postJSON(t, ts.URL+"/api/v1/analyses?project=demo", rep, http.StatusCreated, &ignore)
+
+	var report struct {
+		Vulnerabilities int `json:"vulnerabilities"`
+		Categories      []struct {
+			OWASP string   `json:"owasp"`
+			Count int      `json:"count"`
+			CWE   []string `json:"cwe"`
+		} `json:"categories"`
+	}
+	getJSON(t, ts.URL+"/api/v1/security-report?project=demo", http.StatusOK, &report)
+	if report.Vulnerabilities != 1 {
+		t.Fatalf("vulnerabilities = %d, want 1", report.Vulnerabilities)
+	}
+	if len(report.Categories) == 0 {
+		t.Fatal("expected at least one OWASP category")
+	}
+	top := report.Categories[0]
+	if top.OWASP != "A03:2021-Injection" || top.Count != 1 {
+		t.Errorf("top category = %+v, want A03 count 1", top)
+	}
+	found := false
+	for _, c := range top.CWE {
+		if c == "CWE-95" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("expected CWE-95 in %v", top.CWE)
+	}
+}
+
 func TestIngestUnknownProject(t *testing.T) {
 	ts := httptest.NewServer(server.New(store.NewMemory()))
 	defer ts.Close()

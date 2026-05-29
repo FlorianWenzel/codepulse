@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"sort"
 	"strconv"
 	"sync"
 	"time"
@@ -89,6 +90,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /api/v1/quality-gates", s.listGates)
 	s.mux.HandleFunc("POST /api/v1/projects/{key}/quality-gate", s.assignGate)
 	s.mux.HandleFunc("GET /api/v1/quality-gates/status", s.gateStatus)
+	s.mux.HandleFunc("GET /api/v1/security-report", s.securityReport)
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) { s.mux.ServeHTTP(w, r) }
@@ -483,6 +485,89 @@ func (s *Server) assignGate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"project": r.PathValue("key"), "gateId": body.GateID})
+}
+
+// secCategory aggregates security findings under one OWASP category.
+type secCategory struct {
+	OWASP string   `json:"owasp"`
+	Count int      `json:"count"`
+	CWE   []string `json:"cwe,omitempty"`
+	Rules []string `json:"rules,omitempty"`
+}
+
+// securityReport groups a project's open vulnerabilities + hotspots by OWASP
+// category (from the rule taxonomy) — an OWASP-style security overview.
+func (s *Server) securityReport(w http.ResponseWriter, r *http.Request) {
+	key := r.URL.Query().Get("project")
+	if !s.guard(w, r, canRead(key)) {
+		return
+	}
+	if _, ok := s.store.GetProject(key); !ok {
+		httpError(w, http.StatusNotFound, "project not found")
+		return
+	}
+	branch := branchOf(r)
+
+	cats := map[string]*secCategory{}
+	cweSeen := map[string]map[string]bool{}
+	ruleSeen := map[string]map[string]bool{}
+	add := func(ruleID string) {
+		tx := rules.TaxonomyFor(ruleID)
+		owasps := tx.OWASP
+		if len(owasps) == 0 {
+			owasps = []string{"Uncategorized"}
+		}
+		for _, o := range owasps {
+			c := cats[o]
+			if c == nil {
+				c = &secCategory{OWASP: o}
+				cats[o] = c
+				cweSeen[o] = map[string]bool{}
+				ruleSeen[o] = map[string]bool{}
+			}
+			c.Count++
+			for _, w := range tx.CWE {
+				if !cweSeen[o][w] {
+					cweSeen[o][w] = true
+					c.CWE = append(c.CWE, w)
+				}
+			}
+			if !ruleSeen[o][ruleID] {
+				ruleSeen[o][ruleID] = true
+				c.Rules = append(c.Rules, ruleID)
+			}
+		}
+	}
+
+	vulns := 0
+	for _, is := range s.store.Issues(key, branch, true) {
+		if is.Type == domain.TypeVulnerability {
+			vulns++
+			add(is.RuleID)
+		}
+	}
+	hs := s.store.Hotspots(key, branch, "")
+	for _, h := range hs {
+		add(h.RuleID)
+	}
+
+	out := make([]secCategory, 0, len(cats))
+	for _, c := range cats {
+		sort.Strings(c.CWE)
+		sort.Strings(c.Rules)
+		out = append(out, *c)
+	}
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Count != out[j].Count {
+			return out[i].Count > out[j].Count
+		}
+		return out[i].OWASP < out[j].OWASP
+	})
+
+	writeJSON(w, http.StatusOK, map[string]any{
+		"project": key, "branch": branch,
+		"vulnerabilities": vulns, "hotspots": len(hs), "categories": out,
+	})
 }
 
 func (s *Server) gateStatus(w http.ResponseWriter, r *http.Request) {
