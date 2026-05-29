@@ -29,6 +29,7 @@ var ruleTaxonomy = map[string]Taxonomy{
 	"go:exec-command": {Description: "Building OS commands from untrusted input can lead to command injection.", CWE: []string{"CWE-78"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "command-injection"}},
 	"go:weak-hash":    {Description: "MD5 and SHA-1 are cryptographically broken for security use; prefer SHA-256 or stronger.", CWE: []string{"CWE-327", "CWE-328"}, OWASP: []string{"A02:2021-Cryptographic Failures"}, Tags: []string{"security", "cryptography"}},
 	"go:panic-usage":  {Description: "panic() aborts the goroutine; return an error so callers can handle failure.", Tags: []string{"error-handling"}},
+	"go:tainted-exec": {Description: "Dataflow: a value from os.Getenv reaches exec.Command without sanitization, enabling command injection.", CWE: []string{"CWE-78"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "command-injection", "taint"}},
 
 	// JS / TS (both prefixes share semantics)
 	"js:eval-usage":         {Description: "eval() executes arbitrary code from a string.", CWE: []string{"CWE-95"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "injection"}},

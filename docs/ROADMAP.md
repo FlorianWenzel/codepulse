@@ -149,7 +149,11 @@ Ordered by leverage.
 - Cover correctness/bug patterns, security, concurrency, resource & error handling, API
   misuse, performance, and maintainability. Track coverage vs SonarQube's catalogue per language.
 
-### 2. Analysis sophistication (semantic + dataflow)
+### 2. Analysis sophistication (semantic + dataflow)  *(started)*
+- **First dataflow rule ✅** — `go:tainted-exec`: intra-procedural taint from a source
+  (`os.Getenv`) through assignments (incl. one-hop propagation) to a sink (`exec.Command`),
+  flagging command injection (CWE-78) with no false positives on literal/untainted args.
+  This is the seed of the general taint engine below.
 - Per-language **symbol/scope index** (declarations, references, scopes) shared across rules,
   enabling semantic rules (unused / shadowed / used-before-defined, etc.).
 - **Intra-procedural dataflow + lightweight taint analysis** (source → sink) for real security

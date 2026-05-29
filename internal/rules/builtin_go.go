@@ -110,6 +110,7 @@ func goRules() []Rule {
 			Capture:   "flag",
 			Message:   "Avoid os.Exit() outside main(); it skips deferred cleanup. Return an error instead.",
 		},
+		goTaintExecRule(),
 		complexityRule(langspec.Go()),
 	}
 }
