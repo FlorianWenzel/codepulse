@@ -122,7 +122,7 @@ metric domains, ratings, and a working clean-as-you-code gate.
 - AuthN/Z: local users + **OIDC/SAML/GitHub** SSO, groups, fine-grained RBAC.
 - Performance: partitioning, retention/pruning, read replicas; horizontal worker scaling.
 - More languages (C/C++, C#, Ruby, PHP, Rust, Kotlin, Bash, etc.).
-- IDE feedback via LSP diagnostics export / SARIF; CLI `--fix` for autofixable rules.
+- IDE feedback via LSP diagnostics export / SARIF ✅. **Dedicated IDE plugins (SonarLint-style) are out of scope** — see Phase 5.
 - i18n, accessibility, theming.
 - Portfolio/aggregation views across many projects; notifications (email/Slack).
 - Investigate **WASM grammars (wazero)** to drop CGo and simplify cross-compilation.
@@ -130,6 +130,55 @@ metric domains, ratings, and a working clean-as-you-code gate.
   for security-critical rules.
 
 **Exit:** production-grade self-host suitable for an org with many repos and SSO.
+
+---
+
+## Phase 5 — Toward SonarQube parity (depth)
+
+Phases 0–4 reached feature **breadth**; this phase closes the **depth** gap with SonarQube.
+Ordered by leverage.
+
+### 1. Rule coverage — *the* priority
+- Greatly expand first-party rule sets, focused on **JavaScript/TypeScript, Java, and Go**
+  (then Python), growing from a handful toward tens→hundreds of rules per language.
+- Every rule ships good/bad fixtures + exact-match tests to keep false positives low.
+- Cover correctness/bug patterns, security, concurrency, resource & error handling, API
+  misuse, performance, and maintainability. Track coverage vs SonarQube's catalogue per language.
+
+### 2. Analysis sophistication (semantic + dataflow)
+- Per-language **symbol/scope index** (declarations, references, scopes) shared across rules,
+  enabling semantic rules (unused / shadowed / used-before-defined, etc.).
+- **Intra-procedural dataflow + lightweight taint analysis** (source → sink) for real security
+  findings (injection, XSS, SSRF, path traversal) — beyond today's syntactic matches.
+- Type-aware checks where grammar/imports permit. Keep **Semgrep/CodeQL via SARIF** as the
+  deep-engine path for what we don't implement natively.
+
+### 3. Rule content & security reporting
+- Rich rule metadata: full **descriptions, remediation guidance, code examples**, severity
+  rationale, tags — served via the API and rendered in the dashboard rule/issue views.
+- **CWE / OWASP Top 10 (+ CWE Top 25)** mappings on rules, plus an OWASP-style **security
+  report** per project. Adopt a clean-code-style issue taxonomy.
+
+### 4. CI/CD — premade GitHub Action (like SonarQube's scan action)
+- Ship a **composite/Docker GitHub Action** (`codepulse/scan-action`) that installs the
+  scanner, runs the analysis, uploads to the server (branch/PR aware), and **enforces the
+  quality gate** — failing the workflow on gate ERROR, with PR decoration. One-step setup,
+  mirroring `sonarqube-scan-action` + the gate check. Ship copy-paste workflow snippets and a
+  GitLab CI template too.
+
+### 5. OIDC (extend what's shipped)
+- OIDC **SSO login is already implemented** (`/auth/login` → `/auth/callback`; admin/viewer
+  mapping; `CODEPULSE_OIDC_*`). Next: provider **presets** (Google, GitHub, Okta/Keycloak,
+  Azure AD), group → role mapping, and **GitHub Actions OIDC keyless auth** so the Action
+  uploads with a short-lived OIDC token instead of a static project token.
+
+### More languages
+- Keep widening via `langspec` (C++/C#/PHP/Kotlin/Scala/Swift already added; next Go templates,
+  Lua, Elixir, …) — secondary to rule **depth** above.
+
+### Explicitly out of scope
+- **IDE plugins / SonarLint-style extensions.** SARIF + LSP export remain for editors that
+  consume them, but no first-party IDE plugin is planned.
 
 ---
 
@@ -151,9 +200,13 @@ metric domains, ratings, and a working clean-as-you-code gate.
 | Issue tracking across analyses | ✅ | ✅ *P1→P3* |
 | External analyzer (SARIF) import | partial | ✅ **first-class** *P2* |
 | Rule authoring | Java plugin SDK | **YAML + tree-sitter query** *P1* |
-| SSO (OIDC) | **paid** | ✅ **OSS** (done) |
+| Rule **coverage** (count/quality) | ✅ thousands, curated | ⚠️ small starter sets — **expanding (P5: JS/TS, Java, Go)** |
+| Rule **content** (descriptions, CWE/OWASP, remediation) | ✅ rich | ⚠️ minimal today — **P5** |
+| Native semantic / taint dataflow | **paid, deep** | ⚠️ syntactic today; Semgrep/CodeQL via SARIF ✅; **native dataflow P5** |
+| Premade CI action (scan + gate) | ✅ scan action | **P5** (`codepulse/scan-action`) |
+| SSO (OIDC) | **paid** | ✅ **OSS** (done; presets + GH-Actions keyless P5) |
 | Portfolio / aggregation | **paid** | ✅ (done) |
-| Taint/dataflow security | **paid, deep** | native Semgrep interop (`-semgrep`) + SARIF import (CodeQL) ✅ |
+| IDE plugin (SonarLint-style) | ✅ | ❌ out of scope (SARIF/LSP export only) |
 | Deployment weight | JVM, heavier | single Go binary + Postgres |
 | License | LGPL + commercial editions | **Apache-2.0, no gated features** |
 
@@ -170,7 +223,7 @@ integrating best-of-breed OSS engines rather than reimplementing taint analysis.
 |---|---|
 | **Grammar version drift** breaks queries silently | Pin grammar SHAs per release; run full rule corpus in CI against pinned grammars; `langspec` abstraction for metrics |
 | **CGo cross-compilation pain** | Per-platform release matrix with grammars compiled in; investigate WASM grammars (wazero) to go pure-Go (P4) |
-| **Rule coverage takes years** | Integrate external SARIF + Semgrep rules for breadth; first-party rules focus on quality not quantity |
+| **Rule coverage takes years** | Phase 5 expands first-party rules (JS/TS, Java, Go first) with fixture-backed tests; meanwhile external SARIF + native Semgrep interop provide breadth |
 | **Issue-tracking instability** (resurrected/duplicated issues) | Content-hash + structural matching, not line numbers; large regression corpus of real diffs |
 | **False-positive fatigue** | Every rule ships good/bad fixtures with exact-match assertions; conservative default profiles; easy false-positive marking that sticks |
 | **Performance on monorepos** | Parallel scanner, incremental analysis, async ingest queue, table partitioning + retention |
