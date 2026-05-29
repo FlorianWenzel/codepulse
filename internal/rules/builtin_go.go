@@ -57,6 +57,16 @@ func goRules() []Rule {
 			Message:   "Review this command execution: ensure arguments are trusted and not attacker-controlled.",
 		},
 		{
+			ID:        "go:weak-hash",
+			Name:      "Weak cryptographic hash (MD5/SHA-1)",
+			Type:      domain.TypeHotspot,
+			Severity:  domain.SevMajor,
+			EffortMin: 15,
+			Query:     `(call_expression function: (selector_expression operand: (identifier) @pkg field: (field_identifier) @fn) (#match? @pkg "^(md5|sha1)$") (#eq? @fn "New")) @flag`,
+			Capture:   "flag",
+			Message:   "MD5/SHA-1 are weak; use SHA-256+ for security-sensitive hashing.",
+		},
+		{
 			ID:        "go:debug-print",
 			Name:      "Remove debug print statements",
 			Type:      domain.TypeCodeSmell,

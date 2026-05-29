@@ -51,6 +51,16 @@ func jsLikeRules(spec langspec.Spec) []Rule {
 			Message:   "Complete the task described by this TODO/FIXME marker.",
 		},
 		{
+			ID:        p + ":inner-html",
+			Name:      "Assigning to innerHTML can introduce XSS",
+			Type:      domain.TypeHotspot,
+			Severity:  domain.SevMajor,
+			EffortMin: 15,
+			Query:     `(assignment_expression left: (member_expression property: (property_identifier) @prop (#eq? @prop "innerHTML"))) @flag`,
+			Capture:   "flag",
+			Message:   "Review this innerHTML assignment for XSS; prefer textContent or sanitize input.",
+		},
+		{
 			ID:        p + ":console-usage",
 			Name:      "Remove console statements",
 			Type:      domain.TypeCodeSmell,
