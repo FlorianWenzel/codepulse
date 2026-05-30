@@ -1,6 +1,8 @@
 package rules
 
 import (
+	"strings"
+
 	sitter "github.com/smacker/go-tree-sitter"
 
 	"github.com/FlorianWenzel/codepulse/internal/domain"
@@ -106,6 +108,31 @@ func phpRules() []Rule {
 func ktRules() []Rule {
 	return []Rule{
 		todoRuleQuery("kt", `([(line_comment) (multiline_comment)] @flag (#match? @flag "(TODO|FIXME|XXX)"))`),
+		{
+			ID:        "kt:not-null-assertion",
+			Name:      "Avoid the !! not-null assertion",
+			Type:      domain.TypeCodeSmell,
+			Severity:  domain.SevMajor,
+			EffortMin: 10,
+			Query:     `(postfix_expression) @flag`,
+			Capture:   "flag",
+			Predicate: func(n *sitter.Node, src []byte) (string, bool) {
+				if !strings.HasSuffix(n.Content(src), "!!") {
+					return "", false
+				}
+				return "The !! operator throws NullPointerException if the value is null; use ?., ?:, or a checked null path.", true
+			},
+		},
+		{
+			ID:        "kt:runtime-exec",
+			Name:      "Runtime command execution is security-sensitive",
+			Type:      domain.TypeHotspot,
+			Severity:  domain.SevMajor,
+			EffortMin: 15,
+			Query:     `(navigation_expression (simple_identifier) @o (navigation_suffix (simple_identifier) @m) (#eq? @o "Runtime") (#eq? @m "getRuntime")) @flag`,
+			Capture:   "flag",
+			Message:   "Runtime.getRuntime().exec with untrusted input is command injection; use ProcessBuilder with an argument list and validate input.",
+		},
 		complexityRule(langspec.Kotlin()),
 	}
 }

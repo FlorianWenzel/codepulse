@@ -3,7 +3,7 @@
 > Auto-generated from `codepulse-scan -rules`. Do not edit by hand —
 > regenerate with `make rules-catalog`.
 
-**122 built-in rules** across **15 languages**. Each rule carries a
+**124 built-in rules** across **15 languages**. Each rule carries a
 type (BUG / VULNERABILITY / CODE_SMELL / SECURITY_HOTSPOT), a default severity,
 a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings.
 
@@ -18,7 +18,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | go | 16 |
 | java | 14 |
 | javascript | 20 |
-| kotlin | 2 |
+| kotlin | 4 |
 | php | 5 |
 | python | 16 |
 | ruby | 5 |
@@ -26,7 +26,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | scala | 2 |
 | swift | 2 |
 | typescript | 20 |
-| **Total** | **122** |
+| **Total** | **124** |
 
 ## bash
 
@@ -135,6 +135,8 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | Rule ID | Name | Type | Severity | CWE | OWASP |
 |---------|------|------|----------|-----|-------|
 | `kt:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
+| `kt:not-null-assertion` | Avoid the !! not-null assertion | CODE_SMELL | MAJOR | CWE-476 | — |
+| `kt:runtime-exec` | Runtime command execution is security-sensitive | SECURITY_HOTSPOT | MAJOR | CWE-78 | A03:2021-Injection |
 | `kt:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |
 
 ## php

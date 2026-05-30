@@ -298,6 +298,23 @@ func TestScanBashSecurityRules(t *testing.T) {
 	}
 }
 
+// TestScanKotlinRules covers the Kotlin rules (!! not-null assertion, Runtime
+// exec) added on top of the todo/complexity starter set.
+func TestScanKotlinRules(t *testing.T) {
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/ktbugfixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if rep.Language != "kotlin" {
+		t.Errorf("language = %q, want kotlin", rep.Language)
+	}
+	for _, id := range []string{"kt:not-null-assertion", "kt:runtime-exec"} {
+		if countRule(rep, id) != 1 {
+			t.Errorf("expected rule %s to fire exactly once, got %d", id, countRule(rep, id))
+		}
+	}
+}
+
 // TestScanInlineSuppression checks that codepulse:ignore (bare and id-scoped)
 // and NOSONAR suppress findings on their line, while un-annotated and
 // wrong-id lines are still reported.

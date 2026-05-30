@@ -71,6 +71,8 @@ var remediation = map[string]string{
 	"cs:process-start":           "Use ProcessStartInfo with ArgumentList (no shell) and validate input-derived arguments.",
 	"bash:eval-usage":            "Avoid eval; validate/whitelist input, or use arrays and quoting instead of building command strings.",
 	"bash:curl-pipe-shell":       "Download to a file, verify a checksum/signature, then run it — do not pipe a URL into a shell.",
+	"kt:not-null-assertion":      "Replace !! with a safe call (?.), Elvis (?:), or an explicit null check.",
+	"kt:runtime-exec":            "Use ProcessBuilder with an argument list (no shell) and validate input-derived arguments.",
 }
 
 // ruleTaxonomy maps rule id -> taxonomy. Security rules carry CWE/OWASP; others
@@ -144,6 +146,8 @@ var ruleTaxonomy = map[string]Taxonomy{
 	"cs:process-start":           {Description: "Process.Start with untrusted input can lead to command injection.", CWE: []string{"CWE-78"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "command-injection"}},
 	"bash:eval-usage":            {Description: "eval executes its argument as a shell command; untrusted input is command injection.", CWE: []string{"CWE-95"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "injection"}},
 	"bash:curl-pipe-shell":       {Description: "Piping curl/wget output into a shell executes unverified remote code.", CWE: []string{"CWE-494"}, OWASP: []string{"A08:2021-Software and Data Integrity Failures"}, Tags: []string{"security", "supply-chain"}},
+	"kt:not-null-assertion":      {Description: "The !! operator throws NullPointerException when the value is null, defeating Kotlin null safety.", CWE: []string{"CWE-476"}, Tags: []string{"pitfall", "null-safety"}},
+	"kt:runtime-exec":            {Description: "Runtime.getRuntime().exec with untrusted input can lead to command injection.", CWE: []string{"CWE-78"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "command-injection"}},
 }
 
 // Meta is a catalogue entry describing one rule.
