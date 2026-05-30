@@ -33,6 +33,10 @@ The goal is for ~80% of rules to be query-only, ~15% query+predicate, ~5% visito
 
 ## 3. Authoring format
 
+> **Note:** the YAML/`rule.yaml` format below is the *planned* authoring layer. Today
+> rules are small Go values (`rules.Rule`); see [CONTRIBUTING.md](../CONTRIBUTING.md) for the
+> current workflow.
+
 A rule lives under `rules/<lang>/<rule-id>/` with three files:
 
 ```
