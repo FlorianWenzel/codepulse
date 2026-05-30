@@ -42,6 +42,8 @@ var remediation = map[string]string{
 	"ts:tainted-eval":             "Never eval request data. Parse/validate it, or dispatch on an allow-list.",
 	"js:tainted-sql":              "Use parameterized queries / prepared statements with placeholders; never build SQL from request data.",
 	"ts:tainted-sql":              "Use parameterized queries / prepared statements with placeholders; never build SQL from request data.",
+	"js:tainted-ssrf":             "Validate the URL against an allow-list of hosts/schemes; never let request data choose the destination.",
+	"ts:tainted-ssrf":             "Validate the URL against an allow-list of hosts/schemes; never let request data choose the destination.",
 
 	"ts:eval-usage":               "Remove eval(); parse JSON with JSON.parse or dispatch explicitly.",
 	"js:inner-html":               "Use textContent, or sanitize HTML with a vetted library (e.g. DOMPurify) before assignment.",
@@ -130,6 +132,8 @@ var ruleTaxonomy = map[string]Taxonomy{
 	"ts:tainted-xss":           {Description: "Dataflow: request data reaches innerHTML/outerHTML; DOM-based XSS.", CWE: []string{"CWE-79"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "xss", "taint"}},
 	"js:tainted-sql":           {Description: "Dataflow: request data reaches a SQL query (db.query/execute); SQL injection.", CWE: []string{"CWE-89"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "sql-injection", "taint"}},
 	"ts:tainted-sql":           {Description: "Dataflow: request data reaches a SQL query (db.query/execute); SQL injection.", CWE: []string{"CWE-89"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "sql-injection", "taint"}},
+	"js:tainted-ssrf":          {Description: "Dataflow: request data controls an outbound HTTP request URL (fetch/axios); server-side request forgery.", CWE: []string{"CWE-918"}, OWASP: []string{"A10:2021-Server-Side Request Forgery"}, Tags: []string{"security", "ssrf", "taint"}},
+	"ts:tainted-ssrf":          {Description: "Dataflow: request data controls an outbound HTTP request URL (fetch/axios); server-side request forgery.", CWE: []string{"CWE-918"}, OWASP: []string{"A10:2021-Server-Side Request Forgery"}, Tags: []string{"security", "ssrf", "taint"}},
 	"ts:tainted-exec":          {Description: "Dataflow: request data reaches a command-execution call (child_process); command injection.", CWE: []string{"CWE-78"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "command-injection", "taint"}},
 	"js:loose-equality":        {Description: "== / != perform type coercion with surprising results; prefer === / !==.", Tags: []string{"pitfall"}},
 	"ts:loose-equality":        {Description: "== / != perform type coercion with surprising results; prefer === / !==.", Tags: []string{"pitfall"}},

@@ -244,6 +244,22 @@ func TestJSTaintEval(t *testing.T) {
 }
 
 // TestJSTaintSQL covers request data flowing into a SQL query (js/ts:tainted-sql).
+// TestJSTaintSSRF covers request data controlling an outbound HTTP request URL.
+func TestJSTaintSSRF(t *testing.T) {
+	fetchv := "function h(req) { fetch(req.query.url); }\n"
+	if got := runRulesSrc(t, lang.JavaScript, fetchv)["js:tainted-ssrf"]; got != 1 {
+		t.Errorf("fetch ssrf: js:tainted-ssrf fired %d, want 1", got)
+	}
+	axiosv := "function h(req) { const t = req.body.target; axios.get(t); }\n"
+	if got := runRulesSrc(t, lang.JavaScript, axiosv)["js:tainted-ssrf"]; got != 1 {
+		t.Errorf("axios ssrf: js:tainted-ssrf fired %d, want 1", got)
+	}
+	clean := "function h() { fetch('https://api.internal/health'); }\n"
+	if got := runRulesSrc(t, lang.JavaScript, clean)["js:tainted-ssrf"]; got != 0 {
+		t.Errorf("clean ssrf: js:tainted-ssrf fired %d, want 0", got)
+	}
+}
+
 func TestJSTaintSQL(t *testing.T) {
 	tmpl := "function h(req, db) { const id = req.query.id; db.query(`SELECT * FROM t WHERE id = ${id}`); }\n"
 	if got := runRulesSrc(t, lang.JavaScript, tmpl)["js:tainted-sql"]; got != 1 {

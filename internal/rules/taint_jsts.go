@@ -99,6 +99,46 @@ func jsTaintXSSRule(prefix string) Rule {
 	}
 }
 
+func jsTaintSSRFRule(prefix string) Rule {
+	return Rule{
+		ID: prefix + ":tainted-ssrf", Name: "Request data flows into an outbound HTTP request",
+		Type: domain.TypeHotspot, Severity: domain.SevMajor, EffortMin: 30,
+		Visit: func(root *sitter.Node, src []byte, emit func(*sitter.Node, string)) {
+			jsForEachFn(root, src, func(body *sitter.Node, tainted map[string]bool) {
+				parse.Walk(body, func(n *sitter.Node) {
+					if n.Type() != "call_expression" {
+						return
+					}
+					if isJSHTTPEgress(n.ChildByFieldName("function"), src) && anyArgTainted(n, src, tainted) {
+						emit(n, "Request data controls an outbound HTTP request URL (SSRF); validate against an allow-list of hosts.")
+					}
+				})
+			})
+		},
+	}
+}
+
+// isJSHTTPEgress reports whether a call target performs an outbound HTTP request
+// (fetch / axios / got / http(s).get|request).
+func isJSHTTPEgress(callee *sitter.Node, src []byte) bool {
+	if callee == nil {
+		return false
+	}
+	switch callee.Type() {
+	case "identifier":
+		switch callee.Content(src) {
+		case "fetch", "axios", "got", "request", "superagent":
+			return true
+		}
+	case "member_expression":
+		switch jsRootObject(callee, src) {
+		case "axios", "http", "https", "got", "superagent":
+			return true
+		}
+	}
+	return false
+}
+
 func jsTaintSQLRule(prefix string) Rule {
 	return Rule{
 		ID: prefix + ":tainted-sql", Name: "Request data flows into a SQL query",
