@@ -122,7 +122,12 @@ func Scan(opts Options) (domain.Report, error) {
 			}
 		}
 
+		sup := collectSuppressions(ctx.spec, root, src)
 		for _, f := range ctx.engine.Run(rel, root, src) {
+			if suppressed(sup, f.Location.StartLine, f.RuleID) {
+				rep.Summary.SuppressedFindings++
+				continue
+			}
 			if newCode {
 				attributeNewCode(&f, blame, cutoff)
 			}

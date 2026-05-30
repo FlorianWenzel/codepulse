@@ -186,6 +186,26 @@ engine runs, so it also affects `-fail-on` and any server-side quality gate fed
 by the report. Named/inheriting profiles and additional per-rule parameters
 remain future work.
 
+### Inline suppression
+
+A trailing comment on a flagged line suppresses findings there — useful for
+intentional, reviewed exceptions:
+
+```go
+result := append(s, x)          // codepulse:ignore go:discarded-append (kept for the side effect... actually don't)
+password := mustLoadFromVault() // codepulse:ignore   (suppresses ALL rules on this line)
+risky()                         // NOSONAR             (SonarQube-compatible alias)
+```
+
+- `codepulse:ignore` with no ids suppresses every rule on that line.
+- `codepulse:ignore id1 id2` suppresses only the listed rule ids.
+- `NOSONAR` suppresses all rules on that line (Sonar compatibility).
+
+Suppression matches the finding's **start line**. Suppressed findings are
+dropped from the report (so they don't affect `-fail-on` or gates) but counted
+in `summary.suppressedFindings` and printed in the CLI summary, so suppressions
+stay visible rather than silent.
+
 ---
 
 ## 6. Rule sourcing strategy (how we get coverage fast)

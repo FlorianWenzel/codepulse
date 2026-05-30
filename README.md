@@ -17,6 +17,7 @@ make build                                   # build bin/codepulse-scan + bin/co
 ./bin/codepulse-scan -format sarif -o out.sarif ./path
 ./bin/codepulse-scan -coverage cover.out -new-code-days 30 -import-sarif gosec.sarif ./path
 ./bin/codepulse-scan -profile .codepulse.yml ./path   # quality profile: disable rules / override severities
+# Inline suppression: add a trailing comment `codepulse:ignore [rule-ids]` or `NOSONAR`
 make test                                    # unit + e2e tests (incl. a real embedded Postgres)
 
 # Server (self-host)

@@ -88,6 +88,7 @@ type Summary struct {
 	FilesAnalyzed          int               `json:"filesAnalyzed"`
 	TotalNcloc             int               `json:"totalNcloc"`
 	TotalFindings          int               `json:"totalFindings"`
+	SuppressedFindings     int               `json:"suppressedFindings,omitempty"` // dropped via inline codepulse:ignore / NOSONAR
 	BySeverity             map[Severity]int  `json:"bySeverity"`
 	ByType                 map[IssueType]int `json:"byType"`
 	DuplicatedLines        int               `json:"duplicatedLines"`

@@ -206,6 +206,34 @@ func TestScanPythonSecurityRules(t *testing.T) {
 	}
 }
 
+// TestScanInlineSuppression checks that codepulse:ignore (bare and id-scoped)
+// and NOSONAR suppress findings on their line, while un-annotated and
+// wrong-id lines are still reported.
+func TestScanInlineSuppression(t *testing.T) {
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/suppressfixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	// 5 panics total: 3 suppressed (specific id, bare, NOSONAR), 2 reported
+	// (un-annotated + wrong-id).
+	if n := countRule(rep, "go:panic-usage"); n != 2 {
+		t.Errorf("go:panic-usage findings = %d, want 2", n)
+	}
+	if rep.Summary.SuppressedFindings != 3 {
+		t.Errorf("suppressed = %d, want 3", rep.Summary.SuppressedFindings)
+	}
+	// Reported findings must be the un-annotated and wrong-id lines (13 and 15).
+	lines := map[int]bool{}
+	for _, f := range rep.Findings {
+		if f.RuleID == "go:panic-usage" {
+			lines[f.Location.StartLine] = true
+		}
+	}
+	if !lines[13] || !lines[15] {
+		t.Errorf("expected panic findings on lines 13 and 15, got %v", lines)
+	}
+}
+
 // TestScanWithProfile checks that a quality profile disables rules and
 // overrides severities through the full scan pipeline.
 func TestScanWithProfile(t *testing.T) {

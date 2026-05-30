@@ -195,6 +195,9 @@ func printSummary(r domain.Report) {
 	if r.Summary.NewFindings > 0 {
 		fmt.Fprintf(os.Stderr, "  new code   %d new finding(s)\n", r.Summary.NewFindings)
 	}
+	if r.Summary.SuppressedFindings > 0 {
+		fmt.Fprintf(os.Stderr, "  suppressed %d finding(s) via inline codepulse:ignore / NOSONAR\n", r.Summary.SuppressedFindings)
+	}
 	fmt.Fprintf(os.Stderr, "  duplication %.1f%% (%d lines)\n",
 		r.Summary.DuplicatedLinesDensity, r.Summary.DuplicatedLines)
 	if r.Summary.LinesToCover > 0 {
