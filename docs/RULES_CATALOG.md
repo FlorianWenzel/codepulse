@@ -3,7 +3,7 @@
 > Auto-generated from `codepulse-scan -rules`. Do not edit by hand —
 > regenerate with `make rules-catalog`.
 
-**156 built-in rules** across **15 languages**. Each rule carries a
+**157 built-in rules** across **15 languages**. Each rule carries a
 type (BUG / VULNERABILITY / CODE_SMELL / SECURITY_HOTSPOT), a default severity,
 a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings.
 
@@ -19,14 +19,14 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | java | 19 |
 | javascript | 24 |
 | kotlin | 5 |
-| php | 6 |
+| php | 7 |
 | python | 18 |
 | ruby | 6 |
 | rust | 6 |
 | scala | 5 |
 | swift | 5 |
 | typescript | 24 |
-| **Total** | **156** |
+| **Total** | **157** |
 
 ## bash
 
@@ -163,6 +163,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | `php:exec-usage` | Shell command execution is security-sensitive | VULNERABILITY | CRITICAL | CWE-78 | A03:2021-Injection |
 | `php:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
 | `php:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |
+| `php:unsafe-deserialization` | Deserialization of untrusted data (unserialize) | SECURITY_HOTSPOT | CRITICAL | CWE-502 | A08:2021-Software and Data Integrity Failures |
 | `php:weak-hash` | Weak cryptographic hash (MD5/SHA-1) | SECURITY_HOTSPOT | MAJOR | CWE-327, CWE-328 | A02:2021-Cryptographic Failures |
 
 ## python

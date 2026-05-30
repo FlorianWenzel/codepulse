@@ -126,6 +126,17 @@ func TestBashRulesOnFixture(t *testing.T) {
 	})
 }
 
+func TestPHPUnsafeDeserialization(t *testing.T) {
+	src := "<?php $o = unserialize($_GET['d']); ?>\n"
+	if got := runRulesSrc(t, lang.PHP, src)["php:unsafe-deserialization"]; got != 1 {
+		t.Errorf("php:unsafe-deserialization fired %d, want 1", got)
+	}
+	clean := "<?php $o = json_decode($s); ?>\n"
+	if got := runRulesSrc(t, lang.PHP, clean)["php:unsafe-deserialization"]; got != 0 {
+		t.Errorf("php:unsafe-deserialization fired %d on clean, want 0", got)
+	}
+}
+
 func TestWeakHashRules(t *testing.T) {
 	js := "const crypto = require('crypto'); const h = crypto.createHash('md5'); const ok = crypto.createHash('sha256');\n"
 	if got := runRulesSrc(t, lang.JavaScript, js)["js:weak-hash"]; got != 1 {

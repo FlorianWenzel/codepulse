@@ -93,6 +93,16 @@ func phpRules() []Rule {
 			Message:   "Shell execution with untrusted input is command injection; use escapeshellarg/escapeshellcmd or avoid the shell.",
 		},
 		{
+			ID:        "php:unsafe-deserialization",
+			Name:      "Deserialization of untrusted data (unserialize)",
+			Type:      domain.TypeHotspot,
+			Severity:  domain.SevCritical,
+			EffortMin: 30,
+			Query:     `(function_call_expression function: (name) @fn (#eq? @fn "unserialize")) @flag`,
+			Capture:   "flag",
+			Message:   "unserialize() on untrusted input enables PHP object injection (RCE via magic methods). Use json_decode, or pass allowed_classes => false.",
+		},
+		{
 			ID:        "php:weak-hash",
 			Name:      "Weak cryptographic hash (MD5/SHA-1)",
 			Type:      domain.TypeHotspot,
