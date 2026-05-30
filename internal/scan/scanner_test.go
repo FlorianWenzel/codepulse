@@ -153,6 +153,24 @@ func TestScanGoBugRules(t *testing.T) {
 	}
 }
 
+// TestScanJavaBugRules covers Java rules added beyond the starter set:
+// reference-equality string compare, catching NPE, and hard-coded credentials.
+func TestScanJavaBugRules(t *testing.T) {
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/javabugfixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	for _, id := range []string{"java:string-eq-ref", "java:catch-npe", "java:hardcoded-credentials"} {
+		if countRule(rep, id) != 1 {
+			t.Errorf("expected rule %s to fire exactly once, got %d", id, countRule(rep, id))
+		}
+	}
+	// The catch block here is non-empty, so empty-catch must not fire.
+	if countRule(rep, "java:empty-catch") != 0 {
+		t.Errorf("java:empty-catch should not fire on a non-empty catch")
+	}
+}
+
 func countRule(rep domain.Report, id string) int {
 	n := 0
 	for _, f := range rep.Findings {

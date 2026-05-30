@@ -36,13 +36,16 @@ var remediation = map[string]string{
 	"js:tainted-eval":             "Never eval request data. Parse/validate it, or dispatch on an allow-list.",
 	"ts:tainted-eval":             "Never eval request data. Parse/validate it, or dispatch on an allow-list.",
 
-	"ts:eval-usage":      "Remove eval(); parse JSON with JSON.parse or dispatch explicitly.",
-	"js:inner-html":      "Use textContent, or sanitize HTML with a vetted library (e.g. DOMPurify) before assignment.",
-	"ts:inner-html":      "Use textContent, or sanitize HTML with a vetted library (e.g. DOMPurify) before assignment.",
-	"js:document-write":  "Build DOM nodes or set textContent; if HTML is required, sanitize it first.",
-	"ts:document-write":  "Build DOM nodes or set textContent; if HTML is required, sanitize it first.",
-	"java:process-exec":  "Use ProcessBuilder with an argument list and no shell; validate any input-derived arguments.",
-	"java:catch-generic": "Catch the narrowest exception types you can handle; rethrow or wrap the rest.",
+	"ts:eval-usage":              "Remove eval(); parse JSON with JSON.parse or dispatch explicitly.",
+	"js:inner-html":              "Use textContent, or sanitize HTML with a vetted library (e.g. DOMPurify) before assignment.",
+	"ts:inner-html":              "Use textContent, or sanitize HTML with a vetted library (e.g. DOMPurify) before assignment.",
+	"js:document-write":          "Build DOM nodes or set textContent; if HTML is required, sanitize it first.",
+	"ts:document-write":          "Build DOM nodes or set textContent; if HTML is required, sanitize it first.",
+	"java:process-exec":          "Use ProcessBuilder with an argument list and no shell; validate any input-derived arguments.",
+	"java:catch-generic":         "Catch the narrowest exception types you can handle; rethrow or wrap the rest.",
+	"java:string-eq-ref":         "Use a.equals(b) or Objects.equals(a, b); reserve == for reference identity.",
+	"java:catch-npe":             "Remove the catch and fix the null dereference: validate inputs or use Optional.",
+	"java:hardcoded-credentials": "Read secrets from environment variables, a vault, or config — never commit them in source.",
 }
 
 // ruleTaxonomy maps rule id -> taxonomy. Security rules carry CWE/OWASP; others
@@ -85,9 +88,12 @@ var ruleTaxonomy = map[string]Taxonomy{
 	"ts:document-write":     {Description: "document.write with untrusted data enables DOM XSS (and blocks the parser).", CWE: []string{"CWE-79"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "xss"}},
 
 	// Java
-	"java:process-exec":  {Description: "Runtime/ProcessBuilder exec with untrusted input enables command injection.", CWE: []string{"CWE-78"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "command-injection"}},
-	"java:catch-generic": {Description: "Catching Exception/Throwable hides specific failures and can swallow errors you should handle.", CWE: []string{"CWE-396"}, Tags: []string{"error-handling"}},
-	"java:empty-catch":   {Description: "An empty catch block silently discards the exception.", CWE: []string{"CWE-390"}, Tags: []string{"error-handling"}},
+	"java:process-exec":          {Description: "Runtime/ProcessBuilder exec with untrusted input enables command injection.", CWE: []string{"CWE-78"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "command-injection"}},
+	"java:catch-generic":         {Description: "Catching Exception/Throwable hides specific failures and can swallow errors you should handle.", CWE: []string{"CWE-396"}, Tags: []string{"error-handling"}},
+	"java:empty-catch":           {Description: "An empty catch block silently discards the exception.", CWE: []string{"CWE-390"}, Tags: []string{"error-handling"}},
+	"java:string-eq-ref":         {Description: "Comparing strings with ==/!= tests reference identity, not value, and fails for equal-but-distinct String objects.", CWE: []string{"CWE-597"}, Tags: []string{"bug", "pitfall"}},
+	"java:catch-npe":             {Description: "Catching NullPointerException masks a programming error that should be fixed at the source.", CWE: []string{"CWE-395"}, Tags: []string{"error-handling"}},
+	"java:hardcoded-credentials": {Description: "Credentials embedded in source are exposed to anyone with repo access and cannot be rotated easily.", CWE: []string{"CWE-798"}, OWASP: []string{"A07:2021-Identification and Authentication Failures"}, Tags: []string{"security", "secrets"}},
 }
 
 // Meta is a catalogue entry describing one rule.

@@ -3,7 +3,7 @@
 > Auto-generated from `codepulse-scan -rules`. Do not edit by hand —
 > regenerate with `make rules-catalog`.
 
-**94 built-in rules** across **15 languages**. Each rule carries a
+**97 built-in rules** across **15 languages**. Each rule carries a
 type (BUG / VULNERABILITY / CODE_SMELL / SECURITY_HOTSPOT), a default severity,
 a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings.
 
@@ -16,7 +16,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | cpp | 2 |
 | csharp | 2 |
 | go | 16 |
-| java | 11 |
+| java | 14 |
 | javascript | 17 |
 | kotlin | 2 |
 | php | 2 |
@@ -26,7 +26,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | scala | 2 |
 | swift | 2 |
 | typescript | 17 |
-| **Total** | **94** |
+| **Total** | **97** |
 
 ## bash
 
@@ -83,11 +83,14 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 |---------|------|------|----------|-----|-------|
 | `java:assert-usage` | assert is disabled at runtime by default | CODE_SMELL | MINOR | — | — |
 | `java:catch-generic` | Catch specific exceptions, not Exception/Throwable | CODE_SMELL | MAJOR | CWE-396 | — |
+| `java:catch-npe` | NullPointerException should not be caught | CODE_SMELL | MAJOR | CWE-395 | — |
 | `java:empty-catch` | Empty catch block swallows exceptions | BUG | MAJOR | CWE-390 | — |
+| `java:hardcoded-credentials` | Hard-coded credentials | SECURITY_HOTSPOT | CRITICAL | CWE-798 | A07:2021-Identification and Authentication Failures |
 | `java:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
 | `java:legacy-collection` | Legacy synchronized collection | CODE_SMELL | MINOR | — | — |
 | `java:print-stacktrace` | Don't expose stack traces via printStackTrace() | CODE_SMELL | MINOR | — | — |
 | `java:process-exec` | Process execution is security-sensitive | SECURITY_HOTSPOT | MAJOR | CWE-78 | A03:2021-Injection |
+| `java:string-eq-ref` | Strings compared with == instead of equals() | BUG | MAJOR | CWE-597 | — |
 | `java:system-exit` | System.exit() should not be used in library code | CODE_SMELL | MAJOR | — | — |
 | `java:system-print` | Remove System.out/err debug prints | CODE_SMELL | MINOR | — | — |
 | `java:thread-sleep` | Thread.sleep() in application code is a smell | CODE_SMELL | MINOR | — | — |
