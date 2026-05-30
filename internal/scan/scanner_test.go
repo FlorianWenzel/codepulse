@@ -191,6 +191,21 @@ func TestScanJSBugRules(t *testing.T) {
 	}
 }
 
+// TestScanPythonSecurityRules covers the Python security hotspots added beyond
+// the starter set: subprocess shell=True, weak hash, requests verify=False, and
+// hard-coded credentials.
+func TestScanPythonSecurityRules(t *testing.T) {
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/pybugfixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	for _, id := range []string{"py:subprocess-shell", "py:weak-hash", "py:requests-no-verify", "py:hardcoded-credentials"} {
+		if countRule(rep, id) != 1 {
+			t.Errorf("expected rule %s to fire exactly once, got %d", id, countRule(rep, id))
+		}
+	}
+}
+
 // TestScanWithProfile checks that a quality profile disables rules and
 // overrides severities through the full scan pipeline.
 func TestScanWithProfile(t *testing.T) {
