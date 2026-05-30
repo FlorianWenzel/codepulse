@@ -149,6 +149,36 @@ func Scan(opts Options) (domain.Report, error) {
 		}
 	}
 
+	// Secret-scan config/credential files that aren't a supported language
+	// (.env, .yml, .pem, ...), where real-world secrets most often live.
+	for _, path := range collectSecretFiles(opts) {
+		src, err := os.ReadFile(path)
+		if err != nil || !looksTextual(src) {
+			continue
+		}
+		rel := relPath(opts.Root, path)
+		var blame map[int]git.LineInfo
+		if newCode {
+			if abs, err := filepath.Abs(path); err == nil {
+				blame, _ = git.BlameFile(absRoot, abs)
+			}
+		}
+		for _, f := range rules.ScanSecrets(rel, src) {
+			if newCode {
+				attributeNewCode(&f, blame, cutoff)
+			}
+			rep.Findings = append(rep.Findings, f)
+			rep.Summary.BySeverity[f.Severity]++
+			rep.Summary.ByType[f.Type]++
+			rep.Summary.TotalFindings++
+			if f.IsNew {
+				rep.Summary.NewBySeverity[f.Severity]++
+				rep.Summary.NewByType[f.Type]++
+				rep.Summary.NewFindings++
+			}
+		}
+	}
+
 	applyDuplication(&rep, dupFiles, opts.MinDupTokens)
 	ratings.Compute(&rep)
 
@@ -286,6 +316,75 @@ func excluded(path string, excludes []string) bool {
 		}
 	}
 	return false
+}
+
+// secretScanExts are config/credential file extensions that aren't a supported
+// language but commonly carry secrets, so we scan them for secret patterns.
+var secretScanExts = map[string]bool{
+	".env": true, ".yml": true, ".yaml": true, ".json": true, ".properties": true,
+	".ini": true, ".cfg": true, ".conf": true, ".toml": true, ".tf": true,
+	".tfvars": true, ".xml": true, ".pem": true, ".key": true, ".crt": true, ".cer": true,
+}
+
+// secretScanCandidate reports whether a non-source file should be secret-scanned.
+func secretScanCandidate(path string) bool {
+	if strings.HasPrefix(filepath.Base(path), ".env") {
+		return true // .env, .env.local, .env.production, ...
+	}
+	return secretScanExts[strings.ToLower(filepath.Ext(path))]
+}
+
+// looksTextual is a cheap binary check: skip files with a NUL byte in the head.
+func looksTextual(src []byte) bool {
+	head := src
+	if len(head) > 8192 {
+		head = head[:8192]
+	}
+	for _, b := range head {
+		if b == 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// collectSecretFiles returns config/credential files (not supported languages)
+// under opts.Root to scan for secrets only.
+func collectSecretFiles(opts Options) []string {
+	info, err := os.Stat(opts.Root)
+	if err != nil {
+		return nil
+	}
+	if !info.IsDir() {
+		if !lang.IsSupported(opts.Root) && secretScanCandidate(opts.Root) {
+			return []string{opts.Root}
+		}
+		return nil
+	}
+	var files []string
+	_ = filepath.WalkDir(opts.Root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			if path != opts.Root && (skipDirs[d.Name()] || strings.HasPrefix(d.Name(), ".")) {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if lang.IsSupported(path) || !secretScanCandidate(path) || excluded(path, opts.Excludes) {
+			return nil
+		}
+		if opts.MaxFileSize > 0 {
+			if fi, e := d.Info(); e == nil && fi.Size() > opts.MaxFileSize {
+				return nil
+			}
+		}
+		files = append(files, path)
+		return nil
+	})
+	sort.Strings(files)
+	return files
 }
 
 // relPath makes path relative to root (or its parent, when root is a file)

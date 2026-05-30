@@ -383,6 +383,21 @@ func TestScanCognitiveComplexity(t *testing.T) {
 	}
 }
 
+// TestScanSecretsInConfigFiles checks the scanner secret-scans non-source config
+// files (.env, .yaml) where credentials commonly leak.
+func TestScanSecretsInConfigFiles(t *testing.T) {
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/secretconfigfixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if countRule(rep, "secret:aws-access-key-id") != 1 {
+		t.Errorf("aws key in .env: got %d, want 1", countRule(rep, "secret:aws-access-key-id"))
+	}
+	if countRule(rep, "secret:github-token") != 1 {
+		t.Errorf("github token in .yaml: got %d, want 1", countRule(rep, "secret:github-token"))
+	}
+}
+
 // TestScanSecrets checks that the content-based secret scanner flags known
 // credential formats committed in source (with a clean negative).
 func TestScanSecrets(t *testing.T) {
