@@ -247,6 +247,20 @@ func TestScanRubySecurityRules(t *testing.T) {
 	}
 }
 
+// TestScanCFamilySecurityRules covers the C/C++ memory-safety + exec rules.
+// The fixture has a .c and a .cpp file to exercise both prefixes.
+func TestScanCFamilySecurityRules(t *testing.T) {
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/cbugfixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	for _, id := range []string{"c:unsafe-cstring-fn", "c:system-exec", "cpp:unsafe-cstring-fn"} {
+		if countRule(rep, id) != 1 {
+			t.Errorf("expected rule %s to fire exactly once, got %d", id, countRule(rep, id))
+		}
+	}
+}
+
 // TestScanInlineSuppression checks that codepulse:ignore (bare and id-scoped)
 // and NOSONAR suppress findings on their line, while un-annotated and
 // wrong-id lines are still reported.

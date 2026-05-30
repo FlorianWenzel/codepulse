@@ -62,6 +62,10 @@ var remediation = map[string]string{
 	"ruby:eval-usage":            "Remove eval/instance_eval on input; parse or dispatch on an allow-list.",
 	"ruby:command-exec":          "Pass an argument array (system(cmd, *args)) and validate input; avoid backticks on untrusted data.",
 	"ruby:weak-hash":             "Use Digest::SHA256 (or stronger); use bcrypt/argon2 for passwords.",
+	"c:unsafe-cstring-fn":        "Use a bounded variant: snprintf, strncpy/strlcpy, fgets — and always size the destination.",
+	"c:system-exec":              "Avoid system/popen with untrusted input; use exec* with an argument vector and validated input.",
+	"cpp:unsafe-cstring-fn":      "Prefer std::string / std::format, or bounded C APIs (snprintf, strncpy).",
+	"cpp:system-exec":            "Avoid system/popen with untrusted input; use a process API with an argument vector.",
 }
 
 // ruleTaxonomy maps rule id -> taxonomy. Security rules carry CWE/OWASP; others
@@ -126,6 +130,10 @@ var ruleTaxonomy = map[string]Taxonomy{
 	"ruby:eval-usage":            {Description: "eval/instance_eval execute arbitrary Ruby from a string.", CWE: []string{"CWE-95"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "injection"}},
 	"ruby:command-exec":          {Description: "system/exec/spawn and backticks run a shell; untrusted input enables command injection.", CWE: []string{"CWE-78"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "command-injection"}},
 	"ruby:weak-hash":             {Description: "MD5 and SHA-1 are cryptographically broken for security use; prefer SHA-256 or stronger.", CWE: []string{"CWE-327", "CWE-328"}, OWASP: []string{"A02:2021-Cryptographic Failures"}, Tags: []string{"security", "cryptography"}},
+	"c:unsafe-cstring-fn":        {Description: "gets/strcpy/strcat/sprintf write without bounds; a long input overflows the buffer.", CWE: []string{"CWE-120", "CWE-242"}, Tags: []string{"security", "buffer-overflow"}},
+	"c:system-exec":              {Description: "system/popen run a shell; untrusted input enables command injection.", CWE: []string{"CWE-78"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "command-injection"}},
+	"cpp:unsafe-cstring-fn":      {Description: "gets/strcpy/strcat/sprintf write without bounds; a long input overflows the buffer.", CWE: []string{"CWE-120", "CWE-242"}, Tags: []string{"security", "buffer-overflow"}},
+	"cpp:system-exec":            {Description: "system/popen run a shell; untrusted input enables command injection.", CWE: []string{"CWE-78"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "command-injection"}},
 }
 
 // Meta is a catalogue entry describing one rule.

@@ -21,7 +21,9 @@ func todoRuleQuery(prefix, query string) Rule {
 
 const singleComment = `((comment) @flag (#match? @flag "(TODO|FIXME|XXX)"))`
 
-func cppRules() []Rule { return []Rule{todoRule("cpp"), complexityRule(langspec.Cpp())} }
+func cppRules() []Rule {
+	return append([]Rule{todoRule("cpp")}, append(cFamilySecurityRules("cpp"), complexityRule(langspec.Cpp()))...)
+}
 func csRules() []Rule {
 	return []Rule{todoRuleQuery("cs", singleComment), complexityRule(langspec.CSharp())}
 }

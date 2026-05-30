@@ -3,7 +3,7 @@
 > Auto-generated from `codepulse-scan -rules`. Do not edit by hand —
 > regenerate with `make rules-catalog`.
 
-**113 built-in rules** across **15 languages**. Each rule carries a
+**117 built-in rules** across **15 languages**. Each rule carries a
 type (BUG / VULNERABILITY / CODE_SMELL / SECURITY_HOTSPOT), a default severity,
 a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings.
 
@@ -12,8 +12,8 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | Language | Rules |
 |----------|------:|
 | bash | 2 |
-| c | 2 |
-| cpp | 2 |
+| c | 4 |
+| cpp | 4 |
 | csharp | 2 |
 | go | 16 |
 | java | 14 |
@@ -26,7 +26,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | scala | 2 |
 | swift | 2 |
 | typescript | 20 |
-| **Total** | **113** |
+| **Total** | **117** |
 
 ## bash
 
@@ -40,14 +40,18 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | Rule ID | Name | Type | Severity | CWE | OWASP |
 |---------|------|------|----------|-----|-------|
 | `c:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
+| `c:system-exec` | Shell command execution is security-sensitive | SECURITY_HOTSPOT | MAJOR | CWE-78 | A03:2021-Injection |
 | `c:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |
+| `c:unsafe-cstring-fn` | Unsafe C string function (buffer overflow) | SECURITY_HOTSPOT | MAJOR | CWE-120, CWE-242 | — |
 
 ## cpp
 
 | Rule ID | Name | Type | Severity | CWE | OWASP |
 |---------|------|------|----------|-----|-------|
 | `cpp:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
+| `cpp:system-exec` | Shell command execution is security-sensitive | SECURITY_HOTSPOT | MAJOR | CWE-78 | A03:2021-Injection |
 | `cpp:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |
+| `cpp:unsafe-cstring-fn` | Unsafe C string function (buffer overflow) | SECURITY_HOTSPOT | MAJOR | CWE-120, CWE-242 | — |
 
 ## csharp
 
