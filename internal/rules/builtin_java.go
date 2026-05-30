@@ -146,6 +146,7 @@ func javaRules() []Rule {
 			Message:   "Credential assigned from a string literal; load secrets from the environment or a secrets manager instead.",
 		},
 		javaTaintSQLRule(),
+		javaTaintExecRule(),
 		complexityRule(langspec.Java()),
 	}
 }

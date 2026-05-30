@@ -111,6 +111,27 @@ func f() { c := fmt.Sprintf("ls %s", "static"); _ = exec.Command("sh", "-c", c) 
 // str.format() into cursor.execute() (the common modern Python SQLi patterns).
 // TestPyTaintExec covers dataflow command injection: untrusted input reaching
 // os.system / subprocess.* (py:tainted-exec).
+// TestJavaTaintExec covers request data flowing into Runtime.exec.
+func TestJavaTaintExec(t *testing.T) {
+	vuln := `class T {
+  void h(javax.servlet.http.HttpServletRequest request) throws Exception {
+    String cmd = request.getParameter("cmd");
+    Runtime.getRuntime().exec(cmd);
+  }
+}
+`
+	if got := runRulesSrc(t, lang.Java, vuln)["java:tainted-exec"]; got != 1 {
+		t.Errorf("tainted java exec: fired %d, want 1", got)
+	}
+	clean := `class T {
+  void h() throws Exception { Runtime.getRuntime().exec("ls -la"); }
+}
+`
+	if got := runRulesSrc(t, lang.Java, clean)["java:tainted-exec"]; got != 0 {
+		t.Errorf("literal java exec: fired %d, want 0", got)
+	}
+}
+
 // TestJavaTaintSQL covers request data concatenated into a JDBC execute call.
 func TestJavaTaintSQL(t *testing.T) {
 	vuln := `class T {

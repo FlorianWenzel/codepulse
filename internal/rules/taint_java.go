@@ -22,34 +22,53 @@ func javaTaintSQLRule() Rule {
 		Type:      domain.TypeVulnerability,
 		Severity:  domain.SevCritical,
 		EffortMin: 30,
-		Visit: func(root *sitter.Node, src []byte, emit func(*sitter.Node, string)) {
-			parse.Walk(root, func(fn *sitter.Node) {
-				t := fn.Type()
-				if t != "method_declaration" && t != "constructor_declaration" {
+		Visit: javaTaintVisitor(isJavaSQLSink,
+			"Untrusted request data reaches a SQL execute call; use a PreparedStatement with bind parameters (?), not string concatenation."),
+	}
+}
+
+func javaTaintExecRule() Rule {
+	return Rule{
+		ID:        "java:tainted-exec",
+		Name:      "Untrusted request data flows into command execution",
+		Type:      domain.TypeVulnerability,
+		Severity:  domain.SevCritical,
+		EffortMin: 30,
+		Visit: javaTaintVisitor(isJavaExecSink,
+			"Untrusted request data reaches Runtime.exec; this is command injection. Use ProcessBuilder with a validated argument list."),
+	}
+}
+
+// javaTaintVisitor builds a Visit func: per method/constructor, compute the
+// tainted set, then flag sink calls (matched by isSink) with a tainted argument.
+func javaTaintVisitor(isSink func(*sitter.Node, []byte) bool, msg string) func(*sitter.Node, []byte, func(*sitter.Node, string)) {
+	return func(root *sitter.Node, src []byte, emit func(*sitter.Node, string)) {
+		parse.Walk(root, func(fn *sitter.Node) {
+			t := fn.Type()
+			if t != "method_declaration" && t != "constructor_declaration" {
+				return
+			}
+			body := fn.ChildByFieldName("body")
+			if body == nil {
+				return
+			}
+			tainted := collectTaintedJava(body, src)
+			parse.Walk(body, func(n *sitter.Node) {
+				if n.Type() != "method_invocation" || !isSink(n, src) {
 					return
 				}
-				body := fn.ChildByFieldName("body")
-				if body == nil {
+				args := n.ChildByFieldName("arguments")
+				if args == nil {
 					return
 				}
-				tainted := collectTaintedJava(body, src)
-				parse.Walk(body, func(n *sitter.Node) {
-					if n.Type() != "method_invocation" || !isJavaSQLSink(n, src) {
+				for i := 0; i < int(args.NamedChildCount()); i++ {
+					if exprTaintedJava(args.NamedChild(i), src, tainted) {
+						emit(n, msg)
 						return
 					}
-					args := n.ChildByFieldName("arguments")
-					if args == nil {
-						return
-					}
-					for i := 0; i < int(args.NamedChildCount()); i++ {
-						if exprTaintedJava(args.NamedChild(i), src, tainted) {
-							emit(n, "Untrusted request data reaches a SQL execute call; use a PreparedStatement with bind parameters (?), not string concatenation.")
-							return
-						}
-					}
-				})
+				}
 			})
-		},
+		})
 	}
 }
 
@@ -136,4 +155,10 @@ func isJavaSQLSink(mi *sitter.Node, src []byte) bool {
 		return true
 	}
 	return false
+}
+
+// isJavaExecSink reports whether a method_invocation runs an OS command
+// (Runtime.exec(...)).
+func isJavaExecSink(mi *sitter.Node, src []byte) bool {
+	return javaMethodName(mi, src) == "exec"
 }
