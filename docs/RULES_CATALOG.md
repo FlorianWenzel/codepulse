@@ -3,7 +3,7 @@
 > Auto-generated from `codepulse-scan -rules`. Do not edit by hand —
 > regenerate with `make rules-catalog`.
 
-**151 built-in rules** across **15 languages**. Each rule carries a
+**154 built-in rules** across **15 languages**. Each rule carries a
 type (BUG / VULNERABILITY / CODE_SMELL / SECURITY_HOTSPOT), a default severity,
 a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings.
 
@@ -16,8 +16,8 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | cpp | 5 |
 | csharp | 6 |
 | go | 17 |
-| java | 18 |
-| javascript | 22 |
+| java | 19 |
+| javascript | 23 |
 | kotlin | 5 |
 | php | 6 |
 | python | 18 |
@@ -25,8 +25,8 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | rust | 6 |
 | scala | 5 |
 | swift | 5 |
-| typescript | 22 |
-| **Total** | **151** |
+| typescript | 23 |
+| **Total** | **154** |
 
 ## bash
 
@@ -113,6 +113,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | `java:thread-sleep` | Thread.sleep() in application code is a smell | CODE_SMELL | MINOR | — | — |
 | `java:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |
 | `java:unsafe-deserialization` | Deserialization of untrusted data | SECURITY_HOTSPOT | CRITICAL | CWE-502 | A08:2021-Software and Data Integrity Failures |
+| `java:weak-hash` | Weak cryptographic hash (MD5/SHA-1) | SECURITY_HOTSPOT | MAJOR | CWE-327, CWE-328 | A02:2021-Cryptographic Failures |
 
 ## javascript
 
@@ -140,6 +141,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | `js:throw-literal` | Throw an Error, not a literal | CODE_SMELL | MINOR | — | — |
 | `js:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |
 | `js:var-declaration` | Prefer let/const over var | CODE_SMELL | MINOR | — | — |
+| `js:weak-hash` | Weak cryptographic hash (MD5/SHA-1) | SECURITY_HOTSPOT | MAJOR | CWE-327, CWE-328 | A02:2021-Cryptographic Failures |
 
 ## kotlin
 
@@ -253,4 +255,5 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | `ts:throw-literal` | Throw an Error, not a literal | CODE_SMELL | MINOR | — | — |
 | `ts:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |
 | `ts:var-declaration` | Prefer let/const over var | CODE_SMELL | MINOR | — | — |
+| `ts:weak-hash` | Weak cryptographic hash (MD5/SHA-1) | SECURITY_HOTSPOT | MAJOR | CWE-327, CWE-328 | A02:2021-Cryptographic Failures |
 

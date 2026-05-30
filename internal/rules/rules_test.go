@@ -126,6 +126,17 @@ func TestBashRulesOnFixture(t *testing.T) {
 	})
 }
 
+func TestWeakHashRules(t *testing.T) {
+	js := "const crypto = require('crypto'); const h = crypto.createHash('md5'); const ok = crypto.createHash('sha256');\n"
+	if got := runRulesSrc(t, lang.JavaScript, js)["js:weak-hash"]; got != 1 {
+		t.Errorf("js:weak-hash fired %d, want 1 (md5 only)", got)
+	}
+	java := "class W { void f() throws Exception { java.security.MessageDigest.getInstance(\"MD5\"); java.security.MessageDigest.getInstance(\"SHA-256\"); } }\n"
+	if got := runRulesSrc(t, lang.Java, java)["java:weak-hash"]; got != 1 {
+		t.Errorf("java:weak-hash fired %d, want 1 (MD5 only)", got)
+	}
+}
+
 func TestJavaUnsafeDeserialization(t *testing.T) {
 	src := "class D { Object f(java.io.ObjectInputStream in) throws Exception { return in.readObject(); } }\n"
 	if got := runRulesSrc(t, lang.Java, src)["java:unsafe-deserialization"]; got != 1 {

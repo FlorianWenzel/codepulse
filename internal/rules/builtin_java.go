@@ -146,6 +146,16 @@ func javaRules() []Rule {
 			Message:   "Credential assigned from a string literal; load secrets from the environment or a secrets manager instead.",
 		},
 		{
+			ID:        "java:weak-hash",
+			Name:      "Weak cryptographic hash (MD5/SHA-1)",
+			Type:      domain.TypeHotspot,
+			Severity:  domain.SevMajor,
+			EffortMin: 15,
+			Query:     `(method_invocation name: (identifier) @m arguments: (argument_list (string_literal (string_fragment) @algo)) (#eq? @m "getInstance") (#match? @algo "^(MD5|SHA-1|SHA1)$")) @flag`,
+			Capture:   "flag",
+			Message:   "MD5/SHA-1 are weak; use SHA-256+ (MessageDigest.getInstance(\"SHA-256\")), and PBKDF2/bcrypt/argon2 for passwords.",
+		},
+		{
 			ID:        "java:unsafe-deserialization",
 			Name:      "Deserialization of untrusted data",
 			Type:      domain.TypeHotspot,
