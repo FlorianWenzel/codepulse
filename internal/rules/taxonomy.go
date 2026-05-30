@@ -229,6 +229,7 @@ func Catalog() []Meta {
 			})
 		}
 	}
+	out = append(out, SecretCatalog()...)
 	return out
 }
 

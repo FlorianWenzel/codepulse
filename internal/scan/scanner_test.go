@@ -383,6 +383,21 @@ func TestScanCognitiveComplexity(t *testing.T) {
 	}
 }
 
+// TestScanSecrets checks that the content-based secret scanner flags known
+// credential formats committed in source (with a clean negative).
+func TestScanSecrets(t *testing.T) {
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/secretfixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if countRule(rep, "secret:aws-access-key-id") != 1 {
+		t.Errorf("aws key: got %d, want 1", countRule(rep, "secret:aws-access-key-id"))
+	}
+	if countRule(rep, "secret:github-token") != 1 {
+		t.Errorf("github token: got %d, want 1", countRule(rep, "secret:github-token"))
+	}
+}
+
 // TestScanInlineSuppression checks that codepulse:ignore (bare and id-scoped)
 // and NOSONAR suppress findings on their line, while un-annotated and
 // wrong-id lines are still reported.

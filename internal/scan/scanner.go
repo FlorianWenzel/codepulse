@@ -127,7 +127,9 @@ func Scan(opts Options) (domain.Report, error) {
 		}
 
 		sup := collectSuppressions(ctx.spec, root, src)
-		for _, f := range ctx.engine.Run(rel, root, src) {
+		findings := ctx.engine.Run(rel, root, src)
+		findings = append(findings, rules.ScanSecrets(rel, src)...)
+		for _, f := range findings {
 			if suppressed(sup, f.Location.StartLine, f.RuleID) {
 				rep.Summary.SuppressedFindings++
 				continue

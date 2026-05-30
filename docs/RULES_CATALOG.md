@@ -3,7 +3,7 @@
 > Auto-generated from `codepulse-scan -rules`. Do not edit by hand —
 > regenerate with `make rules-catalog`.
 
-**157 built-in rules** across **15 languages**. Each rule carries a
+**165 built-in rules** across **15 languages** (plus language-agnostic secret detection). Each rule carries a
 type (BUG / VULNERABILITY / CODE_SMELL / SECURITY_HOTSPOT), a default severity,
 a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings.
 
@@ -11,6 +11,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 
 | Language | Rules |
 |----------|------:|
+| any | 8 |
 | bash | 5 |
 | c | 5 |
 | cpp | 5 |
@@ -26,7 +27,20 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | scala | 5 |
 | swift | 5 |
 | typescript | 24 |
-| **Total** | **157** |
+| **Total** | **165** |
+
+## any
+
+| Rule ID | Name | Type | Severity | CWE | OWASP |
+|---------|------|------|----------|-----|-------|
+| `secret:aws-access-key-id` | AWS access key ID | VULNERABILITY | BLOCKER | CWE-798 | A07:2021-Identification and Authentication Failures |
+| `secret:github-fine-grained-pat` | GitHub fine-grained PAT | VULNERABILITY | BLOCKER | CWE-798 | A07:2021-Identification and Authentication Failures |
+| `secret:github-token` | GitHub token | VULNERABILITY | BLOCKER | CWE-798 | A07:2021-Identification and Authentication Failures |
+| `secret:google-api-key` | Google API key | VULNERABILITY | BLOCKER | CWE-798 | A07:2021-Identification and Authentication Failures |
+| `secret:private-key` | Private key block | VULNERABILITY | BLOCKER | CWE-798 | A07:2021-Identification and Authentication Failures |
+| `secret:slack-token` | Slack token | VULNERABILITY | BLOCKER | CWE-798 | A07:2021-Identification and Authentication Failures |
+| `secret:slack-webhook` | Slack webhook URL | VULNERABILITY | BLOCKER | CWE-798 | A07:2021-Identification and Authentication Failures |
+| `secret:stripe-secret-key` | Stripe secret key | VULNERABILITY | BLOCKER | CWE-798 | A07:2021-Identification and Authentication Failures |
 
 ## bash
 
