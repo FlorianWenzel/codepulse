@@ -366,6 +366,23 @@ func TestScanScalaRules(t *testing.T) {
 	}
 }
 
+// TestScanCognitiveComplexity checks the cognitive-complexity rule fires on
+// deeply nested (but low-cyclomatic) code, where the cyclomatic high-complexity
+// rule does not.
+func TestScanCognitiveComplexity(t *testing.T) {
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/cognitivefixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if countRule(rep, "go:cognitive-complexity") != 1 {
+		t.Errorf("expected go:cognitive-complexity to fire once, got %d", countRule(rep, "go:cognitive-complexity"))
+	}
+	// cyclomatic is low here, so the high-complexity rule must NOT fire.
+	if countRule(rep, "go:high-complexity") != 0 {
+		t.Errorf("go:high-complexity should not fire on low-cyclomatic code, got %d", countRule(rep, "go:high-complexity"))
+	}
+}
+
 // TestScanInlineSuppression checks that codepulse:ignore (bare and id-scoped)
 // and NOSONAR suppress findings on their line, while un-annotated and
 // wrong-id lines are still reported.

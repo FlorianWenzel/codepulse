@@ -31,7 +31,8 @@ func CyclomaticOfFunc(spec langspec.Spec, n *sitter.Node, src []byte) int {
 type FuncInfo struct {
 	Node       *sitter.Node
 	Name       string
-	Complexity int
+	Complexity int // cyclomatic
+	Cognitive  int // cognitive (nesting-weighted)
 }
 
 // Functions returns every named function/method declaration with its name and
@@ -46,7 +47,7 @@ func Functions(spec langspec.Spec, root *sitter.Node, src []byte) []FuncInfo {
 		if id := n.ChildByFieldName(spec.NameField); id != nil {
 			name = id.Content(src)
 		}
-		out = append(out, FuncInfo{Node: n, Name: name, Complexity: cyclomaticOf(spec, n, src)})
+		out = append(out, FuncInfo{Node: n, Name: name, Complexity: cyclomaticOf(spec, n, src), Cognitive: cognitiveOf(spec, n, src)})
 	})
 	return out
 }

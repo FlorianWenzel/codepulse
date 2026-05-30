@@ -3,7 +3,7 @@
 > Auto-generated from `codepulse-scan -rules`. Do not edit by hand —
 > regenerate with `make rules-catalog`.
 
-**130 built-in rules** across **15 languages**. Each rule carries a
+**145 built-in rules** across **15 languages**. Each rule carries a
 type (BUG / VULNERABILITY / CODE_SMELL / SECURITY_HOTSPOT), a default severity,
 a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings.
 
@@ -11,27 +11,28 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 
 | Language | Rules |
 |----------|------:|
-| bash | 4 |
-| c | 4 |
-| cpp | 4 |
-| csharp | 5 |
-| go | 16 |
-| java | 14 |
-| javascript | 20 |
-| kotlin | 4 |
-| php | 5 |
-| python | 16 |
-| ruby | 5 |
-| rust | 5 |
-| scala | 4 |
-| swift | 4 |
-| typescript | 20 |
-| **Total** | **130** |
+| bash | 5 |
+| c | 5 |
+| cpp | 5 |
+| csharp | 6 |
+| go | 17 |
+| java | 15 |
+| javascript | 21 |
+| kotlin | 5 |
+| php | 6 |
+| python | 17 |
+| ruby | 6 |
+| rust | 6 |
+| scala | 5 |
+| swift | 5 |
+| typescript | 21 |
+| **Total** | **145** |
 
 ## bash
 
 | Rule ID | Name | Type | Severity | CWE | OWASP |
 |---------|------|------|----------|-----|-------|
+| `bash:cognitive-complexity` | Function is hard to understand (cognitive complexity) | CODE_SMELL | MAJOR | — | — |
 | `bash:curl-pipe-shell` | Piping a download straight into a shell | VULNERABILITY | CRITICAL | CWE-494 | A08:2021-Software and Data Integrity Failures |
 | `bash:eval-usage` | Use of eval executes arbitrary commands | VULNERABILITY | CRITICAL | CWE-95 | A03:2021-Injection |
 | `bash:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
@@ -41,6 +42,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 
 | Rule ID | Name | Type | Severity | CWE | OWASP |
 |---------|------|------|----------|-----|-------|
+| `c:cognitive-complexity` | Function is hard to understand (cognitive complexity) | CODE_SMELL | MAJOR | — | — |
 | `c:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
 | `c:system-exec` | Shell command execution is security-sensitive | SECURITY_HOTSPOT | MAJOR | CWE-78 | A03:2021-Injection |
 | `c:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |
@@ -50,6 +52,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 
 | Rule ID | Name | Type | Severity | CWE | OWASP |
 |---------|------|------|----------|-----|-------|
+| `cpp:cognitive-complexity` | Function is hard to understand (cognitive complexity) | CODE_SMELL | MAJOR | — | — |
 | `cpp:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
 | `cpp:system-exec` | Shell command execution is security-sensitive | SECURITY_HOTSPOT | MAJOR | CWE-78 | A03:2021-Injection |
 | `cpp:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |
@@ -59,6 +62,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 
 | Rule ID | Name | Type | Severity | CWE | OWASP |
 |---------|------|------|----------|-----|-------|
+| `cs:cognitive-complexity` | Function is hard to understand (cognitive complexity) | CODE_SMELL | MAJOR | — | — |
 | `cs:empty-catch` | Empty catch block swallows exceptions | BUG | MAJOR | CWE-390 | — |
 | `cs:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
 | `cs:process-start` | Process execution is security-sensitive | SECURITY_HOTSPOT | MAJOR | CWE-78 | A03:2021-Injection |
@@ -69,6 +73,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 
 | Rule ID | Name | Type | Severity | CWE | OWASP |
 |---------|------|------|----------|-----|-------|
+| `go:cognitive-complexity` | Function is hard to understand (cognitive complexity) | CODE_SMELL | MAJOR | — | — |
 | `go:context-todo` | context.TODO() should be replaced before release | CODE_SMELL | MINOR | — | — |
 | `go:debug-print` | Remove debug print statements | CODE_SMELL | MINOR | — | — |
 | `go:defer-in-loop` | defer inside a loop | BUG | MAJOR | CWE-404 | — |
@@ -93,6 +98,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | `java:assert-usage` | assert is disabled at runtime by default | CODE_SMELL | MINOR | — | — |
 | `java:catch-generic` | Catch specific exceptions, not Exception/Throwable | CODE_SMELL | MAJOR | CWE-396 | — |
 | `java:catch-npe` | NullPointerException should not be caught | CODE_SMELL | MAJOR | CWE-395 | — |
+| `java:cognitive-complexity` | Function is hard to understand (cognitive complexity) | CODE_SMELL | MAJOR | — | — |
 | `java:empty-catch` | Empty catch block swallows exceptions | BUG | MAJOR | CWE-390 | — |
 | `java:hardcoded-credentials` | Hard-coded credentials | SECURITY_HOTSPOT | CRITICAL | CWE-798 | A07:2021-Identification and Authentication Failures |
 | `java:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
@@ -111,6 +117,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 |---------|------|------|----------|-----|-------|
 | `js:alert` | Leftover alert()/confirm()/prompt() | CODE_SMELL | MINOR | — | — |
 | `js:child-process-exec` | Command execution is security-sensitive | SECURITY_HOTSPOT | MAJOR | CWE-78 | A03:2021-Injection |
+| `js:cognitive-complexity` | Function is hard to understand (cognitive complexity) | CODE_SMELL | MAJOR | — | — |
 | `js:console-usage` | Remove console statements | CODE_SMELL | MINOR | — | — |
 | `js:debugger-statement` | Leftover debugger statement | CODE_SMELL | MAJOR | — | — |
 | `js:document-write` | document.write enables XSS and blocks parsing | SECURITY_HOTSPOT | MAJOR | CWE-79 | A03:2021-Injection |
@@ -134,6 +141,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 
 | Rule ID | Name | Type | Severity | CWE | OWASP |
 |---------|------|------|----------|-----|-------|
+| `kt:cognitive-complexity` | Function is hard to understand (cognitive complexity) | CODE_SMELL | MAJOR | — | — |
 | `kt:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
 | `kt:not-null-assertion` | Avoid the !! not-null assertion | CODE_SMELL | MAJOR | CWE-476 | — |
 | `kt:runtime-exec` | Runtime command execution is security-sensitive | SECURITY_HOTSPOT | MAJOR | CWE-78 | A03:2021-Injection |
@@ -143,6 +151,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 
 | Rule ID | Name | Type | Severity | CWE | OWASP |
 |---------|------|------|----------|-----|-------|
+| `php:cognitive-complexity` | Function is hard to understand (cognitive complexity) | CODE_SMELL | MAJOR | — | — |
 | `php:eval-usage` | Use of eval() executes arbitrary code | VULNERABILITY | CRITICAL | CWE-95 | A03:2021-Injection |
 | `php:exec-usage` | Shell command execution is security-sensitive | VULNERABILITY | CRITICAL | CWE-78 | A03:2021-Injection |
 | `php:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
@@ -155,6 +164,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 |---------|------|------|----------|-----|-------|
 | `py:assert-tuple` | assert on a tuple is always true | BUG | MAJOR | — | — |
 | `py:bare-except` | Bare 'except:' hides errors | BUG | MAJOR | CWE-396 | — |
+| `py:cognitive-complexity` | Function is hard to understand (cognitive complexity) | CODE_SMELL | MAJOR | — | — |
 | `py:debug-print` | Remove debug print() calls | CODE_SMELL | INFO | — | — |
 | `py:exec-eval` | Use of eval()/exec() executes arbitrary code | VULNERABILITY | CRITICAL | CWE-95 | A03:2021-Injection |
 | `py:hardcoded-credentials` | Hard-coded credentials | SECURITY_HOTSPOT | CRITICAL | CWE-798 | A07:2021-Identification and Authentication Failures |
@@ -174,6 +184,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 
 | Rule ID | Name | Type | Severity | CWE | OWASP |
 |---------|------|------|----------|-----|-------|
+| `ruby:cognitive-complexity` | Function is hard to understand (cognitive complexity) | CODE_SMELL | MAJOR | — | — |
 | `ruby:command-exec` | Shell command execution is security-sensitive | VULNERABILITY | CRITICAL | CWE-78 | A03:2021-Injection |
 | `ruby:eval-usage` | Use of eval executes arbitrary code | VULNERABILITY | CRITICAL | CWE-95 | A03:2021-Injection |
 | `ruby:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
@@ -184,6 +195,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 
 | Rule ID | Name | Type | Severity | CWE | OWASP |
 |---------|------|------|----------|-----|-------|
+| `rust:cognitive-complexity` | Function is hard to understand (cognitive complexity) | CODE_SMELL | MAJOR | — | — |
 | `rust:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
 | `rust:panic-macro` | panic!/unreachable! aborts instead of returning an error | CODE_SMELL | MAJOR | — | — |
 | `rust:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |
@@ -195,6 +207,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | Rule ID | Name | Type | Severity | CWE | OWASP |
 |---------|------|------|----------|-----|-------|
 | `scala:asinstanceof` | Unsafe cast with asInstanceOf | CODE_SMELL | MAJOR | CWE-704 | — |
+| `scala:cognitive-complexity` | Function is hard to understand (cognitive complexity) | CODE_SMELL | MAJOR | — | — |
 | `scala:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
 | `scala:null-usage` | Avoid null; use Option | CODE_SMELL | MAJOR | CWE-476 | — |
 | `scala:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |
@@ -203,6 +216,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 
 | Rule ID | Name | Type | Severity | CWE | OWASP |
 |---------|------|------|----------|-----|-------|
+| `swift:cognitive-complexity` | Function is hard to understand (cognitive complexity) | CODE_SMELL | MAJOR | — | — |
 | `swift:force-try` | Avoid force-try (try!) | CODE_SMELL | MAJOR | — | — |
 | `swift:force-unwrap` | Avoid force-unwrapping optionals (!) | CODE_SMELL | MAJOR | CWE-476 | — |
 | `swift:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
@@ -214,6 +228,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 |---------|------|------|----------|-----|-------|
 | `ts:alert` | Leftover alert()/confirm()/prompt() | CODE_SMELL | MINOR | — | — |
 | `ts:child-process-exec` | Command execution is security-sensitive | SECURITY_HOTSPOT | MAJOR | CWE-78 | A03:2021-Injection |
+| `ts:cognitive-complexity` | Function is hard to understand (cognitive complexity) | CODE_SMELL | MAJOR | — | — |
 | `ts:console-usage` | Remove console statements | CODE_SMELL | MINOR | — | — |
 | `ts:debugger-statement` | Leftover debugger statement | CODE_SMELL | MAJOR | — | — |
 | `ts:document-write` | document.write enables XSS and blocks parsing | SECURITY_HOTSPOT | MAJOR | CWE-79 | A03:2021-Injection |
