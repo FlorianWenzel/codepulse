@@ -77,6 +77,8 @@ var remediation = map[string]string{
 	"rust:panic-macro":           "Return a Result or handle the case; reserve panic!/unreachable! for genuinely impossible states.",
 	"swift:force-unwrap":         "Use if let / guard let / nil-coalescing (??) instead of force-unwrapping.",
 	"swift:force-try":            "Use do/try/catch or try? instead of try!.",
+	"scala:null-usage":           "Model absence with Option (Some/None) instead of null.",
+	"scala:asinstanceof":         "Use pattern matching (match/case) for checked casts instead of asInstanceOf.",
 }
 
 // ruleTaxonomy maps rule id -> taxonomy. Security rules carry CWE/OWASP; others
@@ -156,6 +158,8 @@ var ruleTaxonomy = map[string]Taxonomy{
 	"rust:panic-macro":           {Description: "panic!/unreachable! abort the thread instead of returning a recoverable error.", Tags: []string{"error-handling"}},
 	"swift:force-unwrap":         {Description: "Force-unwrapping a nil optional with ! crashes at runtime.", CWE: []string{"CWE-476"}, Tags: []string{"pitfall", "null-safety"}},
 	"swift:force-try":            {Description: "try! crashes the process if the call throws, instead of handling the error.", Tags: []string{"error-handling"}},
+	"scala:null-usage":           {Description: "Using null in Scala invites NullPointerExceptions; Option models absence safely.", CWE: []string{"CWE-476"}, Tags: []string{"pitfall", "null-safety"}},
+	"scala:asinstanceof":         {Description: "asInstanceOf performs an unchecked cast that throws ClassCastException at runtime.", CWE: []string{"CWE-704"}, Tags: []string{"pitfall"}},
 }
 
 // Meta is a catalogue entry describing one rule.

@@ -3,7 +3,7 @@
 > Auto-generated from `codepulse-scan -rules`. Do not edit by hand —
 > regenerate with `make rules-catalog`.
 
-**128 built-in rules** across **15 languages**. Each rule carries a
+**130 built-in rules** across **15 languages**. Each rule carries a
 type (BUG / VULNERABILITY / CODE_SMELL / SECURITY_HOTSPOT), a default severity,
 a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings.
 
@@ -23,10 +23,10 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | python | 16 |
 | ruby | 5 |
 | rust | 5 |
-| scala | 2 |
+| scala | 4 |
 | swift | 4 |
 | typescript | 20 |
-| **Total** | **128** |
+| **Total** | **130** |
 
 ## bash
 
@@ -194,7 +194,9 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 
 | Rule ID | Name | Type | Severity | CWE | OWASP |
 |---------|------|------|----------|-----|-------|
+| `scala:asinstanceof` | Unsafe cast with asInstanceOf | CODE_SMELL | MAJOR | CWE-704 | — |
 | `scala:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
+| `scala:null-usage` | Avoid null; use Option | CODE_SMELL | MAJOR | CWE-476 | — |
 | `scala:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |
 
 ## swift

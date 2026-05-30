@@ -9,7 +9,32 @@ import (
 	"github.com/FlorianWenzel/codepulse/internal/langspec"
 )
 
-func scalaRules() []Rule { return []Rule{todoRule("scala"), complexityRule(langspec.Scala())} }
+func scalaRules() []Rule {
+	return []Rule{
+		todoRule("scala"),
+		{
+			ID:        "scala:null-usage",
+			Name:      "Avoid null; use Option",
+			Type:      domain.TypeCodeSmell,
+			Severity:  domain.SevMajor,
+			EffortMin: 10,
+			Query:     `(null_literal) @flag`,
+			Capture:   "flag",
+			Message:   "Avoid null in Scala; model absence with Option (Some/None) to prevent NullPointerExceptions.",
+		},
+		{
+			ID:        "scala:asinstanceof",
+			Name:      "Unsafe cast with asInstanceOf",
+			Type:      domain.TypeCodeSmell,
+			Severity:  domain.SevMajor,
+			EffortMin: 15,
+			Query:     `(field_expression (identifier) @m (#eq? @m "asInstanceOf")) @flag`,
+			Capture:   "flag",
+			Message:   "asInstanceOf throws ClassCastException at runtime; use pattern matching (match/case) for safe, checked casts.",
+		},
+		complexityRule(langspec.Scala()),
+	}
+}
 func swiftRules() []Rule {
 	return []Rule{
 		todoRuleQuery("swift", `([(comment) (multiline_comment)] @flag (#match? @flag "(TODO|FIXME|XXX)"))`),
