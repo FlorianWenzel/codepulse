@@ -33,7 +33,7 @@ const filtered = computed(() => {
     if (language.value && r.language !== language.value) return false
     if (ruleType.value && r.type !== ruleType.value) return false
     if (!term) return true
-    const hay = `${r.id} ${r.name} ${(r.cwe || []).join(' ')} ${(r.tags || []).join(' ')}`.toLowerCase()
+    const hay = `${r.id} ${r.name} ${r.description || ''} ${r.remediation || ''} ${(r.cwe || []).join(' ')} ${(r.tags || []).join(' ')}`.toLowerCase()
     return hay.includes(term)
   })
 })
@@ -69,6 +69,7 @@ const filtered = computed(() => {
             <code>{{ r.id }}</code>
             <div class="name">{{ r.name }}</div>
             <div class="desc" v-if="r.description">{{ r.description }}</div>
+            <div class="fix" v-if="r.remediation" data-test="rule-fix"><strong>Fix:</strong> {{ r.remediation }}</div>
           </td>
           <td>{{ r.language }}</td>
           <td>{{ r.type }}</td>
@@ -91,6 +92,8 @@ table.rules { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 table.rules th, table.rules td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border, #eee); vertical-align: top; }
 .name { font-weight: 600; margin-top: 2px; }
 .desc { color: var(--muted, #666); font-size: 0.82rem; margin-top: 2px; }
+.fix { color: var(--fg, #202124); font-size: 0.8rem; margin-top: 3px; }
+.fix strong { color: #137333; }
 .sev { font-weight: 600; font-size: 0.8rem; }
 .sev[data-sev="BLOCKER"], .sev[data-sev="CRITICAL"] { color: #c5221f; }
 .sev[data-sev="MAJOR"] { color: #e8710a; }
