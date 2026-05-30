@@ -3,7 +3,7 @@
 > Auto-generated from `codepulse-scan -rules`. Do not edit by hand —
 > regenerate with `make rules-catalog`.
 
-**107 built-in rules** across **15 languages**. Each rule carries a
+**110 built-in rules** across **15 languages**. Each rule carries a
 type (BUG / VULNERABILITY / CODE_SMELL / SECURITY_HOTSPOT), a default severity,
 a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings.
 
@@ -19,14 +19,14 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | java | 14 |
 | javascript | 20 |
 | kotlin | 2 |
-| php | 2 |
+| php | 5 |
 | python | 16 |
 | ruby | 2 |
 | rust | 3 |
 | scala | 2 |
 | swift | 2 |
 | typescript | 20 |
-| **Total** | **107** |
+| **Total** | **110** |
 
 ## bash
 
@@ -132,8 +132,11 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 
 | Rule ID | Name | Type | Severity | CWE | OWASP |
 |---------|------|------|----------|-----|-------|
+| `php:eval-usage` | Use of eval() executes arbitrary code | VULNERABILITY | CRITICAL | CWE-95 | A03:2021-Injection |
+| `php:exec-usage` | Shell command execution is security-sensitive | VULNERABILITY | CRITICAL | CWE-78 | A03:2021-Injection |
 | `php:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
 | `php:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |
+| `php:weak-hash` | Weak cryptographic hash (MD5/SHA-1) | SECURITY_HOTSPOT | MAJOR | CWE-327, CWE-328 | A02:2021-Cryptographic Failures |
 
 ## python
 

@@ -56,6 +56,9 @@ var remediation = map[string]string{
 	"java:string-eq-ref":         "Use a.equals(b) or Objects.equals(a, b); reserve == for reference identity.",
 	"java:catch-npe":             "Remove the catch and fix the null dereference: validate inputs or use Optional.",
 	"java:hardcoded-credentials": "Read secrets from environment variables, a vault, or config — never commit them in source.",
+	"php:eval-usage":             "Remove eval(); parse/validate input or dispatch on an explicit allow-list.",
+	"php:exec-usage":             "Avoid shell exec with untrusted input; use escapeshellarg() or a non-shell API.",
+	"php:weak-hash":              "Use hash('sha256', ...) (or stronger); use password_hash()/password_verify() for passwords.",
 }
 
 // ruleTaxonomy maps rule id -> taxonomy. Security rules carry CWE/OWASP; others
@@ -114,6 +117,9 @@ var ruleTaxonomy = map[string]Taxonomy{
 	"java:string-eq-ref":         {Description: "Comparing strings with ==/!= tests reference identity, not value, and fails for equal-but-distinct String objects.", CWE: []string{"CWE-597"}, Tags: []string{"bug", "pitfall"}},
 	"java:catch-npe":             {Description: "Catching NullPointerException masks a programming error that should be fixed at the source.", CWE: []string{"CWE-395"}, Tags: []string{"error-handling"}},
 	"java:hardcoded-credentials": {Description: "Credentials embedded in source are exposed to anyone with repo access and cannot be rotated easily.", CWE: []string{"CWE-798"}, OWASP: []string{"A07:2021-Identification and Authentication Failures"}, Tags: []string{"security", "secrets"}},
+	"php:eval-usage":             {Description: "eval() executes arbitrary PHP from a string.", CWE: []string{"CWE-95"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "injection"}},
+	"php:exec-usage":             {Description: "system/exec/shell_exec/passthru run a shell; untrusted input enables command injection.", CWE: []string{"CWE-78"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "command-injection"}},
+	"php:weak-hash":              {Description: "MD5 and SHA-1 are cryptographically broken for security use; prefer SHA-256 or stronger.", CWE: []string{"CWE-327", "CWE-328"}, OWASP: []string{"A02:2021-Cryptographic Failures"}, Tags: []string{"security", "cryptography"}},
 }
 
 // Meta is a catalogue entry describing one rule.
