@@ -35,6 +35,7 @@ export const api = {
   gateStatus: (key) => request(`/quality-gates/status?project=${q(key)}`),
   securityReport: (key, branch = 'main') => request(`/security-report?project=${q(key)}&branch=${q(branch)}`),
   hotspots: (key, status = '') => request(`/hotspots?project=${q(key)}&status=${q(status)}`),
+  listRules: (language = '') => request(language ? `/rules?language=${q(language)}` : '/rules'),
 
   // Quality gates.
   listGates: () => request('/quality-gates'),

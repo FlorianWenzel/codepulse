@@ -10,6 +10,7 @@ import { locale, setLocale, availableLocales, t } from './i18n.js'
       <nav class="nav">
         <RouterLink to="/" class="navlink">Projects</RouterLink>
         <RouterLink to="/gates" class="navlink">Gates</RouterLink>
+        <RouterLink to="/rules" class="navlink">Rules</RouterLink>
       </nav>
       <div class="controls">
         <label class="sr-only" for="locale">Language</label>

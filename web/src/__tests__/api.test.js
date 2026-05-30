@@ -51,6 +51,14 @@ describe('api client', () => {
     expect(global.fetch).toHaveBeenCalledWith('/api/v1/security-report?project=demo&branch=main', undefined)
   })
 
+  it('lists rules (all, and filtered by language)', async () => {
+    global.fetch.mockResolvedValue({ ok: true, status: 200, json: async () => [] })
+    await api.listRules()
+    expect(global.fetch).toHaveBeenCalledWith('/api/v1/rules', undefined)
+    await api.listRules('go')
+    expect(global.fetch).toHaveBeenCalledWith('/api/v1/rules?language=go', undefined)
+  })
+
   it('throws on non-OK responses', async () => {
     global.fetch.mockResolvedValue({ ok: false, status: 404, text: async () => 'nope' })
     await expect(api.getProject('x')).rejects.toThrow('404')
