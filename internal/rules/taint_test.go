@@ -107,6 +107,38 @@ func f() { c := fmt.Sprintf("ls %s", "static"); _ = exec.Command("sh", "-c", c) 
 	}
 }
 
+// TestPyTaintFormatting covers taint propagation through f-strings and
+// str.format() into cursor.execute() (the common modern Python SQLi patterns).
+func TestPyTaintFormatting(t *testing.T) {
+	fstring := `def h(request):
+    x = request.args.get("id")
+    q = f"select * from t where id = {x}"
+    cursor.execute(q)
+`
+	if got := runRulesSrc(t, lang.Python, fstring)["py:tainted-sql"]; got != 1 {
+		t.Errorf("f-string taint: py:tainted-sql fired %d, want 1", got)
+	}
+
+	format := `def h(request):
+    x = request.args.get("id")
+    q = "select * from t where id = {}".format(x)
+    cursor.execute(q)
+`
+	if got := runRulesSrc(t, lang.Python, format)["py:tainted-sql"]; got != 1 {
+		t.Errorf(".format taint: py:tainted-sql fired %d, want 1", got)
+	}
+
+	// Literal-only f-string / format -> no taint, no finding.
+	clean := `def h():
+    name = "static"
+    cursor.execute(f"select * from t where n = {name}")
+    cursor.execute("select * from t where n = {}".format(name))
+`
+	if got := runRulesSrc(t, lang.Python, clean)["py:tainted-sql"]; got != 0 {
+		t.Errorf("clean formatting: py:tainted-sql fired %d, want 0", got)
+	}
+}
+
 func TestPyTaintSQL(t *testing.T) {
 	vuln := `def handler(request):
     q = "select * from t where id = " + request.args.get("id")

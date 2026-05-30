@@ -83,7 +83,36 @@ func exprTaintedPy(n *sitter.Node, src []byte, tainted map[string]bool) bool {
 	case "identifier":
 		return tainted[n.Content(src)]
 	case "call":
-		return isPySource(n, src)
+		if isPySource(n, src) {
+			return true
+		}
+		// Taint propagates through "...".format(taint): the call is tainted if
+		// the template or any argument is tainted.
+		fn := n.ChildByFieldName("function")
+		if fn != nil && fn.Type() == "attribute" {
+			if a := fn.ChildByFieldName("attribute"); a != nil && a.Content(src) == "format" {
+				if exprTaintedPy(fn.ChildByFieldName("object"), src, tainted) {
+					return true
+				}
+				if args := n.ChildByFieldName("arguments"); args != nil {
+					for i := 0; i < int(args.NamedChildCount()); i++ {
+						if exprTaintedPy(args.NamedChild(i), src, tainted) {
+							return true
+						}
+					}
+				}
+			}
+		}
+		return false
+	case "string":
+		// f-strings: tainted if any {interpolation} carries taint.
+		for i := 0; i < int(n.NamedChildCount()); i++ {
+			c := n.NamedChild(i)
+			if c.Type() == "interpolation" && exprTaintedPy(firstNamed(c), src, tainted) {
+				return true
+			}
+		}
+		return false
 	case "binary_operator":
 		return exprTaintedPy(n.ChildByFieldName("left"), src, tainted) ||
 			exprTaintedPy(n.ChildByFieldName("right"), src, tainted)
