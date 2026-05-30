@@ -10,13 +10,13 @@ for r in sorted(d, key=lambda r: (r["language"], r["id"])):
     bylang.setdefault(r["language"], []).append(r)
 total = len(d)
 langs = sorted(bylang)
-real_langs = [l for l in langs if l != "any"]
+real_langs = [l for l in langs if l not in ("any", "docker")]
 
 L = []
 L.append("# CodePulse Rule Catalogue\n")
 L.append("> Auto-generated from `codepulse-scan -rules`. Do not edit by hand —")
 L.append("> regenerate with `make rules-catalog`.\n")
-L.append(f"**{total} built-in rules** across **{len(real_langs)} languages** (plus language-agnostic secret detection). Each rule carries a")
+L.append(f"**{total} built-in rules** across **{len(real_langs)} languages** (plus secret detection & Dockerfile checks). Each rule carries a")
 L.append("type (BUG / VULNERABILITY / CODE_SMELL / SECURITY_HOTSPOT), a default severity,")
 L.append("a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings.\n")
 L.append("## Summary\n")

@@ -398,6 +398,23 @@ func TestScanSecretsInConfigFiles(t *testing.T) {
 	}
 }
 
+// TestScanDockerfile checks the line-based Dockerfile linter.
+func TestScanDockerfile(t *testing.T) {
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/dockerfilefixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	for _, id := range []string{"docker:from-latest", "docker:curl-pipe-shell", "docker:run-sudo", "docker:add-local"} {
+		if countRule(rep, id) != 1 {
+			t.Errorf("%s: got %d, want 1", id, countRule(rep, id))
+		}
+	}
+	// USER is present, so run-as-root must NOT fire.
+	if countRule(rep, "docker:run-as-root") != 0 {
+		t.Errorf("docker:run-as-root should not fire when USER is set")
+	}
+}
+
 // TestScanSecrets checks that the content-based secret scanner flags known
 // credential formats committed in source (with a clean negative).
 func TestScanSecrets(t *testing.T) {

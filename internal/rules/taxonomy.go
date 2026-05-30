@@ -230,6 +230,7 @@ func Catalog() []Meta {
 		}
 	}
 	out = append(out, SecretCatalog()...)
+	out = append(out, DockerfileCatalog()...)
 	return out
 }
 

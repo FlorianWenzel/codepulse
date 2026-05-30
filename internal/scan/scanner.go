@@ -163,7 +163,11 @@ func Scan(opts Options) (domain.Report, error) {
 				blame, _ = git.BlameFile(absRoot, abs)
 			}
 		}
-		for _, f := range rules.ScanSecrets(rel, src) {
+		findings := rules.ScanSecrets(rel, src)
+		if rules.IsDockerfile(path) {
+			findings = append(findings, rules.ScanDockerfile(rel, src)...)
+		}
+		for _, f := range findings {
 			if newCode {
 				attributeNewCode(&f, blame, cutoff)
 			}
@@ -356,7 +360,7 @@ func collectSecretFiles(opts Options) []string {
 		return nil
 	}
 	if !info.IsDir() {
-		if !lang.IsSupported(opts.Root) && secretScanCandidate(opts.Root) {
+		if !lang.IsSupported(opts.Root) && (secretScanCandidate(opts.Root) || rules.IsDockerfile(opts.Root)) {
 			return []string{opts.Root}
 		}
 		return nil
@@ -372,7 +376,7 @@ func collectSecretFiles(opts Options) []string {
 			}
 			return nil
 		}
-		if lang.IsSupported(path) || !secretScanCandidate(path) || excluded(path, opts.Excludes) {
+		if lang.IsSupported(path) || !(secretScanCandidate(path) || rules.IsDockerfile(path)) || excluded(path, opts.Excludes) {
 			return nil
 		}
 		if opts.MaxFileSize > 0 {

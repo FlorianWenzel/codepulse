@@ -3,7 +3,7 @@
 > Auto-generated from `codepulse-scan -rules`. Do not edit by hand —
 > regenerate with `make rules-catalog`.
 
-**165 built-in rules** across **15 languages** (plus language-agnostic secret detection). Each rule carries a
+**170 built-in rules** across **15 languages** (plus secret detection & Dockerfile checks). Each rule carries a
 type (BUG / VULNERABILITY / CODE_SMELL / SECURITY_HOTSPOT), a default severity,
 a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings.
 
@@ -16,6 +16,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | c | 5 |
 | cpp | 5 |
 | csharp | 6 |
+| docker | 5 |
 | go | 17 |
 | java | 19 |
 | javascript | 24 |
@@ -27,7 +28,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | scala | 5 |
 | swift | 5 |
 | typescript | 24 |
-| **Total** | **165** |
+| **Total** | **170** |
 
 ## any
 
@@ -82,6 +83,16 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | `cs:process-start` | Process execution is security-sensitive | SECURITY_HOTSPOT | MAJOR | CWE-78 | A03:2021-Injection |
 | `cs:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |
 | `cs:weak-hash` | Weak cryptographic hash (MD5/SHA-1) | SECURITY_HOTSPOT | MAJOR | CWE-327, CWE-328 | A02:2021-Cryptographic Failures |
+
+## docker
+
+| Rule ID | Name | Type | Severity | CWE | OWASP |
+|---------|------|------|----------|-----|-------|
+| `docker:add-local` | ADD used for local files | CODE_SMELL | MINOR | — | — |
+| `docker:curl-pipe-shell` | Download piped into a shell in RUN | VULNERABILITY | CRITICAL | CWE-494 | — |
+| `docker:from-latest` | Base image uses :latest | CODE_SMELL | MINOR | — | — |
+| `docker:run-as-root` | Container runs as root (no USER) | SECURITY_HOTSPOT | MAJOR | CWE-250 | — |
+| `docker:run-sudo` | sudo used in RUN | CODE_SMELL | MINOR | — | — |
 
 ## go
 
