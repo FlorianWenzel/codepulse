@@ -49,4 +49,29 @@ func cFamilySecurityRules(prefix string) []Rule {
 func cRules() []Rule {
 	return append([]Rule{todoRule("c")}, append(cFamilySecurityRules("c"), complexityRule(langspec.C()))...)
 }
-func bashRules() []Rule { return []Rule{todoRule("bash"), complexityRule(langspec.Bash())} }
+func bashRules() []Rule {
+	return []Rule{
+		todoRule("bash"),
+		{
+			ID:        "bash:eval-usage",
+			Name:      "Use of eval executes arbitrary commands",
+			Type:      domain.TypeVulnerability,
+			Severity:  domain.SevCritical,
+			EffortMin: 20,
+			Query:     `(command (command_name (word) @w) (#eq? @w "eval")) @flag`,
+			Capture:   "flag",
+			Message:   "eval runs its argument as a command; with untrusted input this is command injection. Avoid eval or strictly validate input.",
+		},
+		{
+			ID:        "bash:curl-pipe-shell",
+			Name:      "Piping a download straight into a shell",
+			Type:      domain.TypeVulnerability,
+			Severity:  domain.SevCritical,
+			EffortMin: 20,
+			Query:     `(pipeline (command (command_name (word) @dl)) (command (command_name (word) @sh)) (#match? @dl "^(curl|wget|fetch)$") (#match? @sh "^(sh|bash|zsh|ksh|dash)$")) @flag`,
+			Capture:   "flag",
+			Message:   "Piping curl/wget output directly into a shell runs unverified remote code. Download, inspect/verify (checksum/signature), then run.",
+		},
+		complexityRule(langspec.Bash()),
+	}
+}

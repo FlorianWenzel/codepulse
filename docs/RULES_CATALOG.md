@@ -3,7 +3,7 @@
 > Auto-generated from `codepulse-scan -rules`. Do not edit by hand —
 > regenerate with `make rules-catalog`.
 
-**120 built-in rules** across **15 languages**. Each rule carries a
+**122 built-in rules** across **15 languages**. Each rule carries a
 type (BUG / VULNERABILITY / CODE_SMELL / SECURITY_HOTSPOT), a default severity,
 a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings.
 
@@ -11,7 +11,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 
 | Language | Rules |
 |----------|------:|
-| bash | 2 |
+| bash | 4 |
 | c | 4 |
 | cpp | 4 |
 | csharp | 5 |
@@ -26,12 +26,14 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | scala | 2 |
 | swift | 2 |
 | typescript | 20 |
-| **Total** | **120** |
+| **Total** | **122** |
 
 ## bash
 
 | Rule ID | Name | Type | Severity | CWE | OWASP |
 |---------|------|------|----------|-----|-------|
+| `bash:curl-pipe-shell` | Piping a download straight into a shell | VULNERABILITY | CRITICAL | CWE-494 | A08:2021-Software and Data Integrity Failures |
+| `bash:eval-usage` | Use of eval executes arbitrary commands | VULNERABILITY | CRITICAL | CWE-95 | A03:2021-Injection |
 | `bash:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
 | `bash:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |
 

@@ -69,6 +69,8 @@ var remediation = map[string]string{
 	"cs:empty-catch":             "Log the exception, rethrow, or document why it is safe to ignore.",
 	"cs:weak-hash":               "Use SHA256/SHA512; use PBKDF2/bcrypt/argon2 for passwords.",
 	"cs:process-start":           "Use ProcessStartInfo with ArgumentList (no shell) and validate input-derived arguments.",
+	"bash:eval-usage":            "Avoid eval; validate/whitelist input, or use arrays and quoting instead of building command strings.",
+	"bash:curl-pipe-shell":       "Download to a file, verify a checksum/signature, then run it — do not pipe a URL into a shell.",
 }
 
 // ruleTaxonomy maps rule id -> taxonomy. Security rules carry CWE/OWASP; others
@@ -140,6 +142,8 @@ var ruleTaxonomy = map[string]Taxonomy{
 	"cs:empty-catch":             {Description: "An empty catch block silently discards the exception.", CWE: []string{"CWE-390"}, Tags: []string{"error-handling"}},
 	"cs:weak-hash":               {Description: "MD5 and SHA-1 are cryptographically broken for security use; prefer SHA-256 or stronger.", CWE: []string{"CWE-327", "CWE-328"}, OWASP: []string{"A02:2021-Cryptographic Failures"}, Tags: []string{"security", "cryptography"}},
 	"cs:process-start":           {Description: "Process.Start with untrusted input can lead to command injection.", CWE: []string{"CWE-78"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "command-injection"}},
+	"bash:eval-usage":            {Description: "eval executes its argument as a shell command; untrusted input is command injection.", CWE: []string{"CWE-95"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "injection"}},
+	"bash:curl-pipe-shell":       {Description: "Piping curl/wget output into a shell executes unverified remote code.", CWE: []string{"CWE-494"}, OWASP: []string{"A08:2021-Software and Data Integrity Failures"}, Tags: []string{"security", "supply-chain"}},
 }
 
 // Meta is a catalogue entry describing one rule.

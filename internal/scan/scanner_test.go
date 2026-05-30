@@ -278,6 +278,26 @@ func TestScanCSharpSecurityRules(t *testing.T) {
 	}
 }
 
+// TestScanBashSecurityRules covers the Bash security rules (eval, curl|shell)
+// added on top of the todo/complexity starter set.
+func TestScanBashSecurityRules(t *testing.T) {
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/bashbugfixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if rep.Language != "bash" {
+		t.Errorf("language = %q, want bash", rep.Language)
+	}
+	for _, id := range []string{"bash:eval-usage", "bash:curl-pipe-shell"} {
+		if countRule(rep, id) != 1 {
+			t.Errorf("expected rule %s to fire exactly once, got %d", id, countRule(rep, id))
+		}
+	}
+	if rep.Summary.ByType[domain.TypeVulnerability] != 2 {
+		t.Errorf("vulnerabilities = %d, want 2", rep.Summary.ByType[domain.TypeVulnerability])
+	}
+}
+
 // TestScanInlineSuppression checks that codepulse:ignore (bare and id-scoped)
 // and NOSONAR suppress findings on their line, while un-annotated and
 // wrong-id lines are still reported.
