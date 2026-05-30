@@ -176,12 +176,14 @@ disable:
 severity:
   go:panic-usage: BLOCKER      # BLOCKER|CRITICAL|MAJOR|MINOR|INFO
   py:bare-except: MINOR
+# Override the cyclomatic-complexity threshold (<lang>:high-complexity), all langs
+complexityThreshold: 20        # default 15
 ```
 
-Unknown rule ids and invalid severities are rejected at load time (fail-loud,
-not silently ignored). The profile is applied before the engine runs, so it
-also affects `-fail-on` and any server-side quality gate fed by the report.
-Per-rule parameters (e.g. complexity threshold) and named/inheriting profiles
+Unknown rule ids, invalid severities, and a negative threshold are rejected at
+load time (fail-loud, not silently ignored). The profile is applied before the
+engine runs, so it also affects `-fail-on` and any server-side quality gate fed
+by the report. Named/inheriting profiles and additional per-rule parameters
 remain future work.
 
 ---

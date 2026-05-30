@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/FlorianWenzel/codepulse/internal/domain"
+	"github.com/FlorianWenzel/codepulse/internal/lang"
+	"github.com/FlorianWenzel/codepulse/internal/langspec"
 )
 
 func TestProfileApply(t *testing.T) {
@@ -33,6 +35,30 @@ func TestProfileApply(t *testing.T) {
 	// Apply must not mutate the input slice's rules.
 	if base[0].Severity != domain.SevMajor {
 		t.Error("Apply mutated the input rule severity")
+	}
+}
+
+func TestProfileApplyToComplexityThreshold(t *testing.T) {
+	spec := langspec.Go()
+	base := ForLanguage(lang.Go)
+	p := &Profile{ComplexityThreshold: 42}
+	out := p.ApplyTo(spec, base)
+
+	// The high-complexity rule must be present and rebuilt; the others intact.
+	if len(out) != len(base) {
+		t.Errorf("rule count changed: got %d, want %d", len(out), len(base))
+	}
+	var found bool
+	for _, r := range out {
+		if r.ID == "go:high-complexity" {
+			found = true
+			if r.Visit == nil {
+				t.Error("rebuilt complexity rule lost its Visit func")
+			}
+		}
+	}
+	if !found {
+		t.Error("go:high-complexity missing after ApplyTo")
 	}
 }
 

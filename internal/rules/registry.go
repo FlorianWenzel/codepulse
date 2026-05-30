@@ -62,10 +62,15 @@ func ForLanguage(l lang.Language) []Rule {
 	}
 }
 
-// complexityRule builds the language-agnostic high-complexity visitor rule.
-// It reports any named function whose cyclomatic complexity exceeds the
-// threshold, located at the function's name.
+// complexityRule builds the high-complexity rule with the default threshold.
 func complexityRule(spec langspec.Spec) Rule {
+	return complexityRuleWith(spec, HighComplexityThreshold)
+}
+
+// complexityRuleWith builds the language-agnostic high-complexity visitor rule
+// with an explicit threshold. It reports any named function whose cyclomatic
+// complexity exceeds the threshold, located at the function's name.
+func complexityRuleWith(spec langspec.Spec, threshold int) Rule {
 	id := spec.Prefix + ":high-complexity"
 	return Rule{
 		ID:        id,
@@ -75,7 +80,7 @@ func complexityRule(spec langspec.Spec) Rule {
 		EffortMin: 30,
 		Visit: func(root *sitter.Node, src []byte, emit func(*sitter.Node, string)) {
 			for _, f := range metrics.Functions(spec, root, src) {
-				if f.Complexity <= HighComplexityThreshold {
+				if f.Complexity <= threshold {
 					continue
 				}
 				target := f.Node
@@ -84,7 +89,7 @@ func complexityRule(spec langspec.Spec) Rule {
 				}
 				emit(target, fmt.Sprintf(
 					"Function %q has a cyclomatic complexity of %d (threshold %d); refactor it.",
-					f.Name, f.Complexity, HighComplexityThreshold))
+					f.Name, f.Complexity, threshold))
 			}
 		},
 	}

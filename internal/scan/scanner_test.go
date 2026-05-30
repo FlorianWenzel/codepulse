@@ -215,6 +215,28 @@ func TestScanWithProfile(t *testing.T) {
 	}
 }
 
+// TestScanProfileComplexityThreshold raises the complexity threshold so the
+// fixture's complex function is no longer flagged.
+func TestScanProfileComplexityThreshold(t *testing.T) {
+	base, err := scan.Scan(scan.Options{Root: "../../testdata/gofixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if countRule(base, "go:high-complexity") != 1 {
+		t.Fatalf("baseline high-complexity = %d, want 1", countRule(base, "go:high-complexity"))
+	}
+	raised, err := scan.Scan(scan.Options{
+		Root:    "../../testdata/gofixture",
+		Profile: &rules.Profile{ComplexityThreshold: 50},
+	})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if n := countRule(raised, "go:high-complexity"); n != 0 {
+		t.Errorf("high-complexity = %d with threshold 50, want 0", n)
+	}
+}
+
 func countRule(rep domain.Report, id string) int {
 	n := 0
 	for _, f := range rep.Findings {

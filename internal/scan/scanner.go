@@ -189,7 +189,7 @@ func contextFor(l lang.Language, cache map[lang.Language]*langContext, profile *
 		cache[l] = nil
 		return nil, nil
 	}
-	rs := profile.Apply(rules.ForLanguage(l))
+	rs := profile.ApplyTo(spec, rules.ForLanguage(l))
 	if len(rs) == 0 {
 		cache[l] = nil
 		return nil, nil

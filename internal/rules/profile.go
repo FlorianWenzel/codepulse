@@ -7,6 +7,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/FlorianWenzel/codepulse/internal/domain"
+	"github.com/FlorianWenzel/codepulse/internal/langspec"
 )
 
 // Profile customizes the built-in rule set, like a SonarQube quality profile.
@@ -25,6 +26,9 @@ import (
 type Profile struct {
 	Disable  []string          `yaml:"disable" json:"disable"`
 	Severity map[string]string `yaml:"severity" json:"severity"`
+	// ComplexityThreshold overrides the cyclomatic-complexity threshold for the
+	// <lang>:high-complexity rule across all languages (0 = built-in default).
+	ComplexityThreshold int `yaml:"complexityThreshold" json:"complexityThreshold"`
 }
 
 // LoadProfile reads and validates a profile from a YAML/JSON file.
@@ -69,7 +73,31 @@ func (p *Profile) validate() error {
 			return fmt.Errorf("invalid severity %q for rule %q (want BLOCKER|CRITICAL|MAJOR|MINOR|INFO)", sev, id)
 		}
 	}
+	if p.ComplexityThreshold < 0 {
+		return fmt.Errorf("complexityThreshold must be >= 1 (got %d)", p.ComplexityThreshold)
+	}
 	return nil
+}
+
+// ApplyTo applies the profile to one language's rule set. It needs the spec to
+// rebuild the parameterized high-complexity rule when complexityThreshold is
+// set, then delegates to Apply for disable/severity. A nil profile is a no-op.
+func (p *Profile) ApplyTo(spec langspec.Spec, rs []Rule) []Rule {
+	if p == nil {
+		return rs
+	}
+	if p.ComplexityThreshold > 0 {
+		id := spec.Prefix + ":high-complexity"
+		rebuilt := make([]Rule, len(rs))
+		copy(rebuilt, rs)
+		for i := range rebuilt {
+			if rebuilt[i].ID == id {
+				rebuilt[i] = complexityRuleWith(spec, p.ComplexityThreshold)
+			}
+		}
+		rs = rebuilt
+	}
+	return p.Apply(rs)
 }
 
 // Apply returns a copy of rs with disabled rules removed and severities
