@@ -21,36 +21,78 @@ func pythonTaintSQLRule() Rule {
 		Type:      domain.TypeVulnerability,
 		Severity:  domain.SevCritical,
 		EffortMin: 30,
-		Visit:     visitPyTaintSQL,
+		Visit: pyTaintVisitor(isPyExecuteSink,
+			"Untrusted input reaches cursor.execute(); use parameterized queries (placeholders), not string concatenation."),
 	}
 }
 
-func visitPyTaintSQL(root *sitter.Node, src []byte, emit func(*sitter.Node, string)) {
-	parse.Walk(root, func(fn *sitter.Node) {
-		if fn.Type() != "function_definition" {
-			return
-		}
-		body := fn.ChildByFieldName("body")
-		if body == nil {
-			return
-		}
-		tainted := collectTaintedPy(body, src)
-		parse.Walk(body, func(n *sitter.Node) {
-			if n.Type() != "call" || !isPyExecuteSink(n, src) {
+func pythonTaintExecRule() Rule {
+	return Rule{
+		ID:        "py:tainted-exec",
+		Name:      "Untrusted input flows into command execution",
+		Type:      domain.TypeVulnerability,
+		Severity:  domain.SevCritical,
+		EffortMin: 30,
+		Visit: pyTaintVisitor(isPyExecSink,
+			"Untrusted input reaches os.system/subprocess; this is command injection. Pass an argument list and validate input."),
+	}
+}
+
+// pyTaintVisitor builds a Visit func: per function, compute the tainted set,
+// then flag sink calls (matched by isSink) that receive a tainted argument.
+func pyTaintVisitor(isSink func(*sitter.Node, []byte) bool, msg string) func(*sitter.Node, []byte, func(*sitter.Node, string)) {
+	return func(root *sitter.Node, src []byte, emit func(*sitter.Node, string)) {
+		parse.Walk(root, func(fn *sitter.Node) {
+			if fn.Type() != "function_definition" {
 				return
 			}
-			args := n.ChildByFieldName("arguments")
-			if args == nil {
+			body := fn.ChildByFieldName("body")
+			if body == nil {
 				return
 			}
-			for i := 0; i < int(args.NamedChildCount()); i++ {
-				if exprTaintedPy(args.NamedChild(i), src, tainted) {
-					emit(n, "Untrusted input reaches cursor.execute(); use parameterized queries (placeholders), not string concatenation.")
+			tainted := collectTaintedPy(body, src)
+			parse.Walk(body, func(n *sitter.Node) {
+				if n.Type() != "call" || !isSink(n, src) {
 					return
 				}
-			}
+				args := n.ChildByFieldName("arguments")
+				if args == nil {
+					return
+				}
+				for i := 0; i < int(args.NamedChildCount()); i++ {
+					if exprTaintedPy(args.NamedChild(i), src, tainted) {
+						emit(n, msg)
+						return
+					}
+				}
+			})
 		})
-	})
+	}
+}
+
+// isPyExecSink reports whether a call is os.system(...) or subprocess.<run-like>.
+func isPyExecSink(call *sitter.Node, src []byte) bool {
+	fn := call.ChildByFieldName("function")
+	if fn == nil || fn.Type() != "attribute" {
+		return false
+	}
+	obj, attr := "", ""
+	if o := fn.ChildByFieldName("object"); o != nil {
+		obj = o.Content(src)
+	}
+	if a := fn.ChildByFieldName("attribute"); a != nil {
+		attr = a.Content(src)
+	}
+	if obj == "os" && (attr == "system" || attr == "popen") {
+		return true
+	}
+	if obj == "subprocess" {
+		switch attr {
+		case "run", "call", "Popen", "check_output", "check_call":
+			return true
+		}
+	}
+	return false
 }
 
 func collectTaintedPy(body *sitter.Node, src []byte) map[string]bool {

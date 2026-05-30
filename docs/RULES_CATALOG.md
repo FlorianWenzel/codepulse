@@ -3,7 +3,7 @@
 > Auto-generated from `codepulse-scan -rules`. Do not edit by hand —
 > regenerate with `make rules-catalog`.
 
-**145 built-in rules** across **15 languages**. Each rule carries a
+**146 built-in rules** across **15 languages**. Each rule carries a
 type (BUG / VULNERABILITY / CODE_SMELL / SECURITY_HOTSPOT), a default severity,
 a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings.
 
@@ -20,13 +20,13 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | javascript | 21 |
 | kotlin | 5 |
 | php | 6 |
-| python | 17 |
+| python | 18 |
 | ruby | 6 |
 | rust | 6 |
 | scala | 5 |
 | swift | 5 |
 | typescript | 21 |
-| **Total** | **145** |
+| **Total** | **146** |
 
 ## bash
 
@@ -174,6 +174,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | `py:pickle-load` | Unpickling untrusted data executes arbitrary code | VULNERABILITY | CRITICAL | CWE-502 | A08:2021-Software and Data Integrity Failures |
 | `py:requests-no-verify` | TLS verification disabled (verify=False) | SECURITY_HOTSPOT | CRITICAL | CWE-295 | A02:2021-Cryptographic Failures |
 | `py:subprocess-shell` | subprocess called with shell=True | SECURITY_HOTSPOT | MAJOR | CWE-78 | A03:2021-Injection |
+| `py:tainted-exec` | Untrusted input flows into command execution | VULNERABILITY | CRITICAL | CWE-78 | A03:2021-Injection |
 | `py:tainted-sql` | Untrusted input concatenated into a SQL query | VULNERABILITY | CRITICAL | CWE-89 | A03:2021-Injection |
 | `py:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |
 | `py:weak-hash` | Weak cryptographic hash (MD5/SHA-1) | SECURITY_HOTSPOT | MAJOR | CWE-327, CWE-328 | A02:2021-Cryptographic Failures |

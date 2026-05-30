@@ -109,6 +109,31 @@ func f() { c := fmt.Sprintf("ls %s", "static"); _ = exec.Command("sh", "-c", c) 
 
 // TestPyTaintFormatting covers taint propagation through f-strings and
 // str.format() into cursor.execute() (the common modern Python SQLi patterns).
+// TestPyTaintExec covers dataflow command injection: untrusted input reaching
+// os.system / subprocess.* (py:tainted-exec).
+func TestPyTaintExec(t *testing.T) {
+	osSystem := `def h(request):
+    cmd = request.args.get("cmd")
+    os.system(cmd)
+`
+	if got := runRulesSrc(t, lang.Python, osSystem)["py:tainted-exec"]; got != 1 {
+		t.Errorf("os.system taint: py:tainted-exec fired %d, want 1", got)
+	}
+	subproc := `def h(request):
+    subprocess.run(request.args.get("cmd"))
+`
+	if got := runRulesSrc(t, lang.Python, subproc)["py:tainted-exec"]; got != 1 {
+		t.Errorf("subprocess taint: py:tainted-exec fired %d, want 1", got)
+	}
+	clean := `def h():
+    subprocess.run(["ls", "-la"])
+    os.system("uptime")
+`
+	if got := runRulesSrc(t, lang.Python, clean)["py:tainted-exec"]; got != 0 {
+		t.Errorf("clean exec: py:tainted-exec fired %d, want 0", got)
+	}
+}
+
 func TestPyTaintFormatting(t *testing.T) {
 	fstring := `def h(request):
     x = request.args.get("id")

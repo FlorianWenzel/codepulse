@@ -158,6 +158,7 @@ func pythonRules() []Rule {
 			Message:   "Credential assigned from a string literal; load secrets from the environment (os.environ) or a secrets manager.",
 		},
 		pythonTaintSQLRule(),
+		pythonTaintExecRule(),
 		complexityRule(langspec.Python()),
 	}
 }
