@@ -27,6 +27,10 @@ var secretPatterns = []secretPattern{
 	{"secret:stripe-secret-key", "Stripe secret key", regexp.MustCompile(`\bsk_live_[0-9a-zA-Z]{24,}\b`)},
 	{"secret:slack-webhook", "Slack webhook URL", regexp.MustCompile(`https://hooks\.slack\.com/services/T[0-9A-Za-z_]+/B[0-9A-Za-z_]+/[0-9A-Za-z]{20,}`)},
 	{"secret:private-key", "Private key block", regexp.MustCompile(`-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY-----`)},
+	{"secret:gitlab-pat", "GitLab personal access token", regexp.MustCompile(`\bglpat-[A-Za-z0-9_\-]{20}\b`)},
+	{"secret:npm-token", "npm access token", regexp.MustCompile(`\bnpm_[A-Za-z0-9]{36}\b`)},
+	{"secret:sendgrid-key", "SendGrid API key", regexp.MustCompile(`\bSG\.[A-Za-z0-9_\-]{22}\.[A-Za-z0-9_\-]{43}\b`)},
+	{"secret:twilio-api-key", "Twilio API key", regexp.MustCompile(`\bSK[0-9a-fA-F]{32}\b`)},
 }
 
 // ScanSecrets runs the secret patterns over src and returns findings with

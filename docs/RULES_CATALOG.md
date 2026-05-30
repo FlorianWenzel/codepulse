@@ -3,7 +3,7 @@
 > Auto-generated from `codepulse-scan -rules`. Do not edit by hand —
 > regenerate with `make rules-catalog`.
 
-**171 built-in rules** across **15 languages** (plus secret detection, Dockerfile & GitHub Actions checks). Each rule carries a
+**175 built-in rules** across **15 languages** (plus secret detection, Dockerfile & GitHub Actions checks). Each rule carries a
 type (BUG / VULNERABILITY / CODE_SMELL / SECURITY_HOTSPOT), a default severity,
 a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings.
 
@@ -11,7 +11,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 
 | Language | Rules |
 |----------|------:|
-| any | 8 |
+| any | 12 |
 | bash | 5 |
 | c | 5 |
 | cpp | 5 |
@@ -29,7 +29,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | scala | 5 |
 | swift | 5 |
 | typescript | 24 |
-| **Total** | **171** |
+| **Total** | **175** |
 
 ## any
 
@@ -38,11 +38,15 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | `secret:aws-access-key-id` | AWS access key ID | VULNERABILITY | BLOCKER | CWE-798 | A07:2021-Identification and Authentication Failures |
 | `secret:github-fine-grained-pat` | GitHub fine-grained PAT | VULNERABILITY | BLOCKER | CWE-798 | A07:2021-Identification and Authentication Failures |
 | `secret:github-token` | GitHub token | VULNERABILITY | BLOCKER | CWE-798 | A07:2021-Identification and Authentication Failures |
+| `secret:gitlab-pat` | GitLab personal access token | VULNERABILITY | BLOCKER | CWE-798 | A07:2021-Identification and Authentication Failures |
 | `secret:google-api-key` | Google API key | VULNERABILITY | BLOCKER | CWE-798 | A07:2021-Identification and Authentication Failures |
+| `secret:npm-token` | npm access token | VULNERABILITY | BLOCKER | CWE-798 | A07:2021-Identification and Authentication Failures |
 | `secret:private-key` | Private key block | VULNERABILITY | BLOCKER | CWE-798 | A07:2021-Identification and Authentication Failures |
+| `secret:sendgrid-key` | SendGrid API key | VULNERABILITY | BLOCKER | CWE-798 | A07:2021-Identification and Authentication Failures |
 | `secret:slack-token` | Slack token | VULNERABILITY | BLOCKER | CWE-798 | A07:2021-Identification and Authentication Failures |
 | `secret:slack-webhook` | Slack webhook URL | VULNERABILITY | BLOCKER | CWE-798 | A07:2021-Identification and Authentication Failures |
 | `secret:stripe-secret-key` | Stripe secret key | VULNERABILITY | BLOCKER | CWE-798 | A07:2021-Identification and Authentication Failures |
+| `secret:twilio-api-key` | Twilio API key | VULNERABILITY | BLOCKER | CWE-798 | A07:2021-Identification and Authentication Failures |
 
 ## bash
 

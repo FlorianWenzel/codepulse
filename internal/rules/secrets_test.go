@@ -24,4 +24,22 @@ func TestScanSecrets(t *testing.T) {
 	if clean := ScanSecrets("x.go", []byte("x = \"just a normal value, length is fine\"\n")); len(clean) != 0 {
 		t.Errorf("clean source produced %d secret findings, want 0", len(clean))
 	}
+
+	// Newer patterns (assembled so the literals are not contiguous in source).
+	more := map[string]string{
+		"secret:gitlab-pat":  "glpat-" + "12345678901234567890",
+		"secret:npm-token":   "npm_" + "0123456789abcdefghijklmnopqrstuvwxyz",
+		"secret:sendgrid-key": "SG." + "abcdefghijklmnopqrstuv" + "." + "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG",
+	}
+	for id, tok := range more {
+		found := false
+		for _, f := range ScanSecrets("x", []byte("k = \""+tok+"\"\n")) {
+			if f.RuleID == id {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("expected %s to be detected", id)
+		}
+	}
 }
