@@ -3,7 +3,7 @@
 > Auto-generated from `codepulse-scan -rules`. Do not edit by hand —
 > regenerate with `make rules-catalog`.
 
-**146 built-in rules** across **15 languages**. Each rule carries a
+**148 built-in rules** across **15 languages**. Each rule carries a
 type (BUG / VULNERABILITY / CODE_SMELL / SECURITY_HOTSPOT), a default severity,
 a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings.
 
@@ -17,7 +17,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | csharp | 6 |
 | go | 17 |
 | java | 15 |
-| javascript | 21 |
+| javascript | 22 |
 | kotlin | 5 |
 | php | 6 |
 | python | 18 |
@@ -25,8 +25,8 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | rust | 6 |
 | scala | 5 |
 | swift | 5 |
-| typescript | 21 |
-| **Total** | **146** |
+| typescript | 22 |
+| **Total** | **148** |
 
 ## bash
 
@@ -132,6 +132,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | `js:no-with` | Avoid the with statement | CODE_SMELL | MAJOR | — | — |
 | `js:tainted-eval` | Request data flows into eval() | VULNERABILITY | CRITICAL | CWE-95 | A03:2021-Injection |
 | `js:tainted-exec` | Request data flows into command execution | VULNERABILITY | CRITICAL | CWE-78 | A03:2021-Injection |
+| `js:tainted-sql` | Request data flows into a SQL query | VULNERABILITY | CRITICAL | CWE-89 | A03:2021-Injection |
 | `js:tainted-xss` | Request data assigned to innerHTML | VULNERABILITY | CRITICAL | CWE-79 | A03:2021-Injection |
 | `js:throw-literal` | Throw an Error, not a literal | CODE_SMELL | MINOR | — | — |
 | `js:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |
@@ -244,6 +245,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | `ts:no-with` | Avoid the with statement | CODE_SMELL | MAJOR | — | — |
 | `ts:tainted-eval` | Request data flows into eval() | VULNERABILITY | CRITICAL | CWE-95 | A03:2021-Injection |
 | `ts:tainted-exec` | Request data flows into command execution | VULNERABILITY | CRITICAL | CWE-78 | A03:2021-Injection |
+| `ts:tainted-sql` | Request data flows into a SQL query | VULNERABILITY | CRITICAL | CWE-89 | A03:2021-Injection |
 | `ts:tainted-xss` | Request data assigned to innerHTML | VULNERABILITY | CRITICAL | CWE-79 | A03:2021-Injection |
 | `ts:throw-literal` | Throw an Error, not a literal | CODE_SMELL | MINOR | — | — |
 | `ts:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |

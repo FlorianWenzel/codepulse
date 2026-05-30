@@ -199,6 +199,26 @@ func TestJSTaintEval(t *testing.T) {
 	}
 }
 
+// TestJSTaintSQL covers request data flowing into a SQL query (js/ts:tainted-sql).
+func TestJSTaintSQL(t *testing.T) {
+	tmpl := "function h(req, db) { const id = req.query.id; db.query(`SELECT * FROM t WHERE id = ${id}`); }\n"
+	if got := runRulesSrc(t, lang.JavaScript, tmpl)["js:tainted-sql"]; got != 1 {
+		t.Errorf("template-literal sql: js:tainted-sql fired %d, want 1", got)
+	}
+	concat := "function h(req, db) { db.execute('SELECT * FROM t WHERE x = ' + req.body.x); }\n"
+	if got := runRulesSrc(t, lang.JavaScript, concat)["js:tainted-sql"]; got != 1 {
+		t.Errorf("concat sql: js:tainted-sql fired %d, want 1", got)
+	}
+	clean := "function h(db) { db.query('SELECT 1'); }\n"
+	if got := runRulesSrc(t, lang.JavaScript, clean)["js:tainted-sql"]; got != 0 {
+		t.Errorf("clean sql: js:tainted-sql fired %d, want 0", got)
+	}
+	ts := "function h(req: any, db: any) { db.query(`SELECT * FROM t WHERE id = ${req.params.id}`); }\n"
+	if got := runRulesSrc(t, lang.TypeScript, ts)["ts:tainted-sql"]; got != 1 {
+		t.Errorf("ts sql: ts:tainted-sql fired %d, want 1", got)
+	}
+}
+
 func TestJSTaintXSSExec(t *testing.T) {
 	xss := "function h(req, el) { el.innerHTML = req.body.html; }\n"
 	if got := runRulesSrc(t, lang.JavaScript, xss)["js:tainted-xss"]; got != 1 {

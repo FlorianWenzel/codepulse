@@ -189,6 +189,7 @@ func jsLikeRules(spec langspec.Spec) []Rule {
 		jsTaintEvalRule(p),
 		jsTaintXSSRule(p),
 		jsTaintExecRule(p),
+		jsTaintSQLRule(p),
 		complexityRule(spec),
 	}
 }

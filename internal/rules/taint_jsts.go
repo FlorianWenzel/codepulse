@@ -99,6 +99,26 @@ func jsTaintXSSRule(prefix string) Rule {
 	}
 }
 
+func jsTaintSQLRule(prefix string) Rule {
+	return Rule{
+		ID: prefix + ":tainted-sql", Name: "Request data flows into a SQL query",
+		Type: domain.TypeVulnerability, Severity: domain.SevCritical, EffortMin: 30,
+		Visit: func(root *sitter.Node, src []byte, emit func(*sitter.Node, string)) {
+			jsForEachFn(root, src, func(body *sitter.Node, tainted map[string]bool) {
+				parse.Walk(body, func(n *sitter.Node) {
+					if n.Type() != "call_expression" {
+						return
+					}
+					p := jsMemberProp(n.ChildByFieldName("function"), src)
+					if (p == "query" || p == "execute") && anyArgTainted(n, src, tainted) {
+						emit(n, "Request data reaches a SQL query; use parameterized queries / placeholders, not string concatenation or template literals.")
+					}
+				})
+			})
+		},
+	}
+}
+
 func jsTaintExecRule(prefix string) Rule {
 	return Rule{
 		ID: prefix + ":tainted-exec", Name: "Request data flows into command execution",
