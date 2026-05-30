@@ -162,6 +162,28 @@ Performance:
   on the next analysis (not retroactive rewrites of history).
 - Profiles are import/export-able as YAML for version control & sharing.
 
+### Implemented today (scanner-side)
+
+The scanner reads a **quality-profile file** (`.codepulse.yml`/`.codepulse.yaml`,
+auto-discovered in the scan root, or passed via `-profile <path>`). YAML or JSON:
+
+```yaml
+# Turn off rules you don't want
+disable:
+  - js:var-declaration
+  - go:todo-comment
+# Promote/demote a rule's severity
+severity:
+  go:panic-usage: BLOCKER      # BLOCKER|CRITICAL|MAJOR|MINOR|INFO
+  py:bare-except: MINOR
+```
+
+Unknown rule ids and invalid severities are rejected at load time (fail-loud,
+not silently ignored). The profile is applied before the engine runs, so it
+also affects `-fail-on` and any server-side quality gate fed by the report.
+Per-rule parameters (e.g. complexity threshold) and named/inheriting profiles
+remain future work.
+
 ---
 
 ## 6. Rule sourcing strategy (how we get coverage fast)

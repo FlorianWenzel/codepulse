@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/FlorianWenzel/codepulse/internal/domain"
@@ -39,6 +40,7 @@ func run() error {
 		semgrepCfg = flag.String("semgrep", "", "run semgrep with this --config and merge its findings (requires semgrep on PATH)")
 		since      = flag.String("since", "", "incremental: only analyze files changed since this git ref")
 		rulesDump  = flag.Bool("rules", false, "print the built-in rule catalogue as JSON and exit")
+		profile    = flag.String("profile", "", "quality profile file (YAML/JSON); defaults to .codepulse.yml in the scan root")
 		quiet      = flag.Bool("quiet", false, "suppress the human-readable summary on stderr")
 	)
 	flag.Usage = func() {
@@ -63,7 +65,12 @@ func run() error {
 		excludes = strings.Split(*exclude, ",")
 	}
 
-	rep, err := scan.Scan(scan.Options{Root: root, Excludes: excludes, MinDupTokens: *dupTok, NewCodeDays: *newDays, Since: *since})
+	prof, err := loadProfile(*profile, root)
+	if err != nil {
+		return err
+	}
+
+	rep, err := scan.Scan(scan.Options{Root: root, Excludes: excludes, MinDupTokens: *dupTok, NewCodeDays: *newDays, Since: *since, Profile: prof})
 	if err != nil {
 		return err
 	}
@@ -142,6 +149,26 @@ func run() error {
 		}
 	}
 	return nil
+}
+
+// loadProfile resolves a quality profile: the explicit -profile path if given,
+// otherwise .codepulse.yml / .codepulse.yaml auto-discovered in the scan root
+// (a directory). Returns nil (no-op profile) when none is configured.
+func loadProfile(explicit, root string) (*rules.Profile, error) {
+	if explicit != "" {
+		return rules.LoadProfile(explicit)
+	}
+	info, err := os.Stat(root)
+	if err != nil || !info.IsDir() {
+		return nil, nil
+	}
+	for _, name := range []string{".codepulse.yml", ".codepulse.yaml"} {
+		path := filepath.Join(root, name)
+		if _, err := os.Stat(path); err == nil {
+			return rules.LoadProfile(path)
+		}
+	}
+	return nil, nil
 }
 
 // ruleMeta exposes every built-in rule's metadata (incl. description + CWE/tags)

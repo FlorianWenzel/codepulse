@@ -32,12 +32,13 @@ var skipDirs = map[string]bool{
 
 // Options configures a scan.
 type Options struct {
-	Root         string   // directory or file to scan
-	Excludes     []string // path substrings to skip
-	MaxFileSize  int64    // skip files larger than this (bytes); 0 = no limit
-	MinDupTokens int      // duplication window size (0 = dup.DefaultMinTokens)
-	NewCodeDays  int      // findings introduced within this many days are "new" (0 = disabled)
-	Since        string   // incremental: only analyze files changed since this git ref
+	Root         string         // directory or file to scan
+	Excludes     []string       // path substrings to skip
+	MaxFileSize  int64          // skip files larger than this (bytes); 0 = no limit
+	MinDupTokens int            // duplication window size (0 = dup.DefaultMinTokens)
+	NewCodeDays  int            // findings introduced within this many days are "new" (0 = disabled)
+	Since        string         // incremental: only analyze files changed since this git ref
+	Profile      *rules.Profile // optional quality profile (disable rules / override severity)
 }
 
 // langContext bundles the per-language analysis state, built once and reused.
@@ -87,7 +88,7 @@ func Scan(opts Options) (domain.Report, error) {
 
 	for _, path := range files {
 		l := lang.Detect(path)
-		ctx, err := contextFor(l, contexts)
+		ctx, err := contextFor(l, contexts, opts.Profile)
 		if err != nil {
 			return domain.Report{}, err
 		}
@@ -179,7 +180,7 @@ func applyDuplication(rep *domain.Report, dupFiles []dup.File, minTokens int) {
 
 // contextFor returns (building if needed) the analysis context for a language,
 // or nil if the language is unsupported.
-func contextFor(l lang.Language, cache map[lang.Language]*langContext) (*langContext, error) {
+func contextFor(l lang.Language, cache map[lang.Language]*langContext, profile *rules.Profile) (*langContext, error) {
 	if ctx, ok := cache[l]; ok {
 		return ctx, nil
 	}
@@ -188,7 +189,7 @@ func contextFor(l lang.Language, cache map[lang.Language]*langContext) (*langCon
 		cache[l] = nil
 		return nil, nil
 	}
-	rs := rules.ForLanguage(l)
+	rs := profile.Apply(rules.ForLanguage(l))
 	if len(rs) == 0 {
 		cache[l] = nil
 		return nil, nil

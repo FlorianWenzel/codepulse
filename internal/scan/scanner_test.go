@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/FlorianWenzel/codepulse/internal/domain"
+	"github.com/FlorianWenzel/codepulse/internal/rules"
 	"github.com/FlorianWenzel/codepulse/internal/scan"
 )
 
@@ -187,6 +188,30 @@ func TestScanJSBugRules(t *testing.T) {
 	// setInterval with a function reference must NOT be flagged as implied-eval.
 	if countRule(rep, "js:implied-eval") != 1 {
 		t.Errorf("implied-eval should fire only for the string argument, got %d", countRule(rep, "js:implied-eval"))
+	}
+}
+
+// TestScanWithProfile checks that a quality profile disables rules and
+// overrides severities through the full scan pipeline.
+func TestScanWithProfile(t *testing.T) {
+	prof := &rules.Profile{
+		Disable:  []string{"go:todo-comment"},
+		Severity: map[string]string{"go:panic-usage": "BLOCKER"},
+	}
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/gofixture", Profile: prof})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	for _, f := range rep.Findings {
+		if f.RuleID == "go:todo-comment" {
+			t.Error("go:todo-comment should be disabled by the profile")
+		}
+		if f.RuleID == "go:panic-usage" && f.Severity != domain.SevBlocker {
+			t.Errorf("go:panic-usage severity = %q, want BLOCKER", f.Severity)
+		}
+	}
+	if rep.Summary.BySeverity[domain.SevBlocker] != 1 {
+		t.Errorf("BLOCKER count = %d, want 1 (panic-usage promoted)", rep.Summary.BySeverity[domain.SevBlocker])
 	}
 }
 

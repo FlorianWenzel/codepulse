@@ -4,7 +4,7 @@
 
 **Status:** Phases 1–4 implemented and end-to-end tested. Working today:
 
-- **Scanner** (`codepulse-scan`): **15 languages** via tree-sitter (Go, Python, JS, TS, Java, Ruby, Rust, C, Bash, C++, C#, PHP, Kotlin, Scala, Swift); **100+ rules** ([full catalogue](docs/RULES_CATALOG.md)) incl. cross-language **taint/dataflow** (command & SQL injection); rules for bugs/vulnerabilities/code-smells/security-hotspots; metrics (LOC, cyclomatic & cognitive complexity, comments), **duplication detection**, **coverage import** (LCOV/Go/Cobertura), A–E **ratings** + technical debt, **new-code period** via git blame; SARIF 2.1.0 + JSON output; **external-analyzer SARIF import** (consolidate gosec/ESLint/Bandit/…).
+- **Scanner** (`codepulse-scan`): **15 languages** via tree-sitter (Go, Python, JS, TS, Java, Ruby, Rust, C, Bash, C++, C#, PHP, Kotlin, Scala, Swift); **100+ rules** ([full catalogue](docs/RULES_CATALOG.md)) incl. cross-language **taint/dataflow** (command & SQL injection); rules for bugs/vulnerabilities/code-smells/security-hotspots; metrics (LOC, cyclomatic & cognitive complexity, comments), **duplication detection**, **coverage import** (LCOV/Go/Cobertura), A–E **ratings** + technical debt, **new-code period** via git blame; SARIF 2.1.0 + JSON output; **external-analyzer SARIF import** (consolidate gosec/ESLint/Bandit/…); **quality profiles** (`.codepulse.yml`: disable rules / override severities).
 - **Server** (`codepulse-server`): HTTP API over an in-memory or **PostgreSQL** store; analysis ingest with cross-analysis **issue tracking**, **quality gates** (incl. clean-as-you-code), **branch/PR analysis** (new-vs-base), **GitHub PR decoration**, **security-hotspot & issue triage workflows**, **portfolio aggregation**, **retention/pruning**, **notifications webhook**, **token auth + RBAC**, **OIDC SSO** (+ provider presets, group mapping, **keyless GitHub-Actions OIDC**), an **OWASP security report**, and a **rule catalogue** (CWE/OWASP + remediation).
 - **Dashboard** (`web/`): Vue 3 SPA — projects, gate/ratings/measures + file drilldown, findings trend, issue & hotspot triage, security report, gate admin; i18n/theme/a11y.
 
@@ -16,6 +16,7 @@ make build                                   # build bin/codepulse-scan + bin/co
 ./bin/codepulse-scan ./path                  # scan (JSON to stdout, summary to stderr)
 ./bin/codepulse-scan -format sarif -o out.sarif ./path
 ./bin/codepulse-scan -coverage cover.out -new-code-days 30 -import-sarif gosec.sarif ./path
+./bin/codepulse-scan -profile .codepulse.yml ./path   # quality profile: disable rules / override severities
 make test                                    # unit + e2e tests (incl. a real embedded Postgres)
 
 # Server (self-host)
