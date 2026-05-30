@@ -315,6 +315,23 @@ func TestScanKotlinRules(t *testing.T) {
 	}
 }
 
+// TestScanRustRules covers the Rust rules (unsafe block, panic macro) added on
+// top of todo/unwrap/complexity.
+func TestScanRustRules(t *testing.T) {
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/rustbugfixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if rep.Language != "rust" {
+		t.Errorf("language = %q, want rust", rep.Language)
+	}
+	for _, id := range []string{"rust:unsafe-block", "rust:panic-macro", "rust:unwrap"} {
+		if countRule(rep, id) != 1 {
+			t.Errorf("expected rule %s to fire exactly once, got %d", id, countRule(rep, id))
+		}
+	}
+}
+
 // TestScanInlineSuppression checks that codepulse:ignore (bare and id-scoped)
 // and NOSONAR suppress findings on their line, while un-annotated and
 // wrong-id lines are still reported.

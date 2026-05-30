@@ -28,6 +28,26 @@ func rustRules() []Rule {
 			Capture:   "flag",
 			Message:   "Avoid .unwrap(); handle the Result/Option explicitly.",
 		},
+		{
+			ID:        "rust:unsafe-block",
+			Name:      "unsafe block bypasses Rust's safety guarantees",
+			Type:      domain.TypeHotspot,
+			Severity:  domain.SevMajor,
+			EffortMin: 20,
+			Query:     `(unsafe_block) @flag`,
+			Capture:   "flag",
+			Message:   "unsafe disables Rust's memory-safety checks; review for UB (aliasing, bounds, lifetimes) and document the invariants that make it sound.",
+		},
+		{
+			ID:        "rust:panic-macro",
+			Name:      "panic!/unreachable! aborts instead of returning an error",
+			Type:      domain.TypeCodeSmell,
+			Severity:  domain.SevMajor,
+			EffortMin: 15,
+			Query:     `(macro_invocation macro: (identifier) @m (#match? @m "^(panic|unreachable)$")) @flag`,
+			Capture:   "flag",
+			Message:   "panic!/unreachable! aborts the thread; return a Result or handle the case instead (reserve panics for truly impossible states).",
+		},
 		complexityRule(langspec.Rust()),
 	}
 }

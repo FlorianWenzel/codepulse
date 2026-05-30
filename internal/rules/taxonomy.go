@@ -73,6 +73,8 @@ var remediation = map[string]string{
 	"bash:curl-pipe-shell":       "Download to a file, verify a checksum/signature, then run it — do not pipe a URL into a shell.",
 	"kt:not-null-assertion":      "Replace !! with a safe call (?.), Elvis (?:), or an explicit null check.",
 	"kt:runtime-exec":            "Use ProcessBuilder with an argument list (no shell) and validate input-derived arguments.",
+	"rust:unsafe-block":          "Minimize unsafe; encapsulate it behind a safe API and document the invariants that keep it sound.",
+	"rust:panic-macro":           "Return a Result or handle the case; reserve panic!/unreachable! for genuinely impossible states.",
 }
 
 // ruleTaxonomy maps rule id -> taxonomy. Security rules carry CWE/OWASP; others
@@ -148,6 +150,8 @@ var ruleTaxonomy = map[string]Taxonomy{
 	"bash:curl-pipe-shell":       {Description: "Piping curl/wget output into a shell executes unverified remote code.", CWE: []string{"CWE-494"}, OWASP: []string{"A08:2021-Software and Data Integrity Failures"}, Tags: []string{"security", "supply-chain"}},
 	"kt:not-null-assertion":      {Description: "The !! operator throws NullPointerException when the value is null, defeating Kotlin null safety.", CWE: []string{"CWE-476"}, Tags: []string{"pitfall", "null-safety"}},
 	"kt:runtime-exec":            {Description: "Runtime.getRuntime().exec with untrusted input can lead to command injection.", CWE: []string{"CWE-78"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "command-injection"}},
+	"rust:unsafe-block":          {Description: "unsafe disables the Rust memory-safety checks; misuse causes undefined behavior.", CWE: []string{"CWE-119"}, Tags: []string{"security", "memory"}},
+	"rust:panic-macro":           {Description: "panic!/unreachable! abort the thread instead of returning a recoverable error.", Tags: []string{"error-handling"}},
 }
 
 // Meta is a catalogue entry describing one rule.

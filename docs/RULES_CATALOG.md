@@ -3,7 +3,7 @@
 > Auto-generated from `codepulse-scan -rules`. Do not edit by hand —
 > regenerate with `make rules-catalog`.
 
-**124 built-in rules** across **15 languages**. Each rule carries a
+**126 built-in rules** across **15 languages**. Each rule carries a
 type (BUG / VULNERABILITY / CODE_SMELL / SECURITY_HOTSPOT), a default severity,
 a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings.
 
@@ -22,11 +22,11 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | php | 5 |
 | python | 16 |
 | ruby | 5 |
-| rust | 3 |
+| rust | 5 |
 | scala | 2 |
 | swift | 2 |
 | typescript | 20 |
-| **Total** | **124** |
+| **Total** | **126** |
 
 ## bash
 
@@ -185,7 +185,9 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | Rule ID | Name | Type | Severity | CWE | OWASP |
 |---------|------|------|----------|-----|-------|
 | `rust:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
+| `rust:panic-macro` | panic!/unreachable! aborts instead of returning an error | CODE_SMELL | MAJOR | — | — |
 | `rust:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |
+| `rust:unsafe-block` | unsafe block bypasses Rust's safety guarantees | SECURITY_HOTSPOT | MAJOR | CWE-119 | — |
 | `rust:unwrap` | Avoid .unwrap(); handle the error or None case | CODE_SMELL | MINOR | — | — |
 
 ## scala
