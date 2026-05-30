@@ -40,6 +40,7 @@ func run() error {
 		semgrepCfg = flag.String("semgrep", "", "run semgrep with this --config and merge its findings (requires semgrep on PATH)")
 		since      = flag.String("since", "", "incremental: only analyze files changed since this git ref")
 		rulesDump  = flag.Bool("rules", false, "print the built-in rule catalogue as JSON and exit")
+		showVer    = flag.Bool("version", false, "print the codepulse-scan version and exit")
 		profile    = flag.String("profile", "", "quality profile file (YAML/JSON); defaults to .codepulse.yml in the scan root")
 		quiet      = flag.Bool("quiet", false, "suppress the human-readable summary on stderr")
 	)
@@ -49,6 +50,10 @@ func run() error {
 	}
 	flag.Parse()
 
+	if *showVer {
+		fmt.Println("codepulse-scan " + scan.Version)
+		return nil
+	}
 	if *rulesDump {
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")

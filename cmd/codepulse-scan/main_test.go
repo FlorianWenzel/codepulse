@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"os/exec"
+	"strings"
 	"testing"
 )
 
@@ -49,6 +50,17 @@ func TestCLIEndToEnd(t *testing.T) {
 	}
 	if len(log.Runs[0].Results) != 4 {
 		t.Errorf("sarif results = %d, want 4", len(log.Runs[0].Results))
+	}
+}
+
+// TestCLIVersion runs `codepulse-scan -version` and checks it prints a version.
+func TestCLIVersion(t *testing.T) {
+	out, err := exec.Command("go", "run", ".", "-version").Output()
+	if err != nil {
+		t.Fatalf("run cli -version: %v", err)
+	}
+	if got := string(out); !strings.HasPrefix(got, "codepulse-scan ") {
+		t.Errorf("version output = %q, want prefix \"codepulse-scan \"", got)
 	}
 }
 
