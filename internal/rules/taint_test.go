@@ -69,6 +69,42 @@ func f(db *sql.DB, id string) { _, _ = db.Query("select * from t where id = $1",
 	if got := runRulesSrc(t, lang.Go, safe)["go:tainted-sql"]; got != 0 {
 		t.Errorf("parameterized sql: go:tainted-sql fired %d, want 0", got)
 	}
+
+	// Tainted via fmt.Sprintf propagation into the query.
+	sprintf := `package p
+import ("database/sql"; "fmt"; "os")
+func f(db *sql.DB) { q := fmt.Sprintf("select * from t where n='%s'", os.Getenv("N")); _, _ = db.Query(q) }
+`
+	if got := runRulesSrc(t, lang.Go, sprintf)["go:tainted-sql"]; got != 1 {
+		t.Errorf("sprintf-tainted sql: go:tainted-sql fired %d, want 1", got)
+	}
+
+	// fmt.Sprintf with only literal args -> no taint, no finding.
+	sprintfClean := `package p
+import ("database/sql"; "fmt")
+func f(db *sql.DB) { q := fmt.Sprintf("select * from t where n='%s'", "static"); _, _ = db.Query(q) }
+`
+	if got := runRulesSrc(t, lang.Go, sprintfClean)["go:tainted-sql"]; got != 0 {
+		t.Errorf("sprintf-clean sql: go:tainted-sql fired %d, want 0", got)
+	}
+}
+
+// TestGoTaintSprintfExec covers fmt.Sprintf taint propagation into exec.Command.
+func TestGoTaintSprintfExec(t *testing.T) {
+	vuln := `package p
+import ("fmt"; "os"; "os/exec")
+func f() { c := fmt.Sprintf("ls %s", os.Getenv("D")); _ = exec.Command("sh", "-c", c) }
+`
+	if got := runRulesSrc(t, lang.Go, vuln)["go:tainted-exec"]; got != 1 {
+		t.Errorf("sprintf-tainted exec: go:tainted-exec fired %d, want 1", got)
+	}
+	clean := `package p
+import ("fmt"; "os/exec")
+func f() { c := fmt.Sprintf("ls %s", "static"); _ = exec.Command("sh", "-c", c) }
+`
+	if got := runRulesSrc(t, lang.Go, clean)["go:tainted-exec"]; got != 0 {
+		t.Errorf("sprintf-clean exec: go:tainted-exec fired %d, want 0", got)
+	}
 }
 
 func TestPyTaintSQL(t *testing.T) {

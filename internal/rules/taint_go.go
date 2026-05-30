@@ -110,7 +110,22 @@ func exprTainted(n *sitter.Node, src []byte, tainted map[string]bool) bool {
 	case "identifier":
 		return tainted[n.Content(src)]
 	case "call_expression":
-		return isSelectorCall(n, src, "os", "Getenv") || isSelectorCall(n, src, "flag", "Arg")
+		if isSelectorCall(n, src, "os", "Getenv") || isSelectorCall(n, src, "flag", "Arg") {
+			return true
+		}
+		// Taint propagates through string formatting: fmt.Sprintf("... %s", taint)
+		// is itself tainted. This catches the very common pattern of building a
+		// command/query string with Sprintf before passing it to a sink.
+		if isSelectorCall(n, src, "fmt", "Sprintf") || isSelectorCall(n, src, "fmt", "Sprint") || isSelectorCall(n, src, "fmt", "Sprintln") {
+			if args := n.ChildByFieldName("arguments"); args != nil {
+				for i := 0; i < int(args.NamedChildCount()); i++ {
+					if exprTainted(args.NamedChild(i), src, tainted) {
+						return true
+					}
+				}
+			}
+		}
+		return false
 	case "index_expression":
 		op := n.ChildByFieldName("operand")
 		return op != nil && op.Type() == "selector_expression" &&
