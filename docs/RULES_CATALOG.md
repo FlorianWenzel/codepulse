@@ -3,7 +3,7 @@
 > Auto-generated from `codepulse-scan -rules`. Do not edit by hand —
 > regenerate with `make rules-catalog`.
 
-**150 built-in rules** across **15 languages**. Each rule carries a
+**151 built-in rules** across **15 languages**. Each rule carries a
 type (BUG / VULNERABILITY / CODE_SMELL / SECURITY_HOTSPOT), a default severity,
 a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings.
 
@@ -16,7 +16,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | cpp | 5 |
 | csharp | 6 |
 | go | 17 |
-| java | 17 |
+| java | 18 |
 | javascript | 22 |
 | kotlin | 5 |
 | php | 6 |
@@ -26,7 +26,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | scala | 5 |
 | swift | 5 |
 | typescript | 22 |
-| **Total** | **150** |
+| **Total** | **151** |
 
 ## bash
 
@@ -112,6 +112,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | `java:tainted-sql` | Untrusted request data concatenated into a SQL query | VULNERABILITY | CRITICAL | CWE-89 | A03:2021-Injection |
 | `java:thread-sleep` | Thread.sleep() in application code is a smell | CODE_SMELL | MINOR | — | — |
 | `java:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |
+| `java:unsafe-deserialization` | Deserialization of untrusted data | SECURITY_HOTSPOT | CRITICAL | CWE-502 | A08:2021-Software and Data Integrity Failures |
 
 ## javascript
 

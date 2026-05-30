@@ -126,6 +126,17 @@ func TestBashRulesOnFixture(t *testing.T) {
 	})
 }
 
+func TestJavaUnsafeDeserialization(t *testing.T) {
+	src := "class D { Object f(java.io.ObjectInputStream in) throws Exception { return in.readObject(); } }\n"
+	if got := runRulesSrc(t, lang.Java, src)["java:unsafe-deserialization"]; got != 1 {
+		t.Errorf("java:unsafe-deserialization fired %d, want 1", got)
+	}
+	clean := "class D { int f() { return 1; } }\n"
+	if got := runRulesSrc(t, lang.Java, clean)["java:unsafe-deserialization"]; got != 0 {
+		t.Errorf("java:unsafe-deserialization fired %d on clean, want 0", got)
+	}
+}
+
 func TestMoreLanguageRules(t *testing.T) {
 	cases := []struct {
 		l       lang.Language
