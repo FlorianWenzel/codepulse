@@ -35,32 +35,49 @@ func collectSuppressions(spec langspec.Spec, root *sitter.Node, src []byte) map[
 		text := n.Content(src)
 		line := int(n.StartPoint().Row) + 1
 
-		if idx := strings.Index(text, suppressMarker); idx >= 0 {
-			rest := text[idx+len(suppressMarker):]
-			// Drop trailing comment terminators so they aren't parsed as ids.
-			rest = strings.NewReplacer("*/", " ", "-->", " ").Replace(rest)
-			ids := strings.Fields(rest)
-			s := out[line]
-			if len(ids) == 0 {
-				s.all = true
-			} else {
-				if s.ids == nil {
-					s.ids = map[string]bool{}
-				}
-				for _, id := range ids {
-					s.ids[id] = true
-				}
-			}
-			out[line] = s
-			return
-		}
-		if strings.Contains(text, "NOSONAR") {
-			s := out[line]
-			s.all = true
-			out[line] = s
-		}
+		applyDirective(out, line, text)
 	})
 	return out
+}
+
+// collectSuppressionsText scans raw source lines for suppression directives,
+// without needing a parsed tree. Used for non-source files (config, Dockerfile,
+// workflow) where the directive can appear in any comment style.
+func collectSuppressionsText(src []byte) map[int]lineSuppression {
+	out := map[int]lineSuppression{}
+	for i, line := range strings.Split(string(src), "\n") {
+		applyDirective(out, i+1, line)
+	}
+	return out
+}
+
+// applyDirective parses a codepulse:ignore / NOSONAR marker out of text and
+// records it for the given 1-based line.
+func applyDirective(out map[int]lineSuppression, line int, text string) {
+	if idx := strings.Index(text, suppressMarker); idx >= 0 {
+		rest := text[idx+len(suppressMarker):]
+		// Drop trailing comment terminators so they aren't parsed as ids.
+		rest = strings.NewReplacer("*/", " ", "-->", " ").Replace(rest)
+		ids := strings.Fields(rest)
+		s := out[line]
+		if len(ids) == 0 {
+			s.all = true
+		} else {
+			if s.ids == nil {
+				s.ids = map[string]bool{}
+			}
+			for _, id := range ids {
+				s.ids[id] = true
+			}
+		}
+		out[line] = s
+		return
+	}
+	if strings.Contains(text, "NOSONAR") {
+		s := out[line]
+		s.all = true
+		out[line] = s
+	}
 }
 
 // suppressed reports whether a finding at line for ruleID is suppressed.

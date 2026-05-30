@@ -410,6 +410,25 @@ func TestScanWorkflowInjection(t *testing.T) {
 	}
 }
 
+// TestScanNonSourceSuppression checks that inline suppression
+// (codepulse:ignore) also works for the non-source pass (Dockerfile / config
+// secret findings), not just code.
+func TestScanNonSourceSuppression(t *testing.T) {
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/suppressconfigfixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if countRule(rep, "docker:from-latest") != 0 {
+		t.Errorf("docker:from-latest should be suppressed, got %d", countRule(rep, "docker:from-latest"))
+	}
+	if countRule(rep, "secret:aws-access-key-id") != 0 {
+		t.Errorf("secret:aws-access-key-id should be suppressed, got %d", countRule(rep, "secret:aws-access-key-id"))
+	}
+	if rep.Summary.SuppressedFindings < 2 {
+		t.Errorf("suppressed = %d, want >= 2", rep.Summary.SuppressedFindings)
+	}
+}
+
 // TestScanDockerfile checks the line-based Dockerfile linter.
 func TestScanDockerfile(t *testing.T) {
 	rep, err := scan.Scan(scan.Options{Root: "../../testdata/dockerfilefixture"})

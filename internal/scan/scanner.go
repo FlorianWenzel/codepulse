@@ -170,7 +170,12 @@ func Scan(opts Options) (domain.Report, error) {
 		if rules.IsWorkflowFile(path) {
 			findings = append(findings, rules.ScanWorkflow(rel, src)...)
 		}
+		sup := collectSuppressionsText(src)
 		for _, f := range findings {
+			if suppressed(sup, f.Location.StartLine, f.RuleID) {
+				rep.Summary.SuppressedFindings++
+				continue
+			}
 			if newCode {
 				attributeNewCode(&f, blame, cutoff)
 			}
