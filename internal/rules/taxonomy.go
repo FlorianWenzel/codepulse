@@ -75,6 +75,8 @@ var remediation = map[string]string{
 	"kt:runtime-exec":            "Use ProcessBuilder with an argument list (no shell) and validate input-derived arguments.",
 	"rust:unsafe-block":          "Minimize unsafe; encapsulate it behind a safe API and document the invariants that keep it sound.",
 	"rust:panic-macro":           "Return a Result or handle the case; reserve panic!/unreachable! for genuinely impossible states.",
+	"swift:force-unwrap":         "Use if let / guard let / nil-coalescing (??) instead of force-unwrapping.",
+	"swift:force-try":            "Use do/try/catch or try? instead of try!.",
 }
 
 // ruleTaxonomy maps rule id -> taxonomy. Security rules carry CWE/OWASP; others
@@ -152,6 +154,8 @@ var ruleTaxonomy = map[string]Taxonomy{
 	"kt:runtime-exec":            {Description: "Runtime.getRuntime().exec with untrusted input can lead to command injection.", CWE: []string{"CWE-78"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "command-injection"}},
 	"rust:unsafe-block":          {Description: "unsafe disables the Rust memory-safety checks; misuse causes undefined behavior.", CWE: []string{"CWE-119"}, Tags: []string{"security", "memory"}},
 	"rust:panic-macro":           {Description: "panic!/unreachable! abort the thread instead of returning a recoverable error.", Tags: []string{"error-handling"}},
+	"swift:force-unwrap":         {Description: "Force-unwrapping a nil optional with ! crashes at runtime.", CWE: []string{"CWE-476"}, Tags: []string{"pitfall", "null-safety"}},
+	"swift:force-try":            {Description: "try! crashes the process if the call throws, instead of handling the error.", Tags: []string{"error-handling"}},
 }
 
 // Meta is a catalogue entry describing one rule.
