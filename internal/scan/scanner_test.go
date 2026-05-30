@@ -171,6 +171,25 @@ func TestScanJavaBugRules(t *testing.T) {
 	}
 }
 
+// TestScanJSBugRules covers the JS/TS rules added beyond the starter set:
+// implied eval (string setTimeout), empty catch, and hard-coded credentials.
+// The fixture has one .js and one .ts file to exercise both prefixes.
+func TestScanJSBugRules(t *testing.T) {
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/jsbugfixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	for _, id := range []string{"js:implied-eval", "js:empty-catch", "js:hardcoded-credentials", "ts:hardcoded-credentials"} {
+		if countRule(rep, id) != 1 {
+			t.Errorf("expected rule %s to fire exactly once, got %d", id, countRule(rep, id))
+		}
+	}
+	// setInterval with a function reference must NOT be flagged as implied-eval.
+	if countRule(rep, "js:implied-eval") != 1 {
+		t.Errorf("implied-eval should fire only for the string argument, got %d", countRule(rep, "js:implied-eval"))
+	}
+}
+
 func countRule(rep domain.Report, id string) int {
 	n := 0
 	for _, f := range rep.Findings {

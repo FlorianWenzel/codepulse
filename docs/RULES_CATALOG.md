@@ -3,7 +3,7 @@
 > Auto-generated from `codepulse-scan -rules`. Do not edit by hand —
 > regenerate with `make rules-catalog`.
 
-**97 built-in rules** across **15 languages**. Each rule carries a
+**103 built-in rules** across **15 languages**. Each rule carries a
 type (BUG / VULNERABILITY / CODE_SMELL / SECURITY_HOTSPOT), a default severity,
 a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings.
 
@@ -17,7 +17,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | csharp | 2 |
 | go | 16 |
 | java | 14 |
-| javascript | 17 |
+| javascript | 20 |
 | kotlin | 2 |
 | php | 2 |
 | python | 12 |
@@ -25,8 +25,8 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | rust | 3 |
 | scala | 2 |
 | swift | 2 |
-| typescript | 17 |
-| **Total** | **97** |
+| typescript | 20 |
+| **Total** | **103** |
 
 ## bash
 
@@ -105,8 +105,11 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | `js:console-usage` | Remove console statements | CODE_SMELL | MINOR | — | — |
 | `js:debugger-statement` | Leftover debugger statement | CODE_SMELL | MAJOR | — | — |
 | `js:document-write` | document.write enables XSS and blocks parsing | SECURITY_HOTSPOT | MAJOR | CWE-79 | A03:2021-Injection |
+| `js:empty-catch` | Empty catch block swallows errors | BUG | MAJOR | CWE-390 | — |
 | `js:eval-usage` | Use of eval() executes arbitrary code | VULNERABILITY | CRITICAL | CWE-95 | A03:2021-Injection |
+| `js:hardcoded-credentials` | Hard-coded credentials | SECURITY_HOTSPOT | CRITICAL | CWE-798 | A07:2021-Identification and Authentication Failures |
 | `js:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
+| `js:implied-eval` | setTimeout/setInterval called with a string | VULNERABILITY | CRITICAL | CWE-95 | A03:2021-Injection |
 | `js:inner-html` | Assigning to innerHTML can introduce XSS | SECURITY_HOTSPOT | MAJOR | CWE-79 | A03:2021-Injection |
 | `js:loose-equality` | Use strict equality (=== / !==) | CODE_SMELL | MINOR | — | — |
 | `js:no-new-wrappers` | Don't use primitive wrapper constructors | CODE_SMELL | MINOR | — | — |
@@ -187,8 +190,11 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | `ts:console-usage` | Remove console statements | CODE_SMELL | MINOR | — | — |
 | `ts:debugger-statement` | Leftover debugger statement | CODE_SMELL | MAJOR | — | — |
 | `ts:document-write` | document.write enables XSS and blocks parsing | SECURITY_HOTSPOT | MAJOR | CWE-79 | A03:2021-Injection |
+| `ts:empty-catch` | Empty catch block swallows errors | BUG | MAJOR | CWE-390 | — |
 | `ts:eval-usage` | Use of eval() executes arbitrary code | VULNERABILITY | CRITICAL | CWE-95 | A03:2021-Injection |
+| `ts:hardcoded-credentials` | Hard-coded credentials | SECURITY_HOTSPOT | CRITICAL | CWE-798 | A07:2021-Identification and Authentication Failures |
 | `ts:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
+| `ts:implied-eval` | setTimeout/setInterval called with a string | VULNERABILITY | CRITICAL | CWE-95 | A03:2021-Injection |
 | `ts:inner-html` | Assigning to innerHTML can introduce XSS | SECURITY_HOTSPOT | MAJOR | CWE-79 | A03:2021-Injection |
 | `ts:loose-equality` | Use strict equality (=== / !==) | CODE_SMELL | MINOR | — | — |
 | `ts:no-new-wrappers` | Don't use primitive wrapper constructors | CODE_SMELL | MINOR | — | — |

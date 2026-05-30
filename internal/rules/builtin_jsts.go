@@ -151,6 +151,41 @@ func jsLikeRules(spec langspec.Spec) []Rule {
 			Capture:   "flag",
 			Message:   "new String/Number/Boolean creates objects, not primitives; call them without `new`.",
 		},
+		{
+			ID:        p + ":implied-eval",
+			Name:      "setTimeout/setInterval called with a string",
+			Type:      domain.TypeVulnerability,
+			Severity:  domain.SevCritical,
+			EffortMin: 15,
+			Query:     `(call_expression function: (identifier) @fn arguments: (arguments . (string)) (#match? @fn "^(setTimeout|setInterval)$")) @flag`,
+			Capture:   "flag",
+			Message:   "A string argument to setTimeout/setInterval is eval'd. Pass a function reference instead.",
+		},
+		{
+			ID:        p + ":empty-catch",
+			Name:      "Empty catch block swallows errors",
+			Type:      domain.TypeBug,
+			Severity:  domain.SevMajor,
+			EffortMin: 10,
+			Query:     `(catch_clause body: (statement_block) @flag)`,
+			Capture:   "flag",
+			Predicate: func(n *sitter.Node, src []byte) (string, bool) {
+				if n.NamedChildCount() > 0 {
+					return "", false
+				}
+				return "Handle or log the error instead of leaving an empty catch block.", true
+			},
+		},
+		{
+			ID:        p + ":hardcoded-credentials",
+			Name:      "Hard-coded credentials",
+			Type:      domain.TypeHotspot,
+			Severity:  domain.SevCritical,
+			EffortMin: 20,
+			Query:     `(variable_declarator name: (identifier) @n value: (string (string_fragment)) (#match? @n "(?i)(passwd|password|pwd|secret|apikey|api_key|access_key|private_key)")) @flag`,
+			Capture:   "flag",
+			Message:   "Credential assigned from a string literal; load secrets from environment variables or a secrets manager.",
+		},
 		jsTaintEvalRule(p),
 		jsTaintXSSRule(p),
 		jsTaintExecRule(p),
