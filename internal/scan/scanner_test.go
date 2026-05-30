@@ -435,6 +435,28 @@ func TestScanWithProfile(t *testing.T) {
 	}
 }
 
+// TestScanProfileCognitiveThreshold lowers the cognitive threshold so the
+// fixture's complex function is flagged by the cognitive-complexity rule.
+func TestScanProfileCognitiveThreshold(t *testing.T) {
+	base, err := scan.Scan(scan.Options{Root: "../../testdata/gofixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if countRule(base, "go:cognitive-complexity") != 0 {
+		t.Fatalf("baseline cognitive-complexity = %d, want 0 (default threshold)", countRule(base, "go:cognitive-complexity"))
+	}
+	lowered, err := scan.Scan(scan.Options{
+		Root:    "../../testdata/gofixture",
+		Profile: &rules.Profile{CognitiveThreshold: 10},
+	})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if n := countRule(lowered, "go:cognitive-complexity"); n != 1 {
+		t.Errorf("cognitive-complexity = %d with threshold 10, want 1", n)
+	}
+}
+
 // TestScanProfileComplexityThreshold raises the complexity threshold so the
 // fixture's complex function is no longer flagged.
 func TestScanProfileComplexityThreshold(t *testing.T) {

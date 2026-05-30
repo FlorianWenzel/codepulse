@@ -97,6 +97,15 @@ func TestLoadProfileRejectsBadRule(t *testing.T) {
 	}
 }
 
+func TestLoadProfileRejectsNegativeCognitive(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "p.yml")
+	os.WriteFile(path, []byte("cognitiveThreshold: -2\n"), 0o644)
+	if _, err := LoadProfile(path); err == nil {
+		t.Error("expected error for negative cognitiveThreshold")
+	}
+}
+
 func TestLoadProfileRejectsBadSeverity(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "p.yml")

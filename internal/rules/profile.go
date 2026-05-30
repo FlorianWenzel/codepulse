@@ -29,6 +29,9 @@ type Profile struct {
 	// ComplexityThreshold overrides the cyclomatic-complexity threshold for the
 	// <lang>:high-complexity rule across all languages (0 = built-in default).
 	ComplexityThreshold int `yaml:"complexityThreshold" json:"complexityThreshold"`
+	// CognitiveThreshold overrides the cognitive-complexity threshold for the
+	// <lang>:cognitive-complexity rule across all languages (0 = built-in default).
+	CognitiveThreshold int `yaml:"cognitiveThreshold" json:"cognitiveThreshold"`
 }
 
 // LoadProfile reads and validates a profile from a YAML/JSON file.
@@ -76,6 +79,9 @@ func (p *Profile) validate() error {
 	if p.ComplexityThreshold < 0 {
 		return fmt.Errorf("complexityThreshold must be >= 1 (got %d)", p.ComplexityThreshold)
 	}
+	if p.CognitiveThreshold < 0 {
+		return fmt.Errorf("cognitiveThreshold must be >= 1 (got %d)", p.CognitiveThreshold)
+	}
 	return nil
 }
 
@@ -86,13 +92,17 @@ func (p *Profile) ApplyTo(spec langspec.Spec, rs []Rule) []Rule {
 	if p == nil {
 		return rs
 	}
-	if p.ComplexityThreshold > 0 {
-		id := spec.Prefix + ":high-complexity"
+	if p.ComplexityThreshold > 0 || p.CognitiveThreshold > 0 {
+		cycID := spec.Prefix + ":high-complexity"
+		cogID := spec.Prefix + ":cognitive-complexity"
 		rebuilt := make([]Rule, len(rs))
 		copy(rebuilt, rs)
 		for i := range rebuilt {
-			if rebuilt[i].ID == id {
+			switch {
+			case p.ComplexityThreshold > 0 && rebuilt[i].ID == cycID:
 				rebuilt[i] = complexityRuleWith(spec, p.ComplexityThreshold)
+			case p.CognitiveThreshold > 0 && rebuilt[i].ID == cogID:
+				rebuilt[i] = cognitiveComplexityRuleWith(spec, p.CognitiveThreshold)
 			}
 		}
 		rs = rebuilt
