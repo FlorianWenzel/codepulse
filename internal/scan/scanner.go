@@ -167,6 +167,9 @@ func Scan(opts Options) (domain.Report, error) {
 		if rules.IsDockerfile(path) {
 			findings = append(findings, rules.ScanDockerfile(rel, src)...)
 		}
+		if rules.IsWorkflowFile(path) {
+			findings = append(findings, rules.ScanWorkflow(rel, src)...)
+		}
 		for _, f := range findings {
 			if newCode {
 				attributeNewCode(&f, blame, cutoff)
@@ -371,7 +374,7 @@ func collectSecretFiles(opts Options) []string {
 			return err
 		}
 		if d.IsDir() {
-			if path != opts.Root && (skipDirs[d.Name()] || strings.HasPrefix(d.Name(), ".")) {
+			if path != opts.Root && (skipDirs[d.Name()] || (strings.HasPrefix(d.Name(), ".") && d.Name() != ".github")) {
 				return filepath.SkipDir
 			}
 			return nil

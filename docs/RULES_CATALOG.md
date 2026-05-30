@@ -3,7 +3,7 @@
 > Auto-generated from `codepulse-scan -rules`. Do not edit by hand —
 > regenerate with `make rules-catalog`.
 
-**170 built-in rules** across **15 languages** (plus secret detection & Dockerfile checks). Each rule carries a
+**171 built-in rules** across **15 languages** (plus secret detection, Dockerfile & GitHub Actions checks). Each rule carries a
 type (BUG / VULNERABILITY / CODE_SMELL / SECURITY_HOTSPOT), a default severity,
 a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings.
 
@@ -17,6 +17,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | cpp | 5 |
 | csharp | 6 |
 | docker | 5 |
+| github-actions | 1 |
 | go | 17 |
 | java | 19 |
 | javascript | 24 |
@@ -28,7 +29,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | scala | 5 |
 | swift | 5 |
 | typescript | 24 |
-| **Total** | **170** |
+| **Total** | **171** |
 
 ## any
 
@@ -93,6 +94,12 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | `docker:from-latest` | Base image uses :latest | CODE_SMELL | MINOR | — | — |
 | `docker:run-as-root` | Container runs as root (no USER) | SECURITY_HOTSPOT | MAJOR | CWE-250 | — |
 | `docker:run-sudo` | sudo used in RUN | CODE_SMELL | MINOR | — | — |
+
+## github-actions
+
+| Rule ID | Name | Type | Severity | CWE | OWASP |
+|---------|------|------|----------|-----|-------|
+| `actions:script-injection` | Untrusted GitHub context in a workflow | SECURITY_HOTSPOT | CRITICAL | CWE-94 | A03:2021-Injection |
 
 ## go
 

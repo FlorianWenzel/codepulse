@@ -398,6 +398,18 @@ func TestScanSecretsInConfigFiles(t *testing.T) {
 	}
 }
 
+// TestScanWorkflowInjection checks the GitHub Actions script-injection check
+// (untrusted github.event context), reached by descending into .github/workflows.
+func TestScanWorkflowInjection(t *testing.T) {
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/workflowfixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if countRule(rep, "actions:script-injection") != 1 {
+		t.Errorf("actions:script-injection: got %d, want 1 (github.sha must not fire)", countRule(rep, "actions:script-injection"))
+	}
+}
+
 // TestScanDockerfile checks the line-based Dockerfile linter.
 func TestScanDockerfile(t *testing.T) {
 	rep, err := scan.Scan(scan.Options{Root: "../../testdata/dockerfilefixture"})

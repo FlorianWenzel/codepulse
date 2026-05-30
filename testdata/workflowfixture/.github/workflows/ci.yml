@@ -1,0 +1,8 @@
+name: ci
+on: [pull_request_target]
+jobs:
+  greet:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "PR title is ${{ github.event.pull_request.title }}"
+      - run: echo "commit ${{ github.sha }} is fine"
