@@ -53,6 +53,52 @@ func TestCLIEndToEnd(t *testing.T) {
 	}
 }
 
+// TestCLISarifContentFindings guards the SARIF (code-scanning) path for
+// content-based findings: a scanned secret must appear as a result with a
+// matching rule descriptor in the driver.
+func TestCLISarifContentFindings(t *testing.T) {
+	out, err := exec.Command("go", "run", ".", "-format", "sarif", "-quiet", "../../testdata/secretfixture").Output()
+	if err != nil {
+		t.Fatalf("run cli: %v", err)
+	}
+	var log struct {
+		Runs []struct {
+			Tool struct {
+				Driver struct {
+					Rules []struct {
+						ID string `json:"id"`
+					} `json:"rules"`
+				} `json:"driver"`
+			} `json:"tool"`
+			Results []struct {
+				RuleID string `json:"ruleId"`
+			} `json:"results"`
+		} `json:"runs"`
+	}
+	if err := json.Unmarshal(out, &log); err != nil {
+		t.Fatalf("invalid SARIF: %v", err)
+	}
+	if len(log.Runs) != 1 {
+		t.Fatalf("runs = %d, want 1", len(log.Runs))
+	}
+	descriptors := map[string]bool{}
+	for _, r := range log.Runs[0].Tool.Driver.Rules {
+		descriptors[r.ID] = true
+	}
+	var sawSecret bool
+	for _, res := range log.Runs[0].Results {
+		if strings.HasPrefix(res.RuleID, "secret:") {
+			sawSecret = true
+			if !descriptors[res.RuleID] {
+				t.Errorf("secret result %q has no rule descriptor in the driver", res.RuleID)
+			}
+		}
+	}
+	if !sawSecret {
+		t.Error("expected at least one secret result in SARIF output")
+	}
+}
+
 // TestCLIVersion runs `codepulse-scan -version` and checks it prints a version.
 func TestCLIVersion(t *testing.T) {
 	out, err := exec.Command("go", "run", ".", "-version").Output()
