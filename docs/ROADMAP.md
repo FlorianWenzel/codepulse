@@ -138,10 +138,11 @@ metric domains, ratings, and a working clean-as-you-code gate.
 Phases 0–4 reached feature **breadth**; this phase closes the **depth** gap with SonarQube.
 Ordered by leverage.
 
-### 1. Rule coverage — *the* priority  *(in progress)*
+### 1. Rule coverage — *the* priority  *(✅ broad coverage; growing)*
 - Greatly expand first-party rule sets, focused on **JavaScript/TypeScript, Java, and Go**
   (then Python), growing from a handful toward tens→hundreds of rules per language.
-- **Added so far (~80 rules, growing):** security/taint — Go (exec-command, weak-hash, **tainted-exec/tainted-sql** dataflow), Python (eval/exec, yaml/pickle RCE, os-system, **tainted-sql**), JS/TS (eval, inner-html, document-write, child-process-exec), Java (process-exec, catch-generic); correctness — py assert-tuple / mutable-default-arg, js/ts loose-equality, java empty-catch; smells — debug prints, var/with, throw-literal, os/System exit, ioutil/legacy-collection/wrappers/wildcard-import, TODO, high-complexity — each fixture- or inline-tested, with CWE/OWASP + remediation in the taxonomy.
+- **Added so far (145 rules across all 15 languages):** security/taint — Go (exec-command, weak-hash, TLS InsecureSkipVerify, **tainted-exec/tainted-sql** dataflow), Python (eval/exec, yaml/pickle RCE, os-system, subprocess shell, weak-hash, requests verify=False, hardcoded creds, **tainted-sql**), JS/TS (eval, inner-html, document-write, child-process-exec, implied-eval, hardcoded creds, **tainted-eval/xss/exec** dataflow), Java (process-exec, catch-generic, string-eq-ref, catch-npe, hardcoded creds), plus security rules for PHP, Ruby, C/C++, C#, Bash, Kotlin, Rust, Scala, Swift; correctness/bug — discarded-append, defer-in-loop, empty-catch, loose-equality, null-safety (`!!`, force-unwrap, scala null/asInstanceOf); maintainability — **per-function cyclomatic AND cognitive complexity** (every language), debug prints, var/with, TODO. Each fixture- or inline-tested, with CWE/OWASP + remediation in the taxonomy.
+- **Quality profiles ✅ (scanner-side)** — `.codepulse.yml`: disable rules, override severities, tune cyclomatic/cognitive thresholds, exclude paths (validated, fail-loud). **Inline suppression ✅** — `codepulse:ignore [ids]` / `NOSONAR`. **Dashboard rule-catalogue browser ✅** (search + language/type filters, CWE/OWASP).
 
 ### 2. Analysis sophistication (semantic + dataflow)  *(started)*
 - **First dataflow rule ✅** — `go:tainted-exec`: intra-procedural taint from a source
