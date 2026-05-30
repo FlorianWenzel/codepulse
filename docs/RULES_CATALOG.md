@@ -3,7 +3,7 @@
 > Auto-generated from `codepulse-scan -rules`. Do not edit by hand —
 > regenerate with `make rules-catalog`.
 
-**148 built-in rules** across **15 languages**. Each rule carries a
+**149 built-in rules** across **15 languages**. Each rule carries a
 type (BUG / VULNERABILITY / CODE_SMELL / SECURITY_HOTSPOT), a default severity,
 a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings.
 
@@ -16,7 +16,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | cpp | 5 |
 | csharp | 6 |
 | go | 17 |
-| java | 15 |
+| java | 16 |
 | javascript | 22 |
 | kotlin | 5 |
 | php | 6 |
@@ -26,7 +26,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | scala | 5 |
 | swift | 5 |
 | typescript | 22 |
-| **Total** | **148** |
+| **Total** | **149** |
 
 ## bash
 
@@ -108,6 +108,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | `java:string-eq-ref` | Strings compared with == instead of equals() | BUG | MAJOR | CWE-597 | — |
 | `java:system-exit` | System.exit() should not be used in library code | CODE_SMELL | MAJOR | — | — |
 | `java:system-print` | Remove System.out/err debug prints | CODE_SMELL | MINOR | — | — |
+| `java:tainted-sql` | Untrusted request data concatenated into a SQL query | VULNERABILITY | CRITICAL | CWE-89 | A03:2021-Injection |
 | `java:thread-sleep` | Thread.sleep() in application code is a smell | CODE_SMELL | MINOR | — | — |
 | `java:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |
 
