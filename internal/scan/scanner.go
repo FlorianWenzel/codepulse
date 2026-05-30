@@ -60,6 +60,10 @@ func Scan(opts Options) (domain.Report, error) {
 		},
 	}
 
+	if opts.Profile != nil && len(opts.Profile.Exclude) > 0 {
+		opts.Excludes = append(opts.Excludes, opts.Profile.Exclude...)
+	}
+
 	files, err := collectFiles(opts)
 	if err != nil {
 		return domain.Report{}, err

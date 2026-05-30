@@ -32,6 +32,9 @@ type Profile struct {
 	// CognitiveThreshold overrides the cognitive-complexity threshold for the
 	// <lang>:cognitive-complexity rule across all languages (0 = built-in default).
 	CognitiveThreshold int `yaml:"cognitiveThreshold" json:"cognitiveThreshold"`
+	// Exclude lists path substrings to skip during analysis (version-controlled
+	// equivalent of the scanner's -exclude flag).
+	Exclude []string `yaml:"exclude" json:"exclude"`
 }
 
 // LoadProfile reads and validates a profile from a YAML/JSON file.

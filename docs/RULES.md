@@ -180,6 +180,10 @@ severity:
 complexityThreshold: 20        # default 15
 # Override the cognitive-complexity threshold (<lang>:cognitive-complexity)
 cognitiveThreshold: 30         # default 25
+# Skip paths (substring match) — version-controlled equivalent of -exclude
+exclude:
+  - generated/
+  - vendor/
 ```
 
 Unknown rule ids, invalid severities, and negative thresholds are rejected at

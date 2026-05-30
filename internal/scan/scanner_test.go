@@ -457,6 +457,33 @@ func TestScanProfileCognitiveThreshold(t *testing.T) {
 	}
 }
 
+// TestScanProfileExclude checks that profile-level path excludes skip files,
+// like the -exclude flag but version-controlled in the profile.
+func TestScanProfileExclude(t *testing.T) {
+	base, err := scan.Scan(scan.Options{Root: "../../testdata/excludefixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if base.Summary.FilesAnalyzed != 2 {
+		t.Fatalf("baseline files = %d, want 2", base.Summary.FilesAnalyzed)
+	}
+	got, err := scan.Scan(scan.Options{
+		Root:    "../../testdata/excludefixture",
+		Profile: &rules.Profile{Exclude: []string{"generated"}},
+	})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if got.Summary.FilesAnalyzed != 1 {
+		t.Errorf("with exclude: files = %d, want 1", got.Summary.FilesAnalyzed)
+	}
+	for _, m := range got.Metrics {
+		if m.Path == "generated/b.go" {
+			t.Error("generated/b.go should have been excluded")
+		}
+	}
+}
+
 // TestScanProfileComplexityThreshold raises the complexity threshold so the
 // fixture's complex function is no longer flagged.
 func TestScanProfileComplexityThreshold(t *testing.T) {
