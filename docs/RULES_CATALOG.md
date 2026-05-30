@@ -3,7 +3,7 @@
 > Auto-generated from `codepulse-scan -rules`. Do not edit by hand —
 > regenerate with `make rules-catalog`.
 
-**110 built-in rules** across **15 languages**. Each rule carries a
+**113 built-in rules** across **15 languages**. Each rule carries a
 type (BUG / VULNERABILITY / CODE_SMELL / SECURITY_HOTSPOT), a default severity,
 a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings.
 
@@ -21,12 +21,12 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | kotlin | 2 |
 | php | 5 |
 | python | 16 |
-| ruby | 2 |
+| ruby | 5 |
 | rust | 3 |
 | scala | 2 |
 | swift | 2 |
 | typescript | 20 |
-| **Total** | **110** |
+| **Total** | **113** |
 
 ## bash
 
@@ -163,8 +163,11 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 
 | Rule ID | Name | Type | Severity | CWE | OWASP |
 |---------|------|------|----------|-----|-------|
+| `ruby:command-exec` | Shell command execution is security-sensitive | VULNERABILITY | CRITICAL | CWE-78 | A03:2021-Injection |
+| `ruby:eval-usage` | Use of eval executes arbitrary code | VULNERABILITY | CRITICAL | CWE-95 | A03:2021-Injection |
 | `ruby:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
 | `ruby:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |
+| `ruby:weak-hash` | Weak cryptographic hash (MD5/SHA-1) | SECURITY_HOTSPOT | MAJOR | CWE-327, CWE-328 | A02:2021-Cryptographic Failures |
 
 ## rust
 
