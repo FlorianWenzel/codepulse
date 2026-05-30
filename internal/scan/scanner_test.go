@@ -261,6 +261,23 @@ func TestScanCFamilySecurityRules(t *testing.T) {
 	}
 }
 
+// TestScanCSharpSecurityRules covers the C# rules (empty catch, weak hash,
+// Process.Start) added on top of the todo/complexity starter set.
+func TestScanCSharpSecurityRules(t *testing.T) {
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/csbugfixture"})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if rep.Language != "csharp" {
+		t.Errorf("language = %q, want csharp", rep.Language)
+	}
+	for _, id := range []string{"cs:empty-catch", "cs:weak-hash", "cs:process-start"} {
+		if countRule(rep, id) != 1 {
+			t.Errorf("expected rule %s to fire exactly once, got %d", id, countRule(rep, id))
+		}
+	}
+}
+
 // TestScanInlineSuppression checks that codepulse:ignore (bare and id-scoped)
 // and NOSONAR suppress findings on their line, while un-annotated and
 // wrong-id lines are still reported.

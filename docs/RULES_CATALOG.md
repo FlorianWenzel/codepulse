@@ -3,7 +3,7 @@
 > Auto-generated from `codepulse-scan -rules`. Do not edit by hand —
 > regenerate with `make rules-catalog`.
 
-**117 built-in rules** across **15 languages**. Each rule carries a
+**120 built-in rules** across **15 languages**. Each rule carries a
 type (BUG / VULNERABILITY / CODE_SMELL / SECURITY_HOTSPOT), a default severity,
 a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings.
 
@@ -14,7 +14,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | bash | 2 |
 | c | 4 |
 | cpp | 4 |
-| csharp | 2 |
+| csharp | 5 |
 | go | 16 |
 | java | 14 |
 | javascript | 20 |
@@ -26,7 +26,7 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 | scala | 2 |
 | swift | 2 |
 | typescript | 20 |
-| **Total** | **117** |
+| **Total** | **120** |
 
 ## bash
 
@@ -57,8 +57,11 @@ a remediation hint, and — for security rules — CWE and OWASP Top 10 mappings
 
 | Rule ID | Name | Type | Severity | CWE | OWASP |
 |---------|------|------|----------|-----|-------|
+| `cs:empty-catch` | Empty catch block swallows exceptions | BUG | MAJOR | CWE-390 | — |
 | `cs:high-complexity` | Function is too complex | CODE_SMELL | MAJOR | — | — |
+| `cs:process-start` | Process execution is security-sensitive | SECURITY_HOTSPOT | MAJOR | CWE-78 | A03:2021-Injection |
 | `cs:todo-comment` | Track and resolve TODO/FIXME comments | CODE_SMELL | INFO | — | — |
+| `cs:weak-hash` | Weak cryptographic hash (MD5/SHA-1) | SECURITY_HOTSPOT | MAJOR | CWE-327, CWE-328 | A02:2021-Cryptographic Failures |
 
 ## go
 

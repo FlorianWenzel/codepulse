@@ -1,6 +1,8 @@
 package rules
 
 import (
+	sitter "github.com/smacker/go-tree-sitter"
+
 	"github.com/FlorianWenzel/codepulse/internal/domain"
 	"github.com/FlorianWenzel/codepulse/internal/langspec"
 )
@@ -25,7 +27,45 @@ func cppRules() []Rule {
 	return append([]Rule{todoRule("cpp")}, append(cFamilySecurityRules("cpp"), complexityRule(langspec.Cpp()))...)
 }
 func csRules() []Rule {
-	return []Rule{todoRuleQuery("cs", singleComment), complexityRule(langspec.CSharp())}
+	return []Rule{
+		todoRuleQuery("cs", singleComment),
+		{
+			ID:        "cs:empty-catch",
+			Name:      "Empty catch block swallows exceptions",
+			Type:      domain.TypeBug,
+			Severity:  domain.SevMajor,
+			EffortMin: 10,
+			Query:     `(catch_clause (block) @flag)`,
+			Capture:   "flag",
+			Predicate: func(n *sitter.Node, src []byte) (string, bool) {
+				if n.NamedChildCount() > 0 {
+					return "", false
+				}
+				return "Handle or log the exception instead of leaving an empty catch block.", true
+			},
+		},
+		{
+			ID:        "cs:weak-hash",
+			Name:      "Weak cryptographic hash (MD5/SHA-1)",
+			Type:      domain.TypeHotspot,
+			Severity:  domain.SevMajor,
+			EffortMin: 15,
+			Query:     `(member_access_expression expression: (identifier) @t (#match? @t "^(MD5|SHA1|SHA1Managed|MD5CryptoServiceProvider)$")) @flag`,
+			Capture:   "flag",
+			Message:   "MD5/SHA-1 are weak; use SHA256 (and PBKDF2/bcrypt/argon2 for passwords).",
+		},
+		{
+			ID:        "cs:process-start",
+			Name:      "Process execution is security-sensitive",
+			Type:      domain.TypeHotspot,
+			Severity:  domain.SevMajor,
+			EffortMin: 15,
+			Query:     `(member_access_expression expression: (identifier) @o name: (identifier) @m (#eq? @o "Process") (#eq? @m "Start")) @flag`,
+			Capture:   "flag",
+			Message:   "Process.Start with untrusted input is command injection; pass arguments via ProcessStartInfo.ArgumentList and validate them.",
+		},
+		complexityRule(langspec.CSharp()),
+	}
 }
 func phpRules() []Rule {
 	return []Rule{

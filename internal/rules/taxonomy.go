@@ -66,6 +66,9 @@ var remediation = map[string]string{
 	"c:system-exec":              "Avoid system/popen with untrusted input; use exec* with an argument vector and validated input.",
 	"cpp:unsafe-cstring-fn":      "Prefer std::string / std::format, or bounded C APIs (snprintf, strncpy).",
 	"cpp:system-exec":            "Avoid system/popen with untrusted input; use a process API with an argument vector.",
+	"cs:empty-catch":             "Log the exception, rethrow, or document why it is safe to ignore.",
+	"cs:weak-hash":               "Use SHA256/SHA512; use PBKDF2/bcrypt/argon2 for passwords.",
+	"cs:process-start":           "Use ProcessStartInfo with ArgumentList (no shell) and validate input-derived arguments.",
 }
 
 // ruleTaxonomy maps rule id -> taxonomy. Security rules carry CWE/OWASP; others
@@ -134,6 +137,9 @@ var ruleTaxonomy = map[string]Taxonomy{
 	"c:system-exec":              {Description: "system/popen run a shell; untrusted input enables command injection.", CWE: []string{"CWE-78"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "command-injection"}},
 	"cpp:unsafe-cstring-fn":      {Description: "gets/strcpy/strcat/sprintf write without bounds; a long input overflows the buffer.", CWE: []string{"CWE-120", "CWE-242"}, Tags: []string{"security", "buffer-overflow"}},
 	"cpp:system-exec":            {Description: "system/popen run a shell; untrusted input enables command injection.", CWE: []string{"CWE-78"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "command-injection"}},
+	"cs:empty-catch":             {Description: "An empty catch block silently discards the exception.", CWE: []string{"CWE-390"}, Tags: []string{"error-handling"}},
+	"cs:weak-hash":               {Description: "MD5 and SHA-1 are cryptographically broken for security use; prefer SHA-256 or stronger.", CWE: []string{"CWE-327", "CWE-328"}, OWASP: []string{"A02:2021-Cryptographic Failures"}, Tags: []string{"security", "cryptography"}},
+	"cs:process-start":           {Description: "Process.Start with untrusted input can lead to command injection.", CWE: []string{"CWE-78"}, OWASP: []string{"A03:2021-Injection"}, Tags: []string{"security", "command-injection"}},
 }
 
 // Meta is a catalogue entry describing one rule.
