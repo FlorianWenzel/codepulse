@@ -398,6 +398,27 @@ func TestScanSecretsInConfigFiles(t *testing.T) {
 	}
 }
 
+// TestScanProfileNonSource verifies the quality profile disables and re-severities
+// non-source (Dockerfile/secret) findings, not just AST rules.
+func TestScanProfileNonSource(t *testing.T) {
+	prof := &rules.Profile{
+		Disable:  []string{"docker:from-latest"},
+		Severity: map[string]string{"docker:run-sudo": "INFO"},
+	}
+	rep, err := scan.Scan(scan.Options{Root: "../../testdata/dockerfilefixture", Profile: prof})
+	if err != nil {
+		t.Fatalf("scan: %v", err)
+	}
+	if countRule(rep, "docker:from-latest") != 0 {
+		t.Errorf("docker:from-latest should be disabled by the profile, got %d", countRule(rep, "docker:from-latest"))
+	}
+	for _, f := range rep.Findings {
+		if f.RuleID == "docker:run-sudo" && f.Severity != domain.SevInfo {
+			t.Errorf("docker:run-sudo severity = %q, want INFO (profile override)", f.Severity)
+		}
+	}
+}
+
 // TestScanWorkflowInjection checks the GitHub Actions script-injection check
 // (untrusted github.event context), reached by descending into .github/workflows.
 func TestScanWorkflowInjection(t *testing.T) {

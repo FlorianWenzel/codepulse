@@ -113,6 +113,32 @@ func (p *Profile) ApplyTo(spec langspec.Spec, rs []Rule) []Rule {
 	return p.Apply(rs)
 }
 
+// Disabled reports whether the profile turns off the given rule id. Works for
+// any catalogue id, including content-based (secret/docker/actions) findings
+// that don't flow through Apply.
+func (p *Profile) Disabled(id string) bool {
+	if p == nil {
+		return false
+	}
+	for _, d := range p.Disable {
+		if d == id {
+			return true
+		}
+	}
+	return false
+}
+
+// SeverityFor returns the profile's severity override for id, if any.
+func (p *Profile) SeverityFor(id string) (domain.Severity, bool) {
+	if p == nil {
+		return "", false
+	}
+	if s, ok := p.Severity[id]; ok {
+		return domain.Severity(s), true
+	}
+	return "", false
+}
+
 // Apply returns a copy of rs with disabled rules removed and severities
 // overridden per the profile. A nil profile returns rs unchanged.
 func (p *Profile) Apply(rs []Rule) []Rule {

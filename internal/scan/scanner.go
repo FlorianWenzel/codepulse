@@ -172,6 +172,12 @@ func Scan(opts Options) (domain.Report, error) {
 		}
 		sup := collectSuppressionsText(src)
 		for _, f := range findings {
+			if opts.Profile.Disabled(f.RuleID) {
+				continue
+			}
+			if sev, ok := opts.Profile.SeverityFor(f.RuleID); ok {
+				f.Severity = sev
+			}
 			if suppressed(sup, f.Location.StartLine, f.RuleID) {
 				rep.Summary.SuppressedFindings++
 				continue
